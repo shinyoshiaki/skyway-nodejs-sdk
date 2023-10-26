@@ -1,14 +1,13 @@
 {
-  "name": "@skyway-sdk/room",
+  "name": "@shinyoshiaki/skyway-nodejs-sdk",
   "version": "1.6.1",
-  "description": "The official Next Generation JavaScript SDK for SkyWay",
-  "homepage": "https://skyway.ntt.com/",
+  "description": "The unofficial Next Generation NodeJs SDK for SkyWay",
   "repository": {
     "type": "git",
-    "url": "https://github.com/skyway/js-sdk.git"
+    "url": "https://github.com/shinyoshiaki/skyway-nodejs-sdk.git"
   },
   "license": "MIT",
-  "author": "NTT Communications Corp.",
+  "author": "shinyoshiaki2012@gmail.com",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
