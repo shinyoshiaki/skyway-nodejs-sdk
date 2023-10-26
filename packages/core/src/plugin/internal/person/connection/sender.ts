@@ -702,26 +702,22 @@ export class Sender extends Peer {
 
     this._log.debug('<handleReceiverAnswer> [start]');
 
-    await this.pc
-      .setRemoteDescription(
-        new RTCSessionDescription(sdp.sdp!, sdp.type as any)
-      )
-      .catch((err) => {
-        const error = createError({
-          operationName: 'Sender._handleReceiverAnswer',
-          context: this._context,
-          info: {
-            ...errors.internal,
-            detail: 'failed to setRemoteDescription',
-          },
-          path: log.prefix,
-          payload: { sdp },
-          channel: this.localPerson.channel,
-          error: err,
-        });
-        this._log.error(error);
-        throw error;
+    await this.pc.setRemoteDescription(sdp).catch((err) => {
+      const error = createError({
+        operationName: 'Sender._handleReceiverAnswer',
+        context: this._context,
+        info: {
+          ...errors.internal,
+          detail: 'failed to setRemoteDescription',
+        },
+        path: log.prefix,
+        payload: { sdp },
+        channel: this.localPerson.channel,
+        error: err,
       });
+      this._log.error(error);
+      throw error;
+    });
 
     this._log.debug('<handleReceiverAnswer> sRD');
     await this.resolveCandidates();

@@ -14,7 +14,6 @@ import { SfuTransport } from './transport';
 import {
   RTCRtpCodecParameters,
   useAbsSendTime,
-  useFIR,
   useNACK,
   usePLI,
   useREMB,

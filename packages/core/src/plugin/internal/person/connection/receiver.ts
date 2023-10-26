@@ -525,10 +525,7 @@ export class Receiver extends Peer {
   private async sendAnswer(sdp: RTCSessionDescriptionInit) {
     this._log.debug(`[receiver] start: sendAnswer`);
 
-    await this.pc.setRemoteDescription({
-      sdp: sdp.sdp!,
-      type: sdp.type as any,
-    });
+    await this.pc.setRemoteDescription(sdp);
     const answer = await this.pc.createAnswer();
 
     const offerObject = sdpTransform.parse(this.pc.remoteDescription!.sdp);

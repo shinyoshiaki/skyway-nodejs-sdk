@@ -47,7 +47,7 @@
   "dependencies": {
     "@skyway-sdk/core": "^1.6.1",
     "@skyway-sdk/sfu-bot": "^1.6.1",
-    "msc-node": "^0.0.16",
+    "msc-node": "^0.0.17",
     "uuid": "^9.0.0"
   },
   "devDependencies": {
