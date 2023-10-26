@@ -1,5 +1,5 @@
-import { errors as coreErrors } from '@skyway-sdk/core';
-import { errors as sfuErrors } from '@skyway-sdk/sfu-bot';
+import { errors as coreErrors } from '@shinyoshiaki/skyway-nodejs-sdk-core';
+import { errors as sfuErrors } from '@shinyoshiaki/skyway-nodejs-sdk-sfu-bot';
 
 export const roomErrors = {
   invalidParameter: { name: 'invalidParameter', detail: '', solution: '' },

@@ -1,5 +1,5 @@
 {
-  "name": "@skyway-sdk/core",
+  "name": "@shinyoshiaki/skyway-nodejs-sdk-core",
   "version": "1.6.1",
   "description": "The official Next Generation JavaScript SDK for SkyWay",
   "keywords": [

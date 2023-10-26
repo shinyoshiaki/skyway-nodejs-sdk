@@ -8,8 +8,8 @@ import {
   statsToArray,
   SubscriptionImpl,
   uuidV4,
-} from '@skyway-sdk/core';
-import { createRemoteStream } from '@skyway-sdk/core';
+} from '@shinyoshiaki/skyway-nodejs-sdk-core';
+import { createRemoteStream } from '@shinyoshiaki/skyway-nodejs-sdk-core';
 import { SfuRestApiClient } from '@skyway-sdk/sfu-api-client';
 import { Consumer } from 'msc-node/lib/types';
 
@@ -81,7 +81,7 @@ export class Receiver {
       await this._api.createConsumer({
         botId: this._bot.id,
         forwardingId: this.subscription.publication.id,
-        rtpCapabilities,
+        rtpCapabilities: rtpCapabilities as any,
         subscriptionId: this.subscription.id,
         subscriberId: this.subscription.subscriber.id,
         spatialLayer,

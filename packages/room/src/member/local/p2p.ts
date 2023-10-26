@@ -6,7 +6,7 @@ import {
   RemoteDataStream,
   RemoteVideoStream,
   SubscriptionImpl,
-} from '@skyway-sdk/core';
+} from '@shinyoshiaki/skyway-nodejs-sdk-core';
 
 import { errors } from '../../errors';
 import { RoomPublication } from '../../publication';

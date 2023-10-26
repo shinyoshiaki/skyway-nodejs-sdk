@@ -1,5 +1,5 @@
 import { Event } from '@skyway-sdk/common';
-import { Member, MemberState } from '@skyway-sdk/core';
+import { Member, MemberState } from '@shinyoshiaki/skyway-nodejs-sdk-core';
 
 import { RoomPublication } from '../publication';
 import { RoomType } from '../room';

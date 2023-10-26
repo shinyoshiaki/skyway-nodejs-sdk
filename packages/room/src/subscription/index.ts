@@ -11,7 +11,7 @@ import {
   SubscriptionState,
   TransportConnectionState,
   WebRTCStats,
-} from '@skyway-sdk/core';
+} from '@shinyoshiaki/skyway-nodejs-sdk-core';
 
 import { errors } from '../errors';
 import { RemoteRoomMember } from '../member/remote/base';

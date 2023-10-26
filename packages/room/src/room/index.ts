@@ -4,12 +4,12 @@ import {
   SkyWayChannel,
   SkyWayChannelImpl,
   SkyWayContext,
-} from '@skyway-sdk/core';
+} from '@shinyoshiaki/skyway-nodejs-sdk-core';
 import {
   SfuApiOptions,
   SfuBotPlugin,
   SfuBotPluginOptions,
-} from '@skyway-sdk/sfu-bot';
+} from '@shinyoshiaki/skyway-nodejs-sdk-sfu-bot';
 import { v4 as uuidV4 } from 'uuid';
 
 import { errors } from '../errors';

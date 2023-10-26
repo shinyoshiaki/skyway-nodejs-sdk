@@ -1,5 +1,5 @@
 import { Event, EventDisposer, Logger } from '@skyway-sdk/common';
-import { Member, RemotePersonImpl } from '@skyway-sdk/core';
+import { Member, RemotePersonImpl } from '@shinyoshiaki/skyway-nodejs-sdk-core';
 
 import { errors } from '../../errors';
 import { RoomMember, RoomMemberImpl } from '../../member';

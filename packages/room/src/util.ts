@@ -1,5 +1,5 @@
 import { ErrorInfo, SkyWayError } from '@skyway-sdk/common';
-import { SkyWayContext } from '@skyway-sdk/core';
+import { SkyWayContext } from '@shinyoshiaki/skyway-nodejs-sdk-core';
 
 import { RoomImpl } from './room/base';
 

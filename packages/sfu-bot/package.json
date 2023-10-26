@@ -1,5 +1,5 @@
 {
-  "name": "@skyway-sdk/sfu-bot",
+  "name": "@shinyoshiaki/skyway-nodejs-sdk-sfu-bot",
   "version": "1.6.1",
   "description": "The official Next Generation JavaScript SDK for SkyWay",
   "homepage": "https://skyway.ntt.com/",
@@ -41,7 +41,7 @@
     "watch:tsc": "tsc -p tsconfig.build.json -w"
   },
   "dependencies": {
-    "@skyway-sdk/core": "^1.6.1",
+    "@shinyoshiaki/skyway-nodejs-sdk-core": "^1.6.1",
     "@skyway-sdk/sfu-api-client": "^1.4.5",
     "@types/node": "^20.8.8",
     "lodash": "4.17.21",

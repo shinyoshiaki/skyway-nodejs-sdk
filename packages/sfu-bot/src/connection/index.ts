@@ -12,7 +12,7 @@ import {
   SkyWayContext,
   Subscription,
   SubscriptionImpl,
-} from '@skyway-sdk/core';
+} from '@shinyoshiaki/skyway-nodejs-sdk-core';
 import { SfuRestApiClient } from '@skyway-sdk/sfu-api-client';
 
 import { errors } from '../errors';

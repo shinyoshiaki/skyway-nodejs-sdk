@@ -8,7 +8,7 @@ import {
   RemoteVideoStream,
   SubscriptionImpl,
   SubscriptionOptions,
-} from '@skyway-sdk/core';
+} from '@shinyoshiaki/skyway-nodejs-sdk-core';
 
 import { RoomMember, RoomMemberImpl } from '../../member';
 import { RoomPublication } from '../../publication';

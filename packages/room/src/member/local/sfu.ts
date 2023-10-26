@@ -8,8 +8,11 @@ import {
   RemoteVideoStream,
   SubscriptionImpl,
   SubscriptionOptions,
-} from '@skyway-sdk/core';
-import { errors as sfuErrors, SfuBotMember } from '@skyway-sdk/sfu-bot';
+} from '@shinyoshiaki/skyway-nodejs-sdk-core';
+import {
+  errors as sfuErrors,
+  SfuBotMember,
+} from '@shinyoshiaki/skyway-nodejs-sdk-sfu-bot';
 
 import { defaultMaxSubscribers } from '../../const';
 import { errors } from '../../errors';

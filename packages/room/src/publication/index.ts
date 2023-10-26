@@ -13,8 +13,8 @@ import {
   ReplaceStreamOptions,
   TransportConnectionState,
   WebRTCStats,
-} from '@skyway-sdk/core';
-import { SfuBotMember } from '@skyway-sdk/sfu-bot';
+} from '@shinyoshiaki/skyway-nodejs-sdk-core';
+import { SfuBotMember } from '@shinyoshiaki/skyway-nodejs-sdk-sfu-bot';
 
 import { errors } from '../errors';
 import { RoomMember, RoomMemberImpl } from '../member';
