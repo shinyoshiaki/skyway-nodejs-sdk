@@ -8,19 +8,21 @@ import {
   TransportConnectionState,
 } from '@skyway-sdk/core';
 import { SfuRestApiClient } from '@skyway-sdk/sfu-api-client';
-import { DataProducerOptions } from 'mediasoup-client/lib/DataProducer';
-import { MediaKind, RtpParameters } from 'mediasoup-client/lib/RtpParameters';
 import {
   ConnectionState,
   DtlsParameters,
   Transport,
-} from 'mediasoup-client/lib/Transport';
+  MediaKind,
+  RtpParameters,
+  DataProducerOptions,
+} from 'msc-node/lib/types';
 
 import { errors } from '../../errors';
 import { SfuBotMember } from '../../member';
 import { SfuBotPluginOptions } from '../../option';
 import { SfuBotPlugin } from '../../plugin';
 import { createWarnPayload } from '../../util';
+import { RTCPeerConnection } from 'msc-node';
 
 const log = new Logger(
   'packages/sfu-bot/src/connection/transport/transport.ts'
@@ -76,7 +78,7 @@ export class SfuTransport {
     ) as SfuBotPlugin;
     this._options = sfuPlugin.options;
 
-    log.debug('peerConfig', this.pc?.getConfiguration?.() ?? {});
+    // log.debug('peerConfig', this.pc?.getConfiguration?.() ?? {});
 
     msTransport.on('connect', (params, callback, errback) =>
       this._onConnect(msTransport.id)(

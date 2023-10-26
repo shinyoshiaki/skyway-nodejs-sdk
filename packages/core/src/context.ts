@@ -32,7 +32,14 @@ export class SkyWayContext {
 
     const token = SkyWayAuthToken.Decode(authTokenString);
 
-    const { osName, osVersion, browserName, browserVersion } = getRuntimeInfo();
+    const { osName, osVersion, browserName, browserVersion } = getRuntimeInfo({
+      isNotBrowser: {
+        browserName: 'nodejs',
+        browserVersion: '0.0.0',
+        osName: 'nodejs',
+        osVersion: '0.0.0',
+      },
+    });
     const runtime = {
       sdkName: 'core',
       sdkVersion: this.version,

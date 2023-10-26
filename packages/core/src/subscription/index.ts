@@ -17,6 +17,7 @@ import {
 import { TransportConnectionState } from '../plugin/interface';
 import { Publication, PublicationImpl } from '../publication';
 import { createError } from '../util';
+import { RTCPeerConnection } from 'msc-node';
 
 export * from './factory';
 

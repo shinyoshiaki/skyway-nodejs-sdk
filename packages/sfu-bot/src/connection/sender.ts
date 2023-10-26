@@ -13,20 +13,18 @@ import {
   setEncodingParams,
   SkyWayChannelImpl,
   SkyWayContext,
-  statsToArray,
   SubscriptionImpl,
   TransportConnectionState,
   uuidV4,
-  waitForLocalStats,
 } from '@skyway-sdk/core';
 import { SfuRestApiClient } from '@skyway-sdk/sfu-api-client';
 import isEqual from 'lodash/isEqual';
-import { Producer, ProducerOptions } from 'mediasoup-client/lib/Producer';
+import { Producer, ProducerOptions } from 'msc-node/lib/types';
 import {
   RtpCodecCapability,
   RtpCodecParameters,
   RtpParameters,
-} from 'mediasoup-client/lib/RtpParameters';
+} from 'msc-node/lib/types';
 
 import { errors } from '../errors';
 import { Forwarding, ForwardingConfigure } from '../forwarding';
@@ -34,6 +32,7 @@ import { SfuBotMember } from '../member';
 import { createWarnPayload } from '../util';
 import { SfuTransport } from './transport/transport';
 import { TransportRepository } from './transport/transportRepository';
+import { MediaStreamTrack } from 'msc-node';
 
 const log = new Logger('packages/sfu-bot/src/connection/sender.ts');
 
@@ -227,52 +226,6 @@ export class Sender {
     ) as SubscriptionImpl;
     const [codec] = producer.rtpParameters.codecs;
     botSubscribing.codec = codec;
-
-    if (isSafari()) {
-      waitForLocalStats({
-        stream,
-        remoteMember: this._bot.id,
-        end: (stats) => {
-          const outbound = stats.find(
-            (s) =>
-              s.id.includes('RTCOutboundRTP') || s.type.includes('outbound-rtp')
-          );
-          if (outbound?.keyFramesEncoded > 0) return true;
-          return false;
-        },
-        interval: 10,
-      })
-        .then(async () => {
-          const encodings = this.publication.encodings;
-
-          if (encodings?.length > 0) {
-            await setEncodingParams(producer.rtpSender!, encodings).catch(
-              (e) => {
-                log.error('_onEncodingsChanged failed', e, this);
-              }
-            );
-          }
-        })
-        .catch((err) => {
-          log.error('setEncodingParams waitForLocalStats failed', err, this);
-        });
-    }
-
-    waitForLocalStats({
-      stream,
-      remoteMember: this._bot.id,
-      end: (stats) => !!stats.find((s) => s.type.includes('local-candidate')),
-    })
-      .then(async () => {
-        const payload = await createLogPayload({
-          operationName: 'startForwarding/waitForLocalStats',
-          channel: this.channel,
-        });
-        log.debug(payload, 'forwarding connection connected', {
-          broadcasterTransportId,
-        });
-      })
-      .catch(() => {});
 
     return forwarding;
   }
@@ -569,19 +522,19 @@ export class Sender {
       connectionState: transport.connectionState,
       info: this,
     });
-    stream._getStatsCallbacks[this._bot.id] = async () => {
-      if (producer.closed) {
-        delete stream._getStatsCallbacks[this._bot.id];
-        return [];
-      }
-      const stats = await producer.getStats();
-      let arr = statsToArray(stats);
-      arr = arr.map((stats) => {
-        stats['sfuTransportId'] = transport.id;
-        return stats;
-      });
-      return arr;
-    };
+    // stream._getStatsCallbacks[this._bot.id] = async () => {
+    //   if (producer.closed) {
+    //     delete stream._getStatsCallbacks[this._bot.id];
+    //     return [];
+    //   }
+    //   const stats = await producer.getStats();
+    //   let arr = statsToArray(stats);
+    //   arr = arr.map((stats) => {
+    //     stats['sfuTransportId'] = transport.id;
+    //     return stats;
+    //   });
+    //   return arr;
+    // };
 
     // replaceStream時に古いstreamに紐づくcallbackを削除するため、戻り値としてcallback削除用の関数を返し、replaceStream時に呼び出す
     const cleanupCallbacks = () => {

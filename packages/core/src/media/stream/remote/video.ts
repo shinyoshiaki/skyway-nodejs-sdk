@@ -1,3 +1,4 @@
+import { MediaStreamTrack } from 'msc-node';
 import { RemoteMediaStreamBase } from './media';
 
 export class RemoteVideoStream extends RemoteMediaStreamBase {

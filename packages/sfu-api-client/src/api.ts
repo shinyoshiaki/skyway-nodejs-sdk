@@ -6,13 +6,12 @@ import {
   Logger,
   LogLevel,
 } from '@skyway-sdk/common';
-import { ConsumerOptions } from 'mediasoup-client/lib/Consumer';
-import { DataConsumerOptions } from 'mediasoup-client/lib/DataConsumer';
-import { RtpCapabilities } from 'mediasoup-client/lib/RtpParameters';
 import {
+  ConsumerOptions,
+  RtpCapabilities,
   IceParameters,
   TransportOptions,
-} from 'mediasoup-client/lib/Transport';
+} from 'msc-node/lib/types';
 
 import { defaultSfuApiOptions } from './const';
 import { errors } from './errors';

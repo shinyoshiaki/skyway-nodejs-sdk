@@ -1,4 +1,5 @@
 import { Logger, PromiseQueue } from '@skyway-sdk/common';
+import { MediaStreamTrack } from 'msc-node';
 
 import { errors } from '../../../errors';
 import { createError } from '../../../util';
@@ -44,13 +45,6 @@ export class LocalAudioStream extends LocalMediaStreamBase {
         this._isEnabled = enabled;
 
         if (this._options.stopTrackWhenDisabled) {
-          const track =
-            this._options.isDisplayMedia === true
-              ? await this.enableDisplay()
-              : await this.enableMic();
-
-          this._updateTrack(track);
-          this._onEnableChanged.emit(track);
         } else if (this._oldTrack) {
           this._updateTrack(this._oldTrack);
           this._onEnableChanged.emit(this._oldTrack);
@@ -63,25 +57,5 @@ export class LocalAudioStream extends LocalMediaStreamBase {
 
   get isEnabled() {
     return this._isEnabled;
-  }
-
-  private async enableMic() {
-    const [track] = (
-      await navigator.mediaDevices.getUserMedia({
-        audio: this.trackConstraints,
-      })
-    ).getAudioTracks();
-
-    return track;
-  }
-
-  private async enableDisplay() {
-    const [track] = (
-      await navigator.mediaDevices.getDisplayMedia({
-        audio: this.trackConstraints,
-      })
-    ).getAudioTracks();
-
-    return track;
   }
 }

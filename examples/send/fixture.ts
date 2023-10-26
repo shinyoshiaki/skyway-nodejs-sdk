@@ -1,27 +1,20 @@
-import {
-  nowInSec,
-  SfuRoomOptions,
-  SkyWayAuthToken,
-  SkyWayConfigOptions,
-  uuidV4,
-} from '@skyway-sdk/room';
-
-import { appId, secret } from '../../../env';
+import { SkyWayAuthToken, uuidV4 } from '@skyway-sdk/room';
+import { appId, secret } from '../../env';
 
 const testToken = new SkyWayAuthToken({
   jti: uuidV4(),
-  iat: nowInSec(),
-  exp: nowInSec() + 60 * 60 * 24,
+  exp: Date.now() / 1000 + 60 * 60,
+  iat: Date.now() / 1000,
   scope: {
     app: {
-      id: appId,
       turn: true,
+      id: appId,
       actions: ['read'],
       channels: [
         {
           id: '*',
           name: '*',
-          actions: ['write'],
+          actions: ['read', 'write'],
           members: [
             {
               id: '*',
@@ -38,7 +31,11 @@ const testToken = new SkyWayAuthToken({
           sfuBots: [
             {
               actions: ['write'],
-              forwardings: [{ actions: ['write'] }],
+              forwardings: [
+                {
+                  actions: ['write'],
+                },
+              ],
             },
           ],
         },
@@ -46,8 +43,4 @@ const testToken = new SkyWayAuthToken({
     },
   },
 });
-export const tokenString = testToken.encode(secret);
-export const contextOptions: Partial<SkyWayConfigOptions> = {
-  log: { level: 'debug' },
-};
-export const sfuOptions: Partial<SfuRoomOptions> = {};
+export const testTokenString = testToken.encode(secret);

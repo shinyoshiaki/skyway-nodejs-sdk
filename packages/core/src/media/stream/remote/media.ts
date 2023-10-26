@@ -1,3 +1,4 @@
+import { MediaStreamTrack } from 'msc-node';
 import { attachElement, ContentType, detachElement } from '../base';
 import { RemoteStreamBase } from './base';
 
@@ -25,8 +26,8 @@ export abstract class RemoteMediaStreamBase extends RemoteStreamBase {
    * @description [japanese] streamをelementに適用する.
    */
   attach(element: HTMLVideoElement | HTMLAudioElement) {
-    this._element = element;
-    attachElement(element, this.track);
+    // this._element = element;
+    // attachElement(element, this.track);
   }
 
   /**
@@ -34,9 +35,9 @@ export abstract class RemoteMediaStreamBase extends RemoteStreamBase {
    * @description [japanese] elementからstreamを取り除く.
    */
   detach() {
-    if (this._element) {
-      detachElement(this._element, this.track);
-      this._element = undefined;
-    }
+    // if (this._element) {
+    //   detachElement(this._element, this.track);
+    //   this._element = undefined;
+    // }
   }
 }

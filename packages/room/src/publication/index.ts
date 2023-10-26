@@ -22,6 +22,7 @@ import { RoomImpl } from '../room/base';
 import { StreamSubscribedEvent, StreamUnsubscribedEvent } from '../room/event';
 import { RoomSubscription } from '../subscription';
 import { createError } from '../util';
+import { RTCPeerConnection } from 'msc-node';
 
 const path = 'packages/room/src/publication/index.ts';
 const logger = new Logger(path);

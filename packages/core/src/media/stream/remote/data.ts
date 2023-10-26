@@ -2,6 +2,7 @@ import { Event } from '@skyway-sdk/common';
 
 import { DataStreamMessageType, objectFlag } from '../local/data';
 import { RemoteStreamBase } from './base';
+import { RTCDataChannel } from 'msc-node';
 
 export class RemoteDataStream extends RemoteStreamBase {
   private _isEnabled = true;

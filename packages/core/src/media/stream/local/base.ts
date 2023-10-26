@@ -5,6 +5,7 @@ import { Member } from '../../../member';
 import { RemoteMember } from '../../../member/remoteMember';
 import { Transport, TransportConnectionState } from '../../../plugin/interface';
 import { ContentType, Stream, WebRTCStats } from '../base';
+import { RTCPeerConnection } from 'msc-node';
 
 export abstract class LocalStreamBase implements Stream {
   readonly side = 'local';

@@ -140,32 +140,32 @@ export class P2PConnection implements SkyWayConnection {
     this.close({ reason: 'no media' });
   }
 
-  async getStats(content: Subscription | Publication) {
-    const stream = content.stream;
-    if (!stream) {
-      throw createError({
-        operationName: 'P2PConnection.getStats',
-        info: {
-          ...errors.invalidArgumentValue,
-          detail: 'Subscription or Publication must has stream',
-        },
-        path: log.prefix,
-        context: this._context,
-        channel: this.localPerson.channel,
-      });
-    }
-    if (stream.side === 'local') {
-      if (stream.contentType === 'data') {
-        return this.sender.pc.getStats();
-      }
-      return this.sender.pc.getStats(stream.track);
-    } else {
-      if (stream.contentType === 'data') {
-        return this.receiver.pc.getStats();
-      }
-      return this.receiver.pc.getStats(stream.track);
-    }
-  }
+  // async getStats(content: Subscription | Publication) {
+  //   const stream = content.stream;
+  //   if (!stream) {
+  //     throw createError({
+  //       operationName: 'P2PConnection.getStats',
+  //       info: {
+  //         ...errors.invalidArgumentValue,
+  //         detail: 'Subscription or Publication must has stream',
+  //       },
+  //       path: log.prefix,
+  //       context: this._context,
+  //       channel: this.localPerson.channel,
+  //     });
+  //   }
+  //   if (stream.side === 'local') {
+  //     if (stream.contentType === 'data') {
+  //       return this.sender.pc.getStats();
+  //     }
+  //     return this.sender.pc.getStats(stream.track);
+  //   } else {
+  //     if (stream.contentType === 'data') {
+  //       return this.receiver.pc.getStats();
+  //     }
+  //     return this.receiver.pc.getStats(stream.track);
+  //   }
+  // }
 
   /**@internal */
   close({ reason }: { reason?: string } = {}) {

@@ -18,8 +18,8 @@ const dist = 'dist';
 await $`npm run compile`;
 await $`cp -r ../../bundler/shims ./ `;
 
-await $`esbuild src/index.ts --bundle --inject:./shims/process.js --format=esm --target=es6 --outfile=${dist}/index.mjs`;
-await $`esbuild src/index.ts --bundle --inject:./shims/process.js --format=iife --global-name=${globalName} --target=es6 --outfile=${dist}/${globalName}-latest.js`;
+await $`esbuild src/index.ts --bundle --platform=node --inject:./shims/process.js --format=esm --target=es2020 --outfile=${dist}/index.mjs`;
+await $`esbuild src/index.ts --bundle --platform=node --inject:./shims/process.js --format=iife --global-name=${globalName} --target=es2020 --outfile=${dist}/${globalName}-latest.js`;
 
 const licenses = await createLicenses();
 await appendLicenses(`${dist}/index.mjs`, licenses);

@@ -10,7 +10,7 @@ await $`mkdir ${dist}`;
 
 await $`npm run compile`;
 
-await $`esbuild src/index.ts --bundle --inject:./bundler/shims/process.js --format=esm --target=es6 --outfile=${dist}/index.mjs`;
+await $`esbuild src/index.ts --bundle --platform=node --inject:./bundler/shims/process.js --format=esm --target=es2020 --outfile=${dist}/index.mjs`;
 
 const licenses = await createLicenses();
 await appendLicenses(`${dist}/index.mjs`, licenses);

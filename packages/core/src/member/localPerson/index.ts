@@ -75,7 +75,7 @@ export interface LocalPerson extends Person {
    */
   publish: <T extends LocalStream = LocalStream>(
     stream: T,
-    options?: PublicationOptions
+    options: PublicationOptions
   ) => Promise<Publication<T>>;
   /**
    * @description [japanese] StreamのPublicationをUnpublishする
@@ -267,18 +267,17 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
   }
 
   private _listenBeforeUnload() {
-    if (window) {
-      const leave = async () => {
-        window.removeEventListener('beforeunload', leave);
-        if (this.state !== 'joined') {
-          return;
-        }
-
-        log.debug('leave by beforeunload', this.toJSON());
-        await this.leave();
-      };
-      window.addEventListener('beforeunload', leave);
-    }
+    // if (window) {
+    //   const leave = async () => {
+    //     window.removeEventListener('beforeunload', leave);
+    //     if (this.state !== 'joined') {
+    //       return;
+    //     }
+    //     log.debug('leave by beforeunload', this.toJSON());
+    //     await this.leave();
+    //   };
+    //   window.addEventListener('beforeunload', leave);
+    // }
   }
 
   /**@throws {@link SkyWayError} */
@@ -429,7 +428,7 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
   /**@throws {@link SkyWayError} */
   async publish<T extends LocalStream>(
     stream: T,
-    options: PublicationOptions = {}
+    options: PublicationOptions
   ): Promise<Publication<T>> {
     const timestamp = log.info(
       '[start] publish',
@@ -913,7 +912,7 @@ export type PublicationOptions = {
    * publishする際に優先して利用するCodec設定を指定する。
    * 利用するCodecは配列の先頭が優先される。
    */
-  codecCapabilities?: Codec[];
+  codecCapabilities: Codec[];
   /**
    * @description [japanese]
    * メディアのエンコードの設定を行うことができる。

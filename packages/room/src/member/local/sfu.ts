@@ -31,7 +31,7 @@ export interface LocalSFURoomMember extends LocalRoomMember {
    */
   publish: <T extends LocalStream = LocalStream>(
     stream: LocalStream,
-    options?: RoomPublicationOptions & SfuRoomPublicationOptions
+    options: RoomPublicationOptions & SfuRoomPublicationOptions
   ) => Promise<RoomPublication<T>>;
 }
 
@@ -47,7 +47,7 @@ export class LocalSFURoomMemberImpl
 
   async publish<T extends LocalStream = LocalStream>(
     stream: LocalStream,
-    options: RoomPublicationOptions & SfuRoomPublicationOptions = {}
+    options: RoomPublicationOptions & SfuRoomPublicationOptions
   ): Promise<RoomPublication<T>> {
     if (stream instanceof LocalDataStream) {
       throw createError({

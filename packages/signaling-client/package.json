@@ -20,7 +20,7 @@
     "bootstrap": "lerna bootstrap",
     "build": "cp -r ../../bundler ./ && zx ./bundler/private.mjs && rm -rf ./bundler",
     "compile": "npm run compile:tsc && npm run compile:esbuild",
-    "compile:esbuild": "esbuild src/index.ts --bundle --format=esm --target=es6 --outfile=dist/index.mjs",
+    "compile:esbuild": "esbuild src/index.ts --bundle --format=esm --target=es2020 --outfile=dist/index.mjs",
     "compile:tsc": "rm -rf dist && tsc -p tsconfig.build.json",
     "fix": "npm run format && npm run lint",
     "format": "prettier --write src __tests__",
@@ -31,7 +31,7 @@
     "test:console": "jest",
     "type": "tsc --noEmit -p ./tsconfig.build.json",
     "watch": "npm-run-all --parallel watch:tsc watch:esbuild",
-    "watch:esbuild": "esbuild src/index.ts --bundle --watch --format=esm --target=es6 --outfile=dist/index.mjs",
+    "watch:esbuild": "esbuild src/index.ts --bundle --watch --format=esm --target=es2020 --outfile=dist/index.mjs",
     "watch:tsc": "tsc -p tsconfig.build.json -w"
   },
   "dependencies": {

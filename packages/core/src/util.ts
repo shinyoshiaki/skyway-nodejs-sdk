@@ -4,7 +4,7 @@ import {
   RuntimeInfo,
   SkyWayError,
 } from '@skyway-sdk/common';
-import Bowser from 'bowser';
+// import Bowser from 'bowser';
 import sdpTransform, { MediaAttributes } from 'sdp-transform';
 import { UAParser } from 'ua-parser-js';
 
@@ -215,50 +215,6 @@ export function createError({
 }
 
 /**@internal */
-export const waitForLocalStats = async ({
-  stream,
-  remoteMember,
-  end,
-  interval,
-  timeout,
-}: {
-  stream: LocalStream;
-  remoteMember: string;
-  end: (stats: WebRTCStats) => boolean;
-  /**ms */
-  interval?: number;
-  /**ms */
-  timeout?: number;
-}) =>
-  new Promise<WebRTCStats>(async (r, f) => {
-    interval ??= 100;
-    timeout ??= 10_000;
-
-    for (let elapsed = 0; ; elapsed += interval) {
-      if (elapsed >= timeout) {
-        f(
-          createError({
-            operationName: 'Peer.waitForStats',
-            info: {
-              ...errors.timeout,
-              detail: 'waitForStats timeout',
-            },
-            path: log.prefix,
-          })
-        );
-        break;
-      }
-
-      const stats = await stream._getStats(remoteMember);
-      if (end(stats)) {
-        r(stats);
-        break;
-      }
-      await new Promise((r) => setTimeout(r, interval));
-    }
-  });
-
-/**@internal */
 export async function getRtcRtpCapabilities(): Promise<{
   audio: (Codec & { payload: number })[];
   video: (Codec & { payload: number })[];
@@ -368,12 +324,10 @@ export const getRuntimeInfo = ({
   if (isNotBrowser) {
     return isNotBrowser;
   }
-
-  const browser = Bowser.getParser(window.navigator.userAgent);
-  const osName = browser.getOSName();
-  const osVersion = browser.getOSVersion();
-  const browserName = browser.getBrowserName();
-  const browserVersion = browser.getBrowserVersion();
+  const osName = 'nodejs';
+  const osVersion = '0.0.0';
+  const browserName = 'nodejs';
+  const browserVersion = '0.0.0';
   return {
     browserName,
     browserVersion,

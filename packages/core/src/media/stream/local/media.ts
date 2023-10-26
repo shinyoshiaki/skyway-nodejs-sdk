@@ -1,4 +1,5 @@
 import { Event, EventDisposer, Logger } from '@skyway-sdk/common';
+import { MediaStreamTrack } from 'msc-node';
 
 import {
   AudioMediaTrackConstraints,
@@ -85,8 +86,8 @@ export abstract class LocalMediaStreamBase extends LocalStreamBase {
    * @description [japanese] streamをelementに適用する.
    */
   attach(element: HTMLVideoElement | HTMLAudioElement) {
-    this._element = element;
-    attachElement(element, this._track);
+    // this._element = element;
+    // attachElement(element, this._track);
   }
 
   /**
@@ -94,10 +95,10 @@ export abstract class LocalMediaStreamBase extends LocalStreamBase {
    * @description [japanese] elementからstreamを取り除く.
    */
   detach() {
-    if (this._element) {
-      detachElement(this._element, this._track);
-      this._element = undefined;
-    }
+    // if (this._element) {
+    //   detachElement(this._element, this._track);
+    //   this._element = undefined;
+    // }
   }
 
   /**@internal */
@@ -105,7 +106,7 @@ export abstract class LocalMediaStreamBase extends LocalStreamBase {
     if (this._options.stopTrackWhenDisabled) {
       this._trackConstraints = {
         ...this.trackConstraints,
-        ...this.track.getConstraints(),
+        // ...this.track.getConstraints(),
       };
       this.track.stop();
     } else {
@@ -167,10 +168,7 @@ export type LocalMediaStreamOptions = {
   isDisplayMedia: boolean;
 };
 
-const createEmptyTrack = new RTCPeerConnection();
 /**@internal */
-export const emptyAudioTrack =
-  createEmptyTrack.addTransceiver('audio').receiver.track;
+export const emptyAudioTrack = new MediaStreamTrack({ kind: 'audio' });
 /**@internal */
-export const emptyVideoTrack =
-  createEmptyTrack.addTransceiver('video').receiver.track;
+export const emptyVideoTrack = new MediaStreamTrack({ kind: 'video' });

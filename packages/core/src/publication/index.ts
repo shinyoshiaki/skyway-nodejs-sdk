@@ -23,6 +23,7 @@ import {
 import { TransportConnectionState } from '../plugin/interface';
 import { Subscription } from '../subscription';
 import { createError, createLogPayload, createWarnPayload } from '../util';
+import { RTCPeerConnection } from 'msc-node';
 
 export * from './factory';
 

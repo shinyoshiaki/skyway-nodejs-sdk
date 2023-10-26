@@ -35,6 +35,7 @@ import {
   SenderRestartIceMessage,
   SenderUnproduceMessage,
 } from './sender';
+import { RTCRtpTransceiver } from 'msc-node';
 
 const log = new Logger(
   'packages/core/src/plugin/internal/person/connection/receiver.ts'
@@ -238,16 +239,16 @@ export class Receiver extends Peer {
       rtcPeerConnection: this.pc,
       connectionState: convertConnectionState(this.pc.connectionState),
     });
-    stream._getStats = async () => {
-      if (stream.contentType === 'data') {
-        const stats = await this.pc.getStats();
-        const arr = statsToArray(stats);
-        return arr;
-      }
-      const stats = await this.pc.getStats(stream.track);
-      const arr = statsToArray(stats);
-      return arr;
-    };
+    // stream._getStats = async () => {
+    //   if (stream.contentType === 'data') {
+    //     const stats = await this.pc.getStats();
+    //     const arr = statsToArray(stats);
+    //     return arr;
+    //   }
+    //   const stats = await this.pc.getStats(stream.track);
+    //   const arr = statsToArray(stats);
+    //   return arr;
+    // };
     this._disposer.push(() => {
       stream._getTransport = () => undefined;
     });
@@ -524,7 +525,10 @@ export class Receiver extends Peer {
   private async sendAnswer(sdp: RTCSessionDescriptionInit) {
     this._log.debug(`[receiver] start: sendAnswer`);
 
-    await this.pc.setRemoteDescription(sdp);
+    await this.pc.setRemoteDescription({
+      sdp: sdp.sdp!,
+      type: sdp.type as any,
+    });
     const answer = await this.pc.createAnswer();
 
     const offerObject = sdpTransform.parse(this.pc.remoteDescription!.sdp);

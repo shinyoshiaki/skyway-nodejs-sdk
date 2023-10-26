@@ -1,5 +1,5 @@
 {
-  "name": "skyway-sdk",
+  "name": "skyway-nodejs-sdk",
   "private": true,
   "workspaces": [
     "packages/*",

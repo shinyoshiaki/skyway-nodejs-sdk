@@ -20,7 +20,7 @@
     "bootstrap": "lerna bootstrap",
     "build": "zx bundle.mjs",
     "compile": "npm run compile:tsc && npm run compile:esbuild",
-    "compile:esbuild": "esbuild src/index.ts --bundle --format=esm --target=es6 --outfile=dist/index.mjs",
+    "compile:esbuild": "esbuild src/index.ts --bundle --platform=node --format=esm --target=es2020 --outfile=dist/index.mjs",
     "compile:tsc": "rm -rf dist && tsc -p tsconfig.build.json",
     "doc": "npm run doc:html && npm run doc:md",
     "doc:html": "rm -rf docs/html && typedoc --excludePrivate --disableSources --excludeInternal --tsconfig ./tsconfig.build.json --out docs/html --plugin none ./src/index.ts ",
@@ -37,16 +37,19 @@
     "type": "npm-run-all --parallel type:main",
     "type:main": "tsc --noEmit -p ./tsconfig.json",
     "watch": "npm-run-all --parallel watch:tsc watch:esbuild",
-    "watch:esbuild": "esbuild src/index.ts --bundle --watch --format=esm --target=es6 --outfile=dist/index.mjs",
+    "watch:esbuild": "esbuild src/index.ts --bundle --watch --format=esm --target=es2020 --outfile=dist/index.mjs",
     "watch:tsc": "tsc -p tsconfig.build.json -w"
   },
   "dependencies": {
     "@skyway-sdk/core": "^1.6.1",
     "@skyway-sdk/sfu-api-client": "^1.4.5",
+    "@types/node": "^20.8.8",
     "lodash": "4.17.21",
-    "mediasoup-client": "3.6.82"
+    "msc-node": "^0.0.16"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "@types/lodash": "^4.14.200"
+  },
   "keywords": [
     "webrtc",
     "skyway",

@@ -1,4 +1,9 @@
 import { Event, Logger } from '@skyway-sdk/common';
+import {
+  RTCIceCandidate,
+  RTCPeerConnection,
+  RTCPeerConnectionIceEvent,
+} from 'msc-node';
 
 import { SkyWayContext } from '../../../../context';
 import { errors } from '../../../../errors';
@@ -38,7 +43,7 @@ export abstract class Peer {
     protected readonly endpoint: RemoteMember,
     readonly role: PeerRole
   ) {
-    log.debug('peerConfig', this.pc.getConfiguration());
+    // log.debug('peerConfig', this.pc.getConfiguration());
 
     this.setPeerConnectionListener();
 
@@ -203,49 +208,49 @@ export abstract class Peer {
   };
 
   /**@throws {@link SkyWayError} */
-  protected waitForStats = async ({
-    track,
-    cb,
-    interval,
-    timeout,
-    logging,
-  }: {
-    track: MediaStreamTrack;
-    cb: (stats: { id: string; type: string; [key: string]: any }[]) => boolean;
-    /**ms */
-    interval?: number;
-    /**ms */
-    timeout?: number;
-    logging?: boolean;
-  }) => {
-    interval ??= 100;
-    timeout ??= 10_000;
+  // protected waitForStats = async ({
+  //   track,
+  //   cb,
+  //   interval,
+  //   timeout,
+  //   logging,
+  // }: {
+  //   track: MediaStreamTrack;
+  //   cb: (stats: { id: string; type: string; [key: string]: any }[]) => boolean;
+  //   /**ms */
+  //   interval?: number;
+  //   /**ms */
+  //   timeout?: number;
+  //   logging?: boolean;
+  // }) => {
+  //   interval ??= 100;
+  //   timeout ??= 10_000;
 
-    for (let elapsed = 0; ; elapsed += interval) {
-      if (elapsed >= timeout) {
-        throw createError({
-          operationName: 'Peer.waitForStats',
-          info: {
-            ...errors.timeout,
-            detail: 'waitForStats timeout',
-          },
-          path: log.prefix,
-          context: this._context,
-          channel: this.localPerson.channel,
-        });
-      }
+  //   for (let elapsed = 0; ; elapsed += interval) {
+  //     if (elapsed >= timeout) {
+  //       throw createError({
+  //         operationName: 'Peer.waitForStats',
+  //         info: {
+  //           ...errors.timeout,
+  //           detail: 'waitForStats timeout',
+  //         },
+  //         path: log.prefix,
+  //         context: this._context,
+  //         channel: this.localPerson.channel,
+  //       });
+  //     }
 
-      const report = await this.pc.getStats(track);
-      const stats = statsToJson(report);
-      if (logging) {
-        log.debug('Peer.waitForStats', stats);
-      }
-      if (cb(stats)) {
-        break;
-      }
-      await new Promise((r) => setTimeout(r, interval));
-    }
-  };
+  //     const report = await this.pc.getStats(track);
+  //     const stats = statsToJson(report);
+  //     if (logging) {
+  //       log.debug('Peer.waitForStats', stats);
+  //     }
+  //     if (cb(stats)) {
+  //       break;
+  //     }
+  //     await new Promise((r) => setTimeout(r, interval));
+  //   }
+  // };
 }
 
 export type PeerRole = 'sender' | 'receiver';

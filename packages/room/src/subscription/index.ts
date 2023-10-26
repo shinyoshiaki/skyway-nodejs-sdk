@@ -18,6 +18,7 @@ import { RemoteRoomMember } from '../member/remote/base';
 import { RoomPublication } from '../publication';
 import { RoomImpl } from '../room/base';
 import { createError } from '../util';
+import { RTCPeerConnection } from 'msc-node';
 
 const log = new Logger('packages/room/src/subscription/index.ts');
 

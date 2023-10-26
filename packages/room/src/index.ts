@@ -56,9 +56,7 @@ export {
   RtcRpcApiConfig,
   SkyWayConfigOptions,
   SkyWayContext,
-  SkyWayStreamFactory,
   Stream,
-  StreamFactory,
   SubscriptionOptions,
   SubscriptionState,
   TransportConnectionState,
@@ -68,3 +66,10 @@ export {
   WebRTCStats,
 } from '@skyway-sdk/core';
 export * from '@skyway-sdk/token';
+export {
+  MediaStreamTrack,
+  randomPort,
+  RtpPacket,
+  RtpHeader,
+  dePacketizeRtpPackets,
+} from 'msc-node';

@@ -11,7 +11,7 @@ import {
 } from '@skyway-sdk/core';
 import { createRemoteStream } from '@skyway-sdk/core';
 import { SfuRestApiClient } from '@skyway-sdk/sfu-api-client';
-import { Consumer } from 'mediasoup-client/lib/Consumer';
+import { Consumer } from 'msc-node/lib/types';
 
 import { errors } from '../errors';
 import { SfuBotMember } from '../member';
@@ -182,15 +182,15 @@ export class Receiver {
       connectionState: transport.connectionState,
       info: this,
     });
-    stream._getStats = async () => {
-      const stats = await consumer.getStats();
-      let arr = statsToArray(stats);
-      arr = arr.map((stats) => {
-        stats['sfuTransportId'] = transport.id;
-        return stats;
-      });
-      return arr;
-    };
+    // stream._getStats = async () => {
+    //   const stats = await consumer.getStats();
+    //   let arr = statsToArray(stats);
+    //   arr = arr.map((stats) => {
+    //     stats['sfuTransportId'] = transport.id;
+    //     return stats;
+    //   });
+    //   return arr;
+    // };
     this._disposer.push(() => {
       stream._getTransport = () => undefined;
     });

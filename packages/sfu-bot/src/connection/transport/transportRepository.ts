@@ -6,13 +6,20 @@ import {
   SkyWayContext,
 } from '@skyway-sdk/core';
 import { SfuRestApiClient } from '@skyway-sdk/sfu-api-client';
-import { Device } from 'mediasoup-client';
-import { RtpCapabilities } from 'mediasoup-client/lib/RtpParameters';
-import { TransportOptions } from 'mediasoup-client/lib/Transport';
+import { TransportOptions, RtpCapabilities, Device } from 'msc-node/lib/types';
 
 import { errors } from '../../errors';
 import { SfuBotMember } from '../../member';
 import { SfuTransport } from './transport';
+import {
+  RTCRtpCodecParameters,
+  useAbsSendTime,
+  useFIR,
+  useNACK,
+  usePLI,
+  useREMB,
+  useSdesMid,
+} from 'msc-node';
 
 const log = new Logger(
   'packages/sfu-bot/src/connection/transport/transportRepository.ts'
@@ -36,14 +43,51 @@ export class TransportRepository {
     private _context: SkyWayContext,
     private readonly _api: SfuRestApiClient
   ) {
-    const { browserName, browserVersion } = getRuntimeInfo();
+    const { browserName, browserVersion } = getRuntimeInfo({
+      isNotBrowser: {
+        browserName: 'nodejs',
+        browserVersion: '0.0.0',
+        osName: 'nodejs',
+        osVersion: '0.0.0',
+      },
+    });
     log.debug('runtime info', { browserName, browserVersion });
     // wkwebview対応
-    if (browserName === 'Safari' && browserVersion == undefined) {
-      this._device = new Device({ handlerName: 'Safari12' });
-    } else {
-      this._device = new Device();
-    }
+    // if (browserName === 'Safari' && browserVersion == undefined) {
+    //   this._device = new Device({ handlerName: 'Safari12' });
+    // } else {
+    //   this._device = new Device();
+    // }
+    this._device = new Device({
+      headerExtensions: {
+        video: [useSdesMid(), useAbsSendTime()],
+      },
+      codecs: {
+        audio: [
+          new RTCRtpCodecParameters({
+            mimeType: 'audio/opus',
+            clockRate: 48000,
+            payloadType: 100,
+            rtcpFeedback: [],
+            channels: 2,
+          }),
+        ],
+        video: [
+          new RTCRtpCodecParameters({
+            mimeType: 'video/H264',
+            clockRate: 90000,
+            payloadType: 101,
+            rtcpFeedback: [useNACK(), usePLI(), useREMB()],
+          }),
+          new RTCRtpCodecParameters({
+            mimeType: 'video/VP8',
+            clockRate: 90000,
+            payloadType: 102,
+            rtcpFeedback: [useNACK(), usePLI(), useREMB()],
+          }),
+        ],
+      },
+    });
   }
 
   async loadDevice(rtpCapabilities: RtpCapabilities) {

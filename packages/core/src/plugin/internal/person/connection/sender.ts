@@ -37,6 +37,12 @@ import { P2PMessage } from '.';
 import { DataChannelNegotiationLabel } from './datachannel';
 import { IceCandidateMessage, Peer } from './peer';
 import { ReceiverAnswerMessage } from './receiver';
+import {
+  MediaStreamTrack,
+  RTCDataChannel,
+  RTCRtpTransceiver,
+  RTCSessionDescription,
+} from 'msc-node';
 
 const log = new Logger(
   'packages/core/src/plugin/internal/person/connection/sender.ts'
@@ -127,7 +133,7 @@ export class Sender extends Peer {
                   context.config.rtcConfig.iceDisconnectBufferTimeout
                 ).catch((e) => e as SkyWayError);
                 if (e && this._connectionState !== 'reconnecting') {
-                  await this.restartIce();
+                  // await this.restartIce();
                 }
               }
               break;
@@ -161,151 +167,151 @@ export class Sender extends Peer {
   }
 
   /**@throws */
-  readonly restartIce = async () => {
-    if (this._backoffIceRestarted.exceeded) {
-      this._log.error(
-        createError({
-          operationName: 'Sender.restartIce',
-          context: this._context,
-          channel: this.localPerson.channel,
-          info: { ...errors.internal, detail: 'restartIce limit exceeded' },
-          path: log.prefix,
-        })
-      );
-      this._setConnectionState('disconnected');
-      return;
-    }
-    this._log.warn(
-      '[start] restartIce',
-      createWarnPayload({
-        operationName: 'Sender.restartIce',
-        detail: 'start restartIce',
-        channel: this.localPerson.channel,
-        payload: { count: this._backoffIceRestarted.count },
-      })
-    );
+  // readonly restartIce = async () => {
+  //   if (this._backoffIceRestarted.exceeded) {
+  //     this._log.error(
+  //       createError({
+  //         operationName: 'Sender.restartIce',
+  //         context: this._context,
+  //         channel: this.localPerson.channel,
+  //         info: { ...errors.internal, detail: 'restartIce limit exceeded' },
+  //         path: log.prefix,
+  //       })
+  //     );
+  //     this._setConnectionState('disconnected');
+  //     return;
+  //   }
+  //   this._log.warn(
+  //     '[start] restartIce',
+  //     createWarnPayload({
+  //       operationName: 'Sender.restartIce',
+  //       detail: 'start restartIce',
+  //       channel: this.localPerson.channel,
+  //       payload: { count: this._backoffIceRestarted.count },
+  //     })
+  //   );
 
-    const checkNeedEnd = () => {
-      if (this.endpoint.state === 'left') {
-        this._log.warn(
-          'endpointMemberLeft',
-          createWarnPayload({
-            operationName: 'restartIce',
-            detail: 'endpointMemberLeft',
-            channel: this.localPerson.channel,
-            payload: { endpointId: this.endpoint.id },
-          })
-        );
-        this._setConnectionState('disconnected');
-        return true;
-      }
+  //   const checkNeedEnd = () => {
+  //     if (this.endpoint.state === 'left') {
+  //       this._log.warn(
+  //         'endpointMemberLeft',
+  //         createWarnPayload({
+  //           operationName: 'restartIce',
+  //           detail: 'endpointMemberLeft',
+  //           channel: this.localPerson.channel,
+  //           payload: { endpointId: this.endpoint.id },
+  //         })
+  //       );
+  //       this._setConnectionState('disconnected');
+  //       return true;
+  //     }
 
-      if ((this.pc.connectionState as RTCPeerConnectionState) === 'connected') {
-        this._log.warn(
-          '[end] restartIce',
-          createWarnPayload({
-            operationName: 'restartIce',
-            detail: 'reconnected',
-            channel: this.localPerson.channel,
-            payload: { count: this._backoffIceRestarted.count },
-          })
-        );
-        this._backoffIceRestarted.reset();
-        this._setConnectionState('connected');
-        return true;
-      }
-    };
+  //     if ((this.pc.connectionState as RTCPeerConnectionState) === 'connected') {
+  //       this._log.warn(
+  //         '[end] restartIce',
+  //         createWarnPayload({
+  //           operationName: 'restartIce',
+  //           detail: 'reconnected',
+  //           channel: this.localPerson.channel,
+  //           payload: { count: this._backoffIceRestarted.count },
+  //         })
+  //       );
+  //       this._backoffIceRestarted.reset();
+  //       this._setConnectionState('connected');
+  //       return true;
+  //     }
+  //   };
 
-    this._setConnectionState('reconnecting');
-    await this._backoffIceRestarted.wait();
+  //   this._setConnectionState('reconnecting');
+  //   await this._backoffIceRestarted.wait();
 
-    if (checkNeedEnd()) return;
+  //   if (checkNeedEnd()) return;
 
-    let e = await this._iceManager.updateIceParams().catch((e) => e as Error);
-    if (e) {
-      this._log.warn(
-        '[failed] restartIce',
-        createWarnPayload({
-          operationName: 'restartIce',
-          detail: 'update IceParams failed',
-          channel: this.localPerson.channel,
-          payload: { count: this._backoffIceRestarted.count },
-        }),
-        e
-      );
-      await this.restartIce();
-      return;
-    }
-    if (this.pc.setConfiguration) {
-      this.pc.setConfiguration({
-        ...this.pc.getConfiguration(),
-        iceServers: this._iceManager.iceServers,
-      });
-      this._log.debug('<restartIce> setConfiguration', {
-        iceServers: this._iceManager.iceServers,
-      });
-    }
+  //   let e = await this._iceManager.updateIceParams().catch((e) => e as Error);
+  //   if (e) {
+  //     this._log.warn(
+  //       '[failed] restartIce',
+  //       createWarnPayload({
+  //         operationName: 'restartIce',
+  //         detail: 'update IceParams failed',
+  //         channel: this.localPerson.channel,
+  //         payload: { count: this._backoffIceRestarted.count },
+  //       }),
+  //       e
+  //     );
+  //     await this.restartIce();
+  //     return;
+  //   }
+  //   if (this.pc.setConfiguration) {
+  //     this.pc.setConfiguration({
+  //       ...this.pc.getConfiguration(),
+  //       iceServers: this._iceManager.iceServers,
+  //     });
+  //     this._log.debug('<restartIce> setConfiguration', {
+  //       iceServers: this._iceManager.iceServers,
+  //     });
+  //   }
 
-    if (checkNeedEnd()) return;
+  //   if (checkNeedEnd()) return;
 
-    if (this.signaling.connectionState !== 'connected') {
-      this._log.warn(
-        '<restartIce> reconnect signaling service',
-        createWarnPayload({
-          operationName: 'restartIce',
-          detail: 'reconnect signaling service',
-          channel: this.localPerson.channel,
-          payload: { count: this._backoffIceRestarted.count },
-        })
-      );
-      e = await this.signaling.onConnectionStateChanged
-        .watch((s) => s === 'connected', 10_000)
-        .catch((e) => e as SkyWayError)
-        .then(() => {});
+  //   if (this.signaling.connectionState !== 'connected') {
+  //     this._log.warn(
+  //       '<restartIce> reconnect signaling service',
+  //       createWarnPayload({
+  //         operationName: 'restartIce',
+  //         detail: 'reconnect signaling service',
+  //         channel: this.localPerson.channel,
+  //         payload: { count: this._backoffIceRestarted.count },
+  //       })
+  //     );
+  //     e = await this.signaling.onConnectionStateChanged
+  //       .watch((s) => s === 'connected', 10_000)
+  //       .catch((e) => e as SkyWayError)
+  //       .then(() => {});
 
-      if (e instanceof SkyWayError) {
-        await this.restartIce();
-        return;
-      }
+  //     if (e instanceof SkyWayError) {
+  //       await this.restartIce();
+  //       return;
+  //     }
 
-      if (checkNeedEnd()) return;
-    }
+  //     if (checkNeedEnd()) return;
+  //   }
 
-    const offer = await this.pc.createOffer({ iceRestart: true });
-    await this.pc.setLocalDescription(offer);
+  //   const offer = await this.pc.createOffer({ iceRestart: true });
+  //   await this.pc.setLocalDescription(offer);
 
-    const message: SenderRestartIceMessage = {
-      kind: 'senderRestartIceMessage',
-      payload: { sdp: this.pc.localDescription! },
-    };
-    e = await this.signaling
-      .send(this.endpoint, message, 10_000)
-      .catch((e) => e);
-    if (e) {
-      this._log.warn(
-        '<restartIce> [failed]',
-        createWarnPayload({
-          operationName: 'restartIce',
-          detail: 'timeout send signaling message',
-          channel: this.localPerson.channel,
-          payload: { count: this._backoffIceRestarted.count },
-        }),
-        e
-      );
-      await this.restartIce();
-      return;
-    }
+  //   const message: SenderRestartIceMessage = {
+  //     kind: 'senderRestartIceMessage',
+  //     payload: { sdp: this.pc.localDescription! },
+  //   };
+  //   e = await this.signaling
+  //     .send(this.endpoint, message, 10_000)
+  //     .catch((e) => e);
+  //   if (e) {
+  //     this._log.warn(
+  //       '<restartIce> [failed]',
+  //       createWarnPayload({
+  //         operationName: 'restartIce',
+  //         detail: 'timeout send signaling message',
+  //         channel: this.localPerson.channel,
+  //         payload: { count: this._backoffIceRestarted.count },
+  //       }),
+  //       e
+  //     );
+  //     await this.restartIce();
+  //     return;
+  //   }
 
-    e = await this.waitForConnectionState(
-      'connected',
-      this._context.config.rtcConfig.iceDisconnectBufferTimeout
-    ).catch((e) => e);
-    if (!e) {
-      if (checkNeedEnd()) return;
-    }
+  //   e = await this.waitForConnectionState(
+  //     'connected',
+  //     this._context.config.rtcConfig.iceDisconnectBufferTimeout
+  //   ).catch((e) => e);
+  //   if (!e) {
+  //     if (checkNeedEnd()) return;
+  //   }
 
-    await this.restartIce();
-  };
+  //   await this.restartIce();
+  // };
 
   get hasMedia() {
     const count = Object.keys(this.publications).length;
@@ -446,7 +452,7 @@ export class Sender extends Peer {
 
       const transceiver = this.pc.addTransceiver(stream.track, {
         direction: 'sendonly',
-        streams: [this._ms],
+        // streams: [this._ms],
       });
 
       publication._onEncodingsChanged
@@ -488,18 +494,18 @@ export class Sender extends Peer {
       await this.pc.setLocalDescription({ type: 'offer', sdp: offerSdp });
       this._log.debug('<add> create offer', this.pc.localDescription);
 
-      if (publication.encodings?.length > 0) {
-        if (isSafari()) {
-          this._safariSetupEncoding(
-            publication as PublicationImpl<LocalVideoStream>
-          );
-        } else {
-          const transceiver = this.transceivers[publication.id];
-          await setEncodingParams(transceiver.sender, [
-            publication.encodings[0],
-          ]);
-        }
-      }
+      // if (publication.encodings?.length > 0) {
+      //   if (isSafari()) {
+      //     // this._safariSetupEncoding(
+      //     //   publication as PublicationImpl<LocalVideoStream>
+      //     // );
+      //   } else {
+      //     const transceiver = this.transceivers[publication.id];
+      //     await setEncodingParams(transceiver.sender, [
+      //       publication.encodings[0],
+      //     ]);
+      //   }
+      // }
     }
 
     const message: SenderProduceMessage = {
@@ -531,21 +537,21 @@ export class Sender extends Peer {
       rtcPeerConnection: this.pc,
       connectionState: this._connectionState,
     });
-    stream._getStatsCallbacks[this.endpoint.id] = async () => {
-      if (stream.contentType === 'data') {
-        const stats = await this.pc.getStats();
-        const arr = statsToArray(stats);
-        return arr;
-      }
+    // stream._getStatsCallbacks[this.endpoint.id] = async () => {
+    //   if (stream.contentType === 'data') {
+    //     const stats = await this.pc.getStats();
+    //     const arr = statsToArray(stats);
+    //     return arr;
+    //   }
 
-      if (stream._replacingTrack) {
-        await stream._onReplacingTrackDone.asPromise(200);
-      }
+    //   if (stream._replacingTrack) {
+    //     await stream._onReplacingTrackDone.asPromise(200);
+    //   }
 
-      const stats = await this.pc.getStats(stream.track);
-      const arr = statsToArray(stats);
-      return arr;
-    };
+    //   const stats = await this.pc.getStats(stream.track);
+    //   const arr = statsToArray(stats);
+    //   return arr;
+    // };
 
     // replaceStream時に古いstreamに紐づくcallbackを削除するため、戻り値としてcallback削除用の関数を返し、replaceStream時に呼び出す
     const cleanupCallbacks = () => {
@@ -697,7 +703,9 @@ export class Sender extends Peer {
     this._log.debug('<handleReceiverAnswer> [start]');
 
     await this.pc
-      .setRemoteDescription(new RTCSessionDescription(sdp))
+      .setRemoteDescription(
+        new RTCSessionDescription(sdp.sdp!, sdp.type as any)
+      )
       .catch((err) => {
         const error = createError({
           operationName: 'Sender._handleReceiverAnswer',
@@ -731,36 +739,36 @@ export class Sender extends Peer {
     this._log.debug('<handleReceiverAnswer> [end]');
   }
 
-  private _safariSetupEncoding(publication: PublicationImpl<LocalVideoStream>) {
-    // 映像の送信が始まる前にEncodeの設定をするとEncodeの設定の更新ができなくなる
-    const transceiver = this.transceivers[publication.id];
+  // private _safariSetupEncoding(publication: PublicationImpl<LocalVideoStream>) {
+  //   // 映像の送信が始まる前にEncodeの設定をするとEncodeの設定の更新ができなくなる
+  //   const transceiver = this.transceivers[publication.id];
 
-    const stream = publication.stream as LocalVideoStream;
-    this.waitForStats({
-      track: stream.track,
-      cb: (stats) => {
-        const outbound = stats.find(
-          (s) =>
-            s.id.includes('RTCOutboundRTP') || s.type.includes('outbound-rtp')
-        );
-        if (outbound?.keyFramesEncoded > 0) return true;
-        return false;
-      },
-      interval: 10,
-      timeout: this._context.config.rtcConfig.timeout,
-    })
-      .then(() => {
-        log.debug('safari wait for stats resolved, setEncodingParams');
-        setEncodingParams(transceiver.sender, [publication.encodings[0]]).catch(
-          (e) => {
-            this._log.error('setEncodingParams failed', e);
-          }
-        );
-      })
-      .catch((e) => {
-        this._log.error('waitForStats', e);
-      });
-  }
+  //   const stream = publication.stream as LocalVideoStream;
+  //   this.waitForStats({
+  //     track: stream.track,
+  //     cb: (stats) => {
+  //       const outbound = stats.find(
+  //         (s) =>
+  //           s.id.includes('RTCOutboundRTP') || s.type.includes('outbound-rtp')
+  //       );
+  //       if (outbound?.keyFramesEncoded > 0) return true;
+  //       return false;
+  //     },
+  //     interval: 10,
+  //     timeout: this._context.config.rtcConfig.timeout,
+  //   })
+  //     .then(() => {
+  //       log.debug('safari wait for stats resolved, setEncodingParams');
+  //       setEncodingParams(transceiver.sender, [publication.encodings[0]]).catch(
+  //         (e) => {
+  //           this._log.error('setEncodingParams failed', e);
+  //         }
+  //       );
+  //     })
+  //     .catch((e) => {
+  //       this._log.error('waitForStats', e);
+  //     });
+  // }
 
   /**@throws {@link SkyWayError} */
   private async _resolvePendingSender() {

@@ -6,6 +6,7 @@ import {
   LocalMediaStreamBase,
   LocalMediaStreamOptions,
 } from './media';
+import { MediaStreamTrack } from 'msc-node';
 
 const log = new Logger('packages/core/src/media/stream/local/customVideo.ts');
 

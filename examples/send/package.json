@@ -1,0 +1,19 @@
+{
+  "name": "send",
+  "version": "1.0.0",
+  "description": "",
+  "author": "",
+  "main": "",
+  "scripts": {
+    "dev": "ts-node-dev ./main.ts"
+  },
+  "dependencies": {
+    "@skyway-sdk/room": "file:../../packages/room",
+    "node-gtk": "file:../../submodules/node-gtk",
+    "@girs/node-gst-1.0": "^1.23.0-3.2.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.8.8",
+    "ts-node-dev": "^2.0.0"
+  }
+}

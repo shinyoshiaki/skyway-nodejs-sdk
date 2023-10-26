@@ -1,17 +1,24 @@
-# SkyWay JS-SDK
+# SkyWay NodeJS-SDK
 
-このリポジトリは、2023 年 1 月 31 日にリリースされた SkyWay の JavaScript SDK です。旧 SkyWay の JavaScript SDK とは互換性がありません。
+SkyWay JS-SDK を Node.js に非公式に対応させた SDK です。
+JS-SDK と API はほとんど同じですが、一部機能に対応していません。
 
-# 本リポジトリの運用方針について
+# skyway-js-sdk との違い
 
-このリポジトリは公開用のミラーリポジトリであり、こちらで開発は行いません。
-
-## Issue / Pull Request
-
-受け付けておりません。
-
-Enterprise プランをご契約のお客様はテクニカルサポートをご利用ください。
-詳しくは[SkyWay サポート](https://support.skyway.ntt.com/hc/ja)をご確認ください。
+- 提供パッケージ
+  - room
+- 対応動作環境
+  - Node.js
+- 対応通信方法
+  - SFU
+- 対応コーデック
+  - opus
+  - vp8
+  - h264
+- 非対応機能
+  - getStats
+  - restartIce
+  - simulcast
 
 # SDK のインストール方法
 
@@ -22,50 +29,22 @@ npm がインストールされている環境下で以下のコマンドを実�
 **Room ライブラリ**
 
 ```sh
-npm install @skyway-sdk/room
-```
-
-**Core ライブラリ**
-
-```sh
-npm install @skyway-sdk/core
-```
-
-**その他のプラグインやユーティリティライブラリ**
-
-```sh
-npm install @skyway-sdk/sfu-bot
-npm install @skyway-sdk/token
-```
-
-## CDN を利用する場合
-
-以下のスクリプト要素を HTML に追加します
-
-**Room ライブラリ**
-
-```html
-<script src="https://cdn.jsdelivr.net/npm/@skyway-sdk/room/dist/skyway_room-latest.js"></script>
-```
-
-モジュールはグローバル変数の `skyway_room` に格納されるので以下のようにモジュールを取得することができます。
-
-```js
-const { SkyWayContext, SkyWayStreamFactory, SkyWayRoom } = skyway_room;
+npm install @shinyoshiaki/skyway-nodejs-sdk
 ```
 
 # ドキュメント
 
-## 公式サイト
+## ユーザガイド
+
+一部 API に対応していません。
 
 [https://skyway.ntt.com/ja/docs/user-guide/javascript-sdk/](https://skyway.ntt.com/ja/docs/user-guide/javascript-sdk/)
 
 ## API リファレンス
 
+一部 API に対応していません。
+
 - [Room ライブラリ](https://javascript-sdk.api-reference.skyway.ntt.com/room)
-- [Core ライブラリ](https://javascript-sdk.api-reference.skyway.ntt.com/core)
-- [SFU Bot ライブラリ](https://javascript-sdk.api-reference.skyway.ntt.com/sfu-bot)
-- [Token ライブラリ](https://javascript-sdk.api-reference.skyway.ntt.com/token)
 
 # 環境構築
 
@@ -77,6 +56,7 @@ const { SkyWayContext, SkyWayStreamFactory, SkyWayRoom } = skyway_room;
 - corepack を有効化するために次のコマンドを実行する
   - `corepack enable npm`
 - ルートディレクトリで次のコマンドを実行する
+  - `git submodule update --init --recursive`
   - `npm run first`
 - `env.ts.template`を`env.ts`にリネームし、ファイル中の appId と secret にダッシュボードで発行した appId と secret を入力する
   - appId と secret の発行方法は[こちら](https://skyway.ntt.com/ja/docs/user-guide/javascript-sdk/quickstart/#199)
@@ -96,8 +76,6 @@ npm run compile
 - そのディレクトリで以下のコマンドを実行する
 
   - `npm run dev`
-
-- コマンドを実行するとローカルサーバが起動するので Web ブラウザでアクセスする
 
 # SDK のビルド方法
 

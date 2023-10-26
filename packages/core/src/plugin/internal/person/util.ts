@@ -1,4 +1,5 @@
 import { Logger } from '@skyway-sdk/common';
+import { RTCRtpTransceiver } from 'msc-node';
 
 import { detectDevice } from '../../../util';
 import { TransportConnectionState } from '../../interface';
@@ -7,23 +8,20 @@ const log = new Logger('packages/core/src/plugin/internal/person/util.ts');
 
 /**@internal */
 export const setEncodingParams = async (
-  sender: RTCRtpSender,
+  sender: RTCRtpTransceiver['sender'],
   newEncodings: RTCRtpEncodingParameters[]
 ) => {
-  const info = log.createBlock({ label: 'setEncodingParams' });
-
-  const params = sender.getParameters();
-  info.debug('getParameters', { params, newEncodings });
-
-  if (params.encodings == undefined) {
-    params.encodings = [];
-  }
-  params.encodings = newEncodings.map((encoding, i) => ({
-    ...(params.encodings[i] || {}),
-    ...encoding,
-  }));
-
-  await sender.setParameters(params);
+  // const info = log.createBlock({ label: 'setEncodingParams' });
+  // const params = sender.getParameters();
+  // info.debug('getParameters', { params, newEncodings });
+  // if (params.encodings == undefined) {
+  //   params.encodings = [];
+  // }
+  // params.encodings = newEncodings.map((encoding, i) => ({
+  //   ...(params.encodings[i] || {}),
+  //   ...encoding,
+  // }));
+  // await sender.setParameters(params);
 };
 
 /**@internal */

@@ -7,6 +7,7 @@ import {
   VideoMediaTrackConstraints,
 } from '../../factory';
 import { LocalMediaStreamBase, LocalMediaStreamOptions } from './media';
+import { MediaStreamTrack } from 'msc-node';
 
 const log = new Logger('packages/core/src/media/stream/local/video.ts');
 
@@ -49,13 +50,12 @@ export class LocalVideoStream extends LocalMediaStreamBase {
         this._isEnabled = enabled;
 
         if (this._options.stopTrackWhenDisabled) {
-          const track =
-            this._options.isDisplayMedia === true
-              ? await this.enableDisplay()
-              : await this.enableCamera();
-
-          this._updateTrack(track);
-          this._onEnableChanged.emit(track);
+          // const track =
+          //   this._options.isDisplayMedia === true
+          //     ? await this.enableDisplay()
+          //     : await this.enableCamera();
+          // this._updateTrack(track);
+          // this._onEnableChanged.emit(track);
         } else if (this._oldTrack) {
           this._updateTrack(this._oldTrack);
           this._onEnableChanged.emit(this._oldTrack);
@@ -70,23 +70,23 @@ export class LocalVideoStream extends LocalMediaStreamBase {
     return this._isEnabled;
   }
 
-  private async enableCamera() {
-    const [track] = (
-      await navigator.mediaDevices.getUserMedia({
-        video: this.trackConstraints,
-      })
-    ).getVideoTracks();
+  // private async enableCamera() {
+  //   const [track] = (
+  //     await navigator.mediaDevices.getUserMedia({
+  //       video: this.trackConstraints,
+  //     })
+  //   ).getVideoTracks();
 
-    return track;
-  }
+  //   return track;
+  // }
 
-  private async enableDisplay() {
-    const [track] = (
-      await navigator.mediaDevices.getDisplayMedia({
-        video: this.trackConstraints,
-      })
-    ).getVideoTracks();
+  // private async enableDisplay() {
+  //   const [track] = (
+  //     await navigator.mediaDevices.getDisplayMedia({
+  //       video: this.trackConstraints,
+  //     })
+  //   ).getVideoTracks();
 
-    return track;
-  }
+  //   return track;
+  // }
 }
