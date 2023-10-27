@@ -3,6 +3,11 @@
 SkyWay JS-SDK を Node.js に非公式に対応させた SDK です。
 JS-SDK と API はほとんど同じですが、一部機能に対応していません。
 
+# サンプルコード
+
+- https://github.com/shinyoshiaki/skyway-nodejs-sdk/tree/nodejs/examples
+- https://github.com/shinyoshiaki/skyway-nodejs-playground
+
 # skyway-js-sdk との違い
 
 - 提供パッケージ
