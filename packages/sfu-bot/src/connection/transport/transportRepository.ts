@@ -57,6 +57,39 @@ export class TransportRepository {
     // } else {
     //   this._device = new Device();
     // }
+
+    const videoCodecs = [
+      ...(() => {
+        const parameters: RTCRtpCodecParameters[] = [];
+        const packetizationModeArr = [0, 1];
+        const profileLevelArr = ['42001f', '42e01f', '4d001f'];
+        const levelAsymmetryArr = [0, 1];
+
+        for (const packetizationMode of packetizationModeArr) {
+          for (const profileLevel of profileLevelArr) {
+            for (const levelAsymmetry of levelAsymmetryArr) {
+              parameters.push(
+                new RTCRtpCodecParameters({
+                  mimeType: 'video/H264',
+                  clockRate: 90000,
+                  payloadType: 101,
+                  rtcpFeedback: [useNACK(), usePLI(), useREMB()],
+                  parameters: `packetization-mode:${packetizationMode};profile-level-id:${profileLevel};level-asymmetry-allowed:${levelAsymmetry}`,
+                })
+              );
+            }
+          }
+        }
+        return parameters;
+      })(),
+      new RTCRtpCodecParameters({
+        mimeType: 'video/VP8',
+        clockRate: 90000,
+        payloadType: 102,
+        rtcpFeedback: [useNACK(), usePLI(), useREMB()],
+      }),
+    ];
+
     this._device = new Device({
       headerExtensions: {
         video: [useSdesMid(), useAbsSendTime()],
@@ -71,20 +104,7 @@ export class TransportRepository {
             channels: 2,
           }),
         ],
-        video: [
-          new RTCRtpCodecParameters({
-            mimeType: 'video/H264',
-            clockRate: 90000,
-            payloadType: 101,
-            rtcpFeedback: [useNACK(), usePLI(), useREMB()],
-          }),
-          new RTCRtpCodecParameters({
-            mimeType: 'video/VP8',
-            clockRate: 90000,
-            payloadType: 102,
-            rtcpFeedback: [useNACK(), usePLI(), useREMB()],
-          }),
-        ],
+        video: videoCodecs,
       },
     });
   }

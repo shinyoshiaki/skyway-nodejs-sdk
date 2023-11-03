@@ -306,57 +306,25 @@ export class Sender {
       .disposer(this._disposer);
 
     const codecCapabilities = this.publication.codecCapabilities;
+    const [cap] = codecCapabilities;
     const deviceCodecs =
       this._transportRepository.rtpCapabilities?.codecs ?? [];
-    log.debug('select codec', { codecCapabilities, deviceCodecs });
 
-    const [codec] = codecCapabilities.map((cap) => {
-      if (cap.mimeType.toLowerCase().includes('video')) {
-        const codec = deviceCodecs.find((c) => {
-          if (c.mimeType.toLowerCase() !== cap.mimeType.toLowerCase()) {
-            return false;
-          }
-          if (
-            Object.keys(cap.parameters ?? {}).length > 0 &&
-            !isEqual(cap.parameters, c.parameters)
-          ) {
-            return false;
-          }
-          return true;
-        });
-        return codec;
-      }
-      const codec = deviceCodecs.find(
-        (c) => c.mimeType.toLowerCase() === cap.mimeType.toLowerCase()
-      );
-      return codec;
-    });
+    const kind = cap.mimeType.split('/')[0] as 'audio' | 'video';
+    const codec: RtpCodecCapability = {
+      ...cap,
+      kind,
+      clockRate: kind === 'audio' ? 48000 : 90000,
+    };
     log.debug('selected codec', { codec });
 
-    if (codec) {
-      const [codecType, codecName] = codec.mimeType.split('/');
-      producerOptions.codec = {
-        ...codec,
-        mimeType: `${codecType}/${codecName.toUpperCase()}`,
-      };
-
-      if (stream.contentType === 'video') {
-        this._fixVideoCodecWithParametersOrder(codec);
-      }
-    } else if (codecCapabilities.length > 0) {
-      log.warn(
-        'preferred codec not supported',
-        createWarnPayload({
-          channel: this.channel,
-          detail: 'preferred codec not supported',
-          operationName: 'Sender._produce',
-          bot: this._bot,
-          payload: {
-            codecCapabilities,
-            deviceCodecs,
-          },
-        })
-      );
+    const [codecType, codecName] = codec.mimeType.split('/');
+    producerOptions.codec = {
+      ...codec,
+      mimeType: `${codecType}/${codecName.toUpperCase()}`,
+    };
+    if (stream.contentType === 'video') {
+      this._fixVideoCodecWithParametersOrder(codec);
     }
 
     if (stream.contentType === 'audio') {
