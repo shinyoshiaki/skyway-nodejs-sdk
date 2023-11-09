@@ -1,6 +1,6 @@
 {
   "name": "@shinyoshiaki/skyway-nodejs-sdk",
-  "version": "1.6.2",
+  "version": "1.6.3",
   "description": "The unofficial Next Generation NodeJs SDK for SkyWay",
   "repository": {
     "type": "git",
@@ -45,9 +45,9 @@
     "watch:tsc": "tsc -p tsconfig.build.json -w"
   },
   "dependencies": {
-    "@shinyoshiaki/skyway-nodejs-sdk-core": "^1.6.1",
-    "@shinyoshiaki/skyway-nodejs-sdk-sfu-bot": "^1.6.1",
-    "msc-node": "^0.0.17",
+    "@shinyoshiaki/skyway-nodejs-sdk-core": "^1.6.3",
+    "@shinyoshiaki/skyway-nodejs-sdk-sfu-bot": "^1.6.3",
+    "msc-node": "^0.0.19",
     "uuid": "^9.0.0"
   },
   "devDependencies": {
