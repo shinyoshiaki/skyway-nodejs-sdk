@@ -22,7 +22,6 @@ CNAME
 docs
 scripts
 e2e
-tests
 __tests__
 packages/signaling-client/examples
 jest
