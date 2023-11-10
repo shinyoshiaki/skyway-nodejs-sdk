@@ -130,13 +130,17 @@ export class Sender {
       broadcasterTransportOptions,
       rtpCapabilities,
       identifierKey,
-    } = await this._api.startForwarding({
-      botId: this._bot.id,
-      publicationId: this.publication.id,
-      contentType: this.publication.contentType,
-      maxSubscribers: configure.maxSubscribers,
-      publisherId: this.publication.publisher.id,
-    });
+    } = await this._api
+      .startForwarding({
+        botId: this._bot.id,
+        publicationId: this.publication.id,
+        contentType: this.publication.contentType,
+        maxSubscribers: configure.maxSubscribers,
+        publisherId: this.publication.publisher.id,
+      })
+      .catch((e) => {
+        throw e;
+      });
     this.forwardingId = forwardingId;
 
     if (broadcasterTransportOptions) {
@@ -307,22 +311,20 @@ export class Sender {
 
     const codecCapabilities = this.publication.codecCapabilities;
     const [cap] = codecCapabilities;
-    const deviceCodecs =
-      this._transportRepository.rtpCapabilities?.codecs ?? [];
-
     const kind = cap.mimeType.split('/')[0] as 'audio' | 'video';
     const codec: RtpCodecCapability = {
       ...cap,
       kind,
-      clockRate: kind === 'audio' ? 48000 : 90000,
+      clockRate: 90000,
     };
+    if (kind === 'audio') {
+      codec.channels ??= 2;
+      codec.clockRate = 48000;
+    }
+
     log.debug('selected codec', { codec });
 
-    const [codecType, codecName] = codec.mimeType.split('/');
-    producerOptions.codec = {
-      ...codec,
-      mimeType: `${codecType}/${codecName.toUpperCase()}`,
-    };
+    producerOptions.codec = codec;
     if (stream.contentType === 'video') {
       this._fixVideoCodecWithParametersOrder(codec);
     }
