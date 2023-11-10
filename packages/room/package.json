@@ -1,6 +1,6 @@
 {
   "name": "@shinyoshiaki/skyway-nodejs-sdk",
-  "version": "1.6.3",
+  "version": "1.6.5",
   "description": "The unofficial Next Generation NodeJs SDK for SkyWay",
   "keywords": [
     "webrtc",
@@ -44,8 +44,8 @@
     "watch:tsc": "tsc -p tsconfig.build.json -w"
   },
   "dependencies": {
-    "@shinyoshiaki/skyway-nodejs-sdk-core": "file:../core",
-    "@shinyoshiaki/skyway-nodejs-sdk-sfu-bot": "file:../sfu-bot",
+    "@shinyoshiaki/skyway-nodejs-sdk-core": "^1.6.3",
+    "@shinyoshiaki/skyway-nodejs-sdk-sfu-bot": "^1.6.3",
     "msc-node": "^0.0.21",
     "uuid": "^9.0.0"
   },
