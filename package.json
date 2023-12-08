@@ -31,7 +31,7 @@
     "update-mirror": "zx scripts/update-mirror-repo.mjs"
   },
   "dependencies": {
-    "werift": "^0.18.12"
+    "werift": "^0.18.13"
   },
   "devDependencies": {
     "@types/jasmine": "^4.3.0",
