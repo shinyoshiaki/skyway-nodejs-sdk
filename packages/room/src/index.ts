@@ -72,4 +72,5 @@ export {
   RtpPacket,
   RtpHeader,
   dePacketizeRtpPackets,
+  RtpBuilder,
 } from 'msc-node';
