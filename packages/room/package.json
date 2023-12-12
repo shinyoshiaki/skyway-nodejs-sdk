@@ -1,6 +1,6 @@
 {
   "name": "@shinyoshiaki/skyway-nodejs-sdk",
-  "version": "1.6.7",
+  "version": "1.6.8",
   "description": "The unofficial Next Generation NodeJs SDK for SkyWay",
   "keywords": [
     "webrtc",
@@ -46,7 +46,7 @@
   "dependencies": {
     "@shinyoshiaki/skyway-nodejs-sdk-core": "^1.6.3",
     "@shinyoshiaki/skyway-nodejs-sdk-sfu-bot": "^1.6.3",
-    "msc-node": "^0.0.21",
+    "msc-node": "^0.0.23",
     "uuid": "^9.0.0"
   },
   "devDependencies": {
