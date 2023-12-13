@@ -5,12 +5,12 @@
   "author": "",
   "main": "",
   "scripts": {
-    "dev": "ts-node-dev ./main.ts"
+    "audio": "DEBUG=mediasoup* ts-node-dev ./audio.ts"
   },
   "dependencies": {
+    "@girs/node-gst-1.0": "^1.23.0-3.2.2",
     "@shinyoshiaki/skyway-nodejs-sdk": "file:../../packages/room",
-    "node-gtk": "file:../../submodules/node-gtk",
-    "@girs/node-gst-1.0": "^1.23.0-3.2.2"
+    "node-gtk": "file:../../submodules/node-gtk"
   },
   "devDependencies": {
     "@types/node": "^20.8.8",

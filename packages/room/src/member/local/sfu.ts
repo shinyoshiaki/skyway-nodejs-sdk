@@ -9,10 +9,7 @@ import {
   SubscriptionImpl,
   SubscriptionOptions,
 } from '@shinyoshiaki/skyway-nodejs-sdk-core';
-import {
-  errors as sfuErrors,
-  SfuBotMember,
-} from '@shinyoshiaki/skyway-nodejs-sdk-sfu-bot';
+import { errors as sfuErrors, SfuBotMember } from '../../imports/sfu';
 
 import { defaultMaxSubscribers } from '../../const';
 import { errors } from '../../errors';

@@ -14,7 +14,7 @@ import {
   TransportConnectionState,
   WebRTCStats,
 } from '@shinyoshiaki/skyway-nodejs-sdk-core';
-import { SfuBotMember } from '@shinyoshiaki/skyway-nodejs-sdk-sfu-bot';
+import { SfuBotMember } from '../imports/sfu';
 
 import { errors } from '../errors';
 import { RoomMember, RoomMemberImpl } from '../member';

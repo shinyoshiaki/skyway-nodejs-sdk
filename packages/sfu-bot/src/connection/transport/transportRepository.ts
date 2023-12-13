@@ -14,6 +14,7 @@ import { SfuTransport } from './transport';
 import {
   RTCRtpCodecParameters,
   useAbsSendTime,
+  useAudioLevelIndication,
   useNACK,
   usePLI,
   useREMB,
@@ -93,6 +94,7 @@ export class TransportRepository {
     this._device = new Device({
       headerExtensions: {
         video: [useSdesMid(), useAbsSendTime()],
+        audio: [useSdesMid(), useAbsSendTime(), useAudioLevelIndication()],
       },
       codecs: {
         audio: [

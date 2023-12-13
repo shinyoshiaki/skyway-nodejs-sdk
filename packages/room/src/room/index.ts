@@ -9,7 +9,7 @@ import {
   SfuApiOptions,
   SfuBotPlugin,
   SfuBotPluginOptions,
-} from '@shinyoshiaki/skyway-nodejs-sdk-sfu-bot';
+} from '../imports/sfu';
 import { v4 as uuidV4 } from 'uuid';
 
 import { errors } from '../errors';
