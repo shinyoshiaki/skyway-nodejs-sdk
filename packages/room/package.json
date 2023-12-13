@@ -1,6 +1,6 @@
 {
   "name": "@shinyoshiaki/skyway-nodejs-sdk",
-  "version": "1.6.9",
+  "version": "1.6.10",
   "description": "The unofficial Next Generation NodeJs SDK for SkyWay",
   "keywords": [
     "webrtc",
@@ -15,7 +15,7 @@
   "author": "shinyoshiaki2012@gmail.com",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
+  "types": "dist/room/src/index.d.ts",
   "files": [
     "dist",
     "LICENSE"
