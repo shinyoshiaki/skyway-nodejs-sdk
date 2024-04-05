@@ -3,7 +3,7 @@ import {
   RTCIceCandidate,
   RTCPeerConnection,
   RTCPeerConnectionIceEvent,
-} from 'msc-node';
+} from '../../../../imports/mediasoup';
 
 import { SkyWayContext } from '../../../../context';
 import { errors } from '../../../../errors';

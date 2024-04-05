@@ -6,23 +6,19 @@ import {
   Logger,
   SkyWayContext,
   TransportConnectionState,
-} from '@shinyoshiaki/skyway-nodejs-sdk-core';
+} from '../../imports/core';
 import { SfuRestApiClient } from '@skyway-sdk/sfu-api-client';
 import {
   ConnectionState,
-  DtlsParameters,
-  Transport,
-  MediaKind,
-  RtpParameters,
-  DataProducerOptions,
-} from 'msc-node/lib/types';
+  RTCPeerConnection,
+  types,
+} from '../../imports/mediasoup';
 
 import { errors } from '../../errors';
 import { SfuBotMember } from '../../member';
 import { SfuBotPluginOptions } from '../../option';
 import { SfuBotPlugin } from '../../plugin';
 import { createWarnPayload } from '../../util';
-import { RTCPeerConnection } from 'msc-node';
 
 const log = new Logger(
   'packages/sfu-bot/src/connection/transport/transport.ts'
@@ -39,15 +35,15 @@ export class SfuTransport {
 
   readonly onProduce = new Event<{
     producerOptions: {
-      kind: MediaKind;
-      rtpParameters: RtpParameters;
+      kind: types.MediaKind;
+      rtpParameters: types.RtpParameters;
       appData: any;
     };
     callback: (props: { id: string }) => void;
     errback: (err: any) => void;
   }>();
   readonly onProduceData = new Event<{
-    producerOptions: DataProducerOptions;
+    producerOptions: types.DataProducerOptions;
     callback: (props: { id: string }) => void;
     errback: (err: any) => void;
   }>();
@@ -67,7 +63,7 @@ export class SfuTransport {
   }
 
   constructor(
-    public msTransport: Transport,
+    public msTransport: types.Transport,
     private _bot: SfuBotMember,
     private _iceManager: IceManager,
     private _sfuApi: SfuRestApiClient,
@@ -83,7 +79,7 @@ export class SfuTransport {
     msTransport.on('connect', (params, callback, errback) =>
       this._onConnect(msTransport.id)(
         params as {
-          dtlsParameters: DtlsParameters;
+          dtlsParameters: types.DtlsParameters;
         },
         callback as any,
         errback!
@@ -331,7 +327,7 @@ export class SfuTransport {
       {
         dtlsParameters,
       }: {
-        dtlsParameters: DtlsParameters;
+        dtlsParameters: types.DtlsParameters;
       },
       callback: () => void,
       errback: (err: any) => void

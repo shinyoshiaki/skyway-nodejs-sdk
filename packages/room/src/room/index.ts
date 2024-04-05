@@ -4,7 +4,7 @@ import {
   SkyWayChannel,
   SkyWayChannelImpl,
   SkyWayContext,
-} from '@shinyoshiaki/skyway-nodejs-sdk-core';
+} from '../imports/core';
 import {
   SfuApiOptions,
   SfuBotPlugin,

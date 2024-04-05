@@ -1,4 +1,4 @@
-import { errors as coreErrors } from '@shinyoshiaki/skyway-nodejs-sdk-core';
+import { errors as coreErrors } from './imports/core';
 import { errors as sfuErrors } from './imports/sfu';
 
 export const roomErrors = {

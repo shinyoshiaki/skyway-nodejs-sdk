@@ -517,7 +517,7 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
       { publication }
     );
 
-    return publication as Publication<T>;
+    return publication as any as Publication<T>;
   }
 
   private async _handleOnStreamPublish(publication: Publication) {
@@ -764,7 +764,7 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
       );
 
       return {
-        subscription: subscription as Subscription<T>,
+        subscription: subscription as any as Subscription<T>,
         stream: subscription.stream as T,
       };
     } catch (error) {

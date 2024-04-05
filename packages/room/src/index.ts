@@ -64,7 +64,7 @@ export {
   TurnProtocol,
   VideoMediaTrackConstraints,
   WebRTCStats,
-} from '@shinyoshiaki/skyway-nodejs-sdk-core';
+} from './imports/core';
 export * from '@skyway-sdk/token';
 export {
   MediaStreamTrack,
@@ -73,4 +73,4 @@ export {
   RtpHeader,
   dePacketizeRtpPackets,
   RtpBuilder,
-} from 'msc-node';
+} from './imports/mediasoup';

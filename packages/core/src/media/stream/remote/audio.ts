@@ -1,4 +1,4 @@
-import { MediaStreamTrack } from 'msc-node';
+import { MediaStreamTrack } from '../../../imports/mediasoup';
 import { RemoteMediaStreamBase } from './media';
 
 export class RemoteAudioStream extends RemoteMediaStreamBase {

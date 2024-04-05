@@ -4,9 +4,8 @@ import {
   getRuntimeInfo,
   IceManager,
   SkyWayContext,
-} from '@shinyoshiaki/skyway-nodejs-sdk-core';
+} from '../../imports/core';
 import { SfuRestApiClient } from '@skyway-sdk/sfu-api-client';
-import { TransportOptions, RtpCapabilities, Device } from 'msc-node/lib/types';
 
 import { errors } from '../../errors';
 import { SfuBotMember } from '../../member';
@@ -19,7 +18,9 @@ import {
   usePLI,
   useREMB,
   useSdesMid,
-} from 'msc-node';
+  types,
+  Device,
+} from '../../imports/mediasoup';
 
 const log = new Logger(
   'packages/sfu-bot/src/connection/transport/transportRepository.ts'
@@ -28,7 +29,7 @@ const log = new Logger(
 export class TransportRepository {
   onTransportCreated = new Event<string>();
 
-  private readonly _device: Device;
+  private readonly _device: types.Device;
   /**@private */
   _transports: { [id: string]: SfuTransport } = {};
 
@@ -111,7 +112,7 @@ export class TransportRepository {
     });
   }
 
-  async loadDevice(rtpCapabilities: RtpCapabilities) {
+  async loadDevice(rtpCapabilities: types.RtpCapabilities) {
     if (!this._device.loaded) {
       await this._device
         .load({
@@ -138,14 +139,14 @@ export class TransportRepository {
   createTransport(
     personId: string,
     bot: SfuBotMember,
-    transportOptions: TransportOptions,
+    transportOptions: types.TransportOptions,
     direction: 'send' | 'recv',
     iceManager: IceManager
   ) {
     const createTransport =
       direction === 'send'
-        ? (o: TransportOptions) => this._device.createSendTransport(o)
-        : (o: TransportOptions) => this._device.createRecvTransport(o);
+        ? (o: types.TransportOptions) => this._device.createSendTransport(o)
+        : (o: types.TransportOptions) => this._device.createRecvTransport(o);
 
     const msTransport = createTransport({
       ...transportOptions,

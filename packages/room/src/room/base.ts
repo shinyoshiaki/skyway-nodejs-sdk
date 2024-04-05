@@ -7,7 +7,7 @@ import {
   Publication,
   SkyWayChannelImpl,
   SubscriptionImpl,
-} from '@shinyoshiaki/skyway-nodejs-sdk-core';
+} from '../imports/core';
 import { v4 } from 'uuid';
 
 import { errors } from '../errors';

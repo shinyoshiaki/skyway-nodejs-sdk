@@ -1,5 +1,5 @@
 import { Event, EventDisposer, Logger } from '@skyway-sdk/common';
-import { MediaStreamTrack } from 'msc-node';
+import { MediaStreamTrack } from '../../../imports/mediasoup';
 
 import {
   AudioMediaTrackConstraints,

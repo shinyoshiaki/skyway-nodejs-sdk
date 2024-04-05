@@ -1,3 +1,6 @@
 [submodule "submodules/node-gtk"]
 	path = submodules/node-gtk
 	url = git@github.com:shinyoshiaki/node-gtk.git
+[submodule "submodules/mediasoup"]
+	path = submodules/mediasoup
+	url = git@github.com:shinyoshiaki/mediasoup-client-node.git

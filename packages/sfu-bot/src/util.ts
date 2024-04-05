@@ -1,8 +1,4 @@
-import {
-  Channel,
-  EncodingParameters,
-  Member,
-} from '@shinyoshiaki/skyway-nodejs-sdk-core';
+import { Channel, EncodingParameters, Member } from './imports/core';
 
 export function getLayerFromEncodings(
   id: string,

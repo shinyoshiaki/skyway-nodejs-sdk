@@ -13,7 +13,7 @@ import {
   ReplaceStreamOptions,
   TransportConnectionState,
   WebRTCStats,
-} from '@shinyoshiaki/skyway-nodejs-sdk-core';
+} from '../imports/core';
 import { SfuBotMember } from '../imports/sfu';
 
 import { errors } from '../errors';
@@ -22,7 +22,7 @@ import { RoomImpl } from '../room/base';
 import { StreamSubscribedEvent, StreamUnsubscribedEvent } from '../room/event';
 import { RoomSubscription } from '../subscription';
 import { createError } from '../util';
-import { RTCPeerConnection } from 'msc-node';
+import { RTCPeerConnection } from '../imports/mediasoup';
 
 const path = 'packages/room/src/publication/index.ts';
 const logger = new Logger(path);

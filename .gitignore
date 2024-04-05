@@ -20,7 +20,6 @@ examples/playground
 examples/playground-room
 CNAME
 docs
-scripts
 e2e
 __tests__
 packages/signaling-client/examples

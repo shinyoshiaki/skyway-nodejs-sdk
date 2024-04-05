@@ -17,7 +17,7 @@ import {
 import { TransportConnectionState } from '../plugin/interface';
 import { Publication, PublicationImpl } from '../publication';
 import { createError } from '../util';
-import { RTCPeerConnection } from 'msc-node';
+import { RTCPeerConnection } from '../imports/mediasoup';
 
 export * from './factory';
 

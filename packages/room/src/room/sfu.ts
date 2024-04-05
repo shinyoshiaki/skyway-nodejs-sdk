@@ -6,7 +6,7 @@ import {
   SkyWayChannelImpl,
   SkyWayContext,
   SubscriptionImpl,
-} from '@shinyoshiaki/skyway-nodejs-sdk-core';
+} from '../imports/core';
 import { SfuBotMember, SfuBotPlugin } from '../imports/sfu';
 
 import {

@@ -6,7 +6,7 @@ import {
   RemoteDataStream,
   RemoteVideoStream,
   SubscriptionImpl,
-} from '@shinyoshiaki/skyway-nodejs-sdk-core';
+} from '../../imports/core';
 
 import { errors } from '../../errors';
 import { RoomPublication } from '../../publication';
@@ -90,7 +90,7 @@ export class LocalP2PRoomMemberImpl
     );
 
     return {
-      subscription: roomSubscription as RoomSubscription<T>,
+      subscription: roomSubscription as any as RoomSubscription<T>,
       stream: stream as T,
     };
   }

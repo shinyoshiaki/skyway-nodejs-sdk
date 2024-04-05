@@ -16,15 +16,10 @@ import {
   SubscriptionImpl,
   TransportConnectionState,
   uuidV4,
-} from '@shinyoshiaki/skyway-nodejs-sdk-core';
+} from '../imports/core';
 import { SfuRestApiClient } from '@skyway-sdk/sfu-api-client';
 import isEqual from 'lodash/isEqual';
-import { Producer, ProducerOptions } from 'msc-node/lib/types';
-import {
-  RtpCodecCapability,
-  RtpCodecParameters,
-  RtpParameters,
-} from 'msc-node/lib/types';
+import { MediaStreamTrack, types } from '../imports/mediasoup';
 
 import { errors } from '../errors';
 import { Forwarding, ForwardingConfigure } from '../forwarding';
@@ -32,14 +27,13 @@ import { SfuBotMember } from '../member';
 import { createWarnPayload } from '../util';
 import { SfuTransport } from './transport/transport';
 import { TransportRepository } from './transport/transportRepository';
-import { MediaStreamTrack } from 'msc-node';
 
 const log = new Logger('packages/sfu-bot/src/connection/sender.ts');
 
 export class Sender {
   forwarding?: Forwarding;
   forwardingId?: string;
-  private _producer?: Producer;
+  private _producer?: types.Producer;
   /**@private */
   _broadcasterTransport?: SfuTransport;
   private _disposer = new EventDisposer();
@@ -288,7 +282,7 @@ export class Sender {
     this._listenStreamEnableChange(stream);
 
     const transactionId = uuidV4();
-    const producerOptions: ProducerOptions = {
+    const producerOptions: types.ProducerOptions = {
       track: stream.track,
       // mediasoup-clientはデフォルトでunproduce時にtrack.stopを実行する
       stopTracks: false,
@@ -312,7 +306,7 @@ export class Sender {
     const codecCapabilities = this.publication.codecCapabilities;
     const [cap] = codecCapabilities;
     const kind = cap.mimeType.split('/')[0] as 'audio' | 'video';
-    const codec: RtpCodecCapability = {
+    const codec: types.RtpCodecCapability = {
       ...cap,
       kind,
       clockRate: 90000,
@@ -408,12 +402,12 @@ export class Sender {
   /** @description 引数のParametersを持ったCodecを優先度配列の先頭に持ってくる
    *  @description H264対応のため
    */
-  private _fixVideoCodecWithParametersOrder(codec: RtpCodecCapability) {
+  private _fixVideoCodecWithParametersOrder(codec: types.RtpCodecCapability) {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     //@ts-ignore
-    const handler = this._broadcasterTransport!.msTransport._handler;
+    const handler = this._broadcasterTransport!.msTransport._handler as any;
 
-    const findCodecWithParameters = (c: RtpCodecParameters) => {
+    const findCodecWithParameters = (c: types.RtpCodecParameters) => {
       if (c.mimeType === codec.mimeType) {
         if (codec.parameters && Object.keys(codec.parameters).length > 0) {
           if (isEqual(c.parameters, codec.parameters)) {
@@ -427,8 +421,8 @@ export class Sender {
     };
 
     const copyCodecExceptPayloadType = (
-      target: RtpCodecParameters,
-      src: RtpCodecParameters
+      target: types.RtpCodecParameters,
+      src: types.RtpCodecParameters
     ) => {
       for (const key of Object.keys(target)) {
         if (key === 'payloadType') {
@@ -441,7 +435,7 @@ export class Sender {
     };
 
     if (handler._sendingRtpParametersByKind) {
-      const parameters: RtpParameters =
+      const parameters: types.RtpParameters =
         handler._sendingRtpParametersByKind['video'];
       const target = parameters.codecs.find(findCodecWithParameters);
 
@@ -461,7 +455,7 @@ export class Sender {
       }
     }
     if (handler._sendingRemoteRtpParametersByKind) {
-      const parameters: RtpParameters =
+      const parameters: types.RtpParameters =
         handler._sendingRemoteRtpParametersByKind['video'];
       const target = parameters.codecs.find(findCodecWithParameters);
 
@@ -485,7 +479,7 @@ export class Sender {
   private _setupTransportAccessForStream(
     stream: LocalStream,
     transport: SfuTransport,
-    producer: Producer
+    producer: types.Producer
   ) {
     stream._getTransportCallbacks[this._bot.id] = () => ({
       rtcPeerConnection: transport.pc,

@@ -14,7 +14,7 @@ import {
   RemoteMemberImplInterface,
   SkyWayChannelImpl,
   SkyWayContext,
-} from '@shinyoshiaki/skyway-nodejs-sdk-core';
+} from './imports/core';
 import { SfuRestApiClient } from '@skyway-sdk/sfu-api-client';
 
 import { SfuBotPlugin } from '.';

@@ -11,14 +11,14 @@ import {
   SubscriptionState,
   TransportConnectionState,
   WebRTCStats,
-} from '@shinyoshiaki/skyway-nodejs-sdk-core';
+} from '../imports/core';
 
 import { errors } from '../errors';
 import { RemoteRoomMember } from '../member/remote/base';
 import { RoomPublication } from '../publication';
 import { RoomImpl } from '../room/base';
 import { createError } from '../util';
-import { RTCPeerConnection } from 'msc-node';
+import { RTCPeerConnection } from '../imports/mediasoup';
 
 const log = new Logger('packages/room/src/subscription/index.ts');
 
