@@ -5,7 +5,8 @@
   "author": "",
   "main": "",
   "scripts": {
-    "audio": "DEBUG=mediasoup* ts-node-dev ./audio.ts"
+    "audio": "DEBUG=mediasoup* ts-node-dev ./audio.ts",
+    "video": "DEBUG=mediasoup* ts-node-dev ./video.ts"
   },
   "dependencies": {
     "@girs/node-gst-1.0": "^1.23.0-3.2.2",

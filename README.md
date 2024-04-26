@@ -58,6 +58,17 @@ npm install @shinyoshiaki/skyway-nodejs-sdk
 ## 初期設定時
 
 - Node.js をインストールする（バージョンは v16.17.1 以降）
+- examplesの依存パッケージをインストール
+
+```
+sudo apt-get install \
+  build-essential git \
+  gobject-introspection \
+  libgirepository1.0-dev \
+  libcairo2 \
+  libcairo2-dev
+```
+
 - corepack を有効化するために次のコマンドを実行する
   - `corepack enable npm`
 - ルートディレクトリで次のコマンドを実行する
