@@ -4,7 +4,6 @@ import {
   SkyWayContext,
   SkyWayRoom,
   randomPort,
-  // } from '@shinyoshiaki/skyway-nodejs-sdk';
 } from '../../packages/room/src/index';
 import { testTokenString } from './fixture';
 import { createSocket } from 'dgram';

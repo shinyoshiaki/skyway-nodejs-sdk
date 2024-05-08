@@ -9,9 +9,9 @@
     "video": "DEBUG=mediasoup* ts-node-dev ./video.ts"
   },
   "dependencies": {
-    "@girs/node-gst-1.0": "^1.23.0-3.2.2",
+    "@girs/node-gst-1.0": "^1.23.0-3.3.0",
     "@shinyoshiaki/skyway-nodejs-sdk": "file:../../packages/room",
-    "node-gtk": "file:../../submodules/node-gtk"
+    "node-gtk": "0.14.0"
   },
   "devDependencies": {
     "@types/node": "^20.8.8",

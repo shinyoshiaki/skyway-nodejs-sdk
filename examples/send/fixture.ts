@@ -1,4 +1,4 @@
-import { SkyWayAuthToken, uuidV4 } from '@shinyoshiaki/skyway-nodejs-sdk';
+import { SkyWayAuthToken, uuidV4 } from '../../packages/room/src';
 import { appId, secret } from '../../env';
 
 const testToken = new SkyWayAuthToken({
