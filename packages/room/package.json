@@ -55,6 +55,11 @@
   },
   "devDependencies": {
     "@types/node": "^20.8.8",
-    "@types/uuid": "^9.0.1"
+    "@types/uuid": "^9.0.1",
+    "werift-common": "^0.0.2",
+    "werift-dtls": "^0.5.4",
+    "werift-ice": "^0.0.16",
+    "werift-rtp": "^0.8.1",
+    "werift-sctp": "^0.0.5"
   }
 }
