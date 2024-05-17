@@ -21,6 +21,7 @@
     "playground": "cd examples/playground && npm run dev",
     "playground-room": "cd examples/playground-room && npm run dev",
     "submodule:init": "git submodule update --init --recursive",
+    "submodule:install": "zx scripts/install_submodules.mjs",
     "test": "cd tests && npm run test",
     "type": "lerna run type",
     "update-mirror": "zx scripts/update-mirror-repo.mjs",
