@@ -22,7 +22,8 @@
     "test": "vitest run ./tests",
     "upgrade-interactive": "npx npm-check --update",
     "first": "npm i && npm run bootstrap && npm run compile",
-    "update-mirror": "zx scripts/update-mirror-repo.mjs"
+    "update-mirror": "zx scripts/update-mirror-repo.mjs",
+    "submodule:init": "git submodule update --init --recursive"
   },
   "dependencies": {
     "@types/node": "^20.12.12",
