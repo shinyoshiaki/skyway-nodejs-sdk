@@ -28,7 +28,7 @@
   "dependencies": {
     "@types/node": "^20.12.12",
     "msc-node": "^0.0.26",
-    "werift": "^0.18.13"
+    "werift": "^0.19.1"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^4.32.0",
