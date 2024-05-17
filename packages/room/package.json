@@ -44,6 +44,9 @@
     "watch:tsc": "tsc -p tsconfig.build.json -w"
   },
   "dependencies": {
+    "@shinyoshiaki/binary-data": "^0.6.1",
+    "@shinyoshiaki/ebml-builder": "^0.0.1",
+    "@shinyoshiaki/jspack": "^0.0.6",
     "@shinyoshiaki/skyway-nodejs-sdk-core": "^1.6.3",
     "@shinyoshiaki/skyway-nodejs-sdk-sfu-bot": "^1.6.3",
     "msc-node": "^0.0.26",
