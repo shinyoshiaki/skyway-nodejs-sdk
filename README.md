@@ -65,7 +65,7 @@ sudo apt-get -y install build-essential git gobject-introspection libgirepositor
 ```
 
 - corepack を有効化するために次のコマンドを実行する
-  - `corepack enable npm`
+  - `sudo corepack enable npm`
 - ルートディレクトリで次のコマンドを実行する
   - `git submodule update --init --recursive`
   - `npm run first`

@@ -3,37 +3,33 @@
   "private": true,
   "workspaces": [
     "packages/*",
-    "examples/*"
+    "examples/*",
+    "tests"
   ],
   "scripts": {
     "bootstrap": "lerna bootstrap",
     "build": "npm run bootstrap && lerna run build && npm run bootstrap",
     "build:example": "lerna run build:example && npm run format",
     "clean": "lerna clean -y && rm -rf ./packages/*/dist && rm -rf ./packages/*/node_modules && rm -rf ./packages/*/bundler && rm -rf node_modules",
-    "type": "lerna run type",
     "compile": "npm run bootstrap && lerna run compile && lerna run type",
     "doc": "npm run compile && npm run doc:update",
     "doc:update": "lerna run doc && zx ./scripts/update-api-reference.mjs",
+    "first": "npm i && npm run bootstrap && npm run compile",
     "format": "lerna run format",
-    "lint": "lerna run lint",
     "graph": "lerna run graph",
+    "lint": "lerna run lint",
     "playground": "cd examples/playground && npm run dev",
     "playground-room": "cd examples/playground-room && npm run dev",
-    "test": "vitest run ./tests",
-    "upgrade-interactive": "npx npm-check --update",
-    "first": "npm i && npm run bootstrap && npm run compile",
+    "submodule:init": "git submodule update --init --recursive",
+    "test": "cd tests && npm run test",
+    "type": "lerna run type",
     "update-mirror": "zx scripts/update-mirror-repo.mjs",
-    "submodule:init": "git submodule update --init --recursive"
-  },
-  "dependencies": {
-    "@types/node": "^20.12.12",
-    "msc-node": "^0.0.26",
-    "werift": "^0.19.1"
+    "upgrade-interactive": "npx npm-check --update"
   },
   "devDependencies": {
+    "@types/node": "^20.12.12",
     "@typescript-eslint/eslint-plugin": "^4.32.0",
     "@typescript-eslint/parser": "^4.32.0",
-    "@vitest/coverage-v8": "^1.6.0",
     "esbuild": "^0.15.7",
     "eslint": "^7.32.0",
     "eslint-config-prettier": "^8.3.0",
@@ -47,7 +43,7 @@
     "typedoc": "^0.22.17",
     "typedoc-plugin-markdown": "3.12.1",
     "typescript": "4.7.4",
-    "vitest": "^1.6.0",
+    "vitest": "^0.34.6",
     "zx": "^7.0.8"
   },
   "packageManager": "npm@10.1.0",

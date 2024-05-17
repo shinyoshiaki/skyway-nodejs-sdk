@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 import {
   Event,
   LocalVideoStream,
@@ -9,7 +9,7 @@ import {
   SkyWayContext,
   SkyWayRoom,
   randomPort,
-} from '../packages/room/src';
+} from '../../packages/room/src';
 import { createSocket } from 'dgram';
 
 import Gst from '@girs/node-gst-1.0';
@@ -40,9 +40,10 @@ describe('loopback', () => {
           onAudio.emit(buf);
         })
         .bind(audio);
-      Gst.parseLaunch(
+      const launch = gst.parseLaunch(
         `audiotestsrc wave=ticks ! audioconvert ! audioresample ! queue ! opusenc ! rtpopuspay ! udpsink host=127.0.0.1 port=${audio}`
-      ).setState(Gst.State.PLAYING);
+      );
+      launch.setState(gst.State.PLAYING);
       const audioTrack = new MediaStreamTrack({ kind: 'audio' });
       onAudio.add((buf) => {
         const rtp = RtpPacket.deSerialize(buf);
@@ -66,7 +67,7 @@ describe('loopback', () => {
       ).join();
       const { stream: remoteStream } =
         await receiver.subscribe<RemoteVideoStream>(publication);
-      remoteStream.track.onReceiveRtp.subscribe((rtp) => {
+      remoteStream.track.onReceiveRtp.subscribe(async (rtp) => {
         const extensions = rtp.header.extensions;
 
         const audioLevel = extensions.find((e) => e.id === 10);
@@ -74,8 +75,10 @@ describe('loopback', () => {
 
         if (p.level === 25) {
           console.log('audioLevel', p);
-          room.close();
+          await room.close();
           context.dispose();
+          launch.setState(gst.State.NULL);
+          // Gst.deinit();
           done();
         }
       });
@@ -100,9 +103,10 @@ describe('loopback', () => {
         })
         .bind(video);
 
-      Gst.parseLaunch(
+      const launch = gst.parseLaunch(
         `videotestsrc ! video/x-raw,width=640,height=480,format=I420 ! x264enc key-int-max=60 ! rtph264pay ! udpsink host=127.0.0.1 port=${video}`
-      ).setState(Gst.State.PLAYING);
+      );
+      launch.setState(gst.State.PLAYING);
 
       const track = new MediaStreamTrack({ kind: 'video' });
       onVideo.add((data) => {
@@ -133,6 +137,7 @@ describe('loopback', () => {
           console.log('receive keyframe');
           await room.close();
           context.dispose();
+          launch.setState(gst.State.NULL);
           done();
         }
       });
