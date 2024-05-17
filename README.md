@@ -61,14 +61,7 @@ npm install @shinyoshiaki/skyway-nodejs-sdk
 - examples の依存パッケージをインストール
 
 ```
-sudo apt-get install \
-  build-essential git \
-  gobject-introspection \
-  libgirepository1.0-dev \
-  libcairo2 \
-  libcairo2-dev
-sudo apt-get -y install libavdevice-dev libavfilter-dev libopus-dev libvpx-dev pkg-config libsrtp2-dev libasound2-dev libgstreamer1.0-0 gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-tools gstreamer1.0-x gstreamer1.0-alsa gstreamer1.0-pulseaudio
-sudo apt-get install gir1.2-gstreamer-1.0
+sudo apt-get -y install build-essential git gobject-introspection libgirepository1.0-dev libcairo2 libcairo2-dev libavdevice-dev libavfilter-dev libopus-dev libvpx-dev pkg-config libsrtp2-dev libasound2-dev libgstreamer1.0-0 gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-tools gstreamer1.0-x gstreamer1.0-alsa gstreamer1.0-pulseaudio gir1.2-gstreamer-1.0
 ```
 
 - corepack を有効化するために次のコマンドを実行する

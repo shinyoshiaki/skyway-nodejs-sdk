@@ -9,8 +9,6 @@ packages/**/coverage
 *.tgz
 
 # internal
-.github/dependabot.yml
-.github/workflows
 CHANGELOG.md
 DEV.md
 env.ts
