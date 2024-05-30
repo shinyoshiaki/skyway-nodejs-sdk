@@ -15,7 +15,7 @@ import {
   SkyWayChannelImpl,
   SkyWayContext,
 } from './imports/core';
-import { SfuRestApiClient } from '@skyway-sdk/sfu-api-client';
+import { SfuRestApiClient } from './imports/sfu';
 
 import { SfuBotPlugin } from '.';
 import { SFUConnection } from './connection';

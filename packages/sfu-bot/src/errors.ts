@@ -1,4 +1,4 @@
-import { errors as apiErrors } from '@skyway-sdk/sfu-api-client';
+import { errors as apiErrors } from './imports/sfu';
 
 export const errors = {
   ...apiErrors,

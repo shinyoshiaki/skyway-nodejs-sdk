@@ -5,7 +5,7 @@ import {
   IceManager,
   SkyWayContext,
 } from '../../imports/core';
-import { SfuRestApiClient } from '@skyway-sdk/sfu-api-client';
+import { SfuRestApiClient } from '../../imports/sfu';
 
 import { errors } from '../../errors';
 import { SfuBotMember } from '../../member';

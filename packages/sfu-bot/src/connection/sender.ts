@@ -17,7 +17,7 @@ import {
   TransportConnectionState,
   uuidV4,
 } from '../imports/core';
-import { SfuRestApiClient } from '@skyway-sdk/sfu-api-client';
+import { SfuRestApiClient } from '../imports/sfu';
 import isEqual from 'lodash/isEqual';
 import { MediaStreamTrack, types } from '../imports/mediasoup';
 
