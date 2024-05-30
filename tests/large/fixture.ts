@@ -1,5 +1,5 @@
-import { SkyWayAuthToken, uuidV4 } from '../packages/room/src';
-import { appId, secret } from '../env';
+import { SkyWayAuthToken, uuidV4 } from '../../packages/room/src';
+import { appId, secret } from '../../env';
 
 const testToken = new SkyWayAuthToken({
   jti: uuidV4(),
