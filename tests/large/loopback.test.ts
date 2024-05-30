@@ -163,7 +163,7 @@ describe('loopback', () => {
         .bind(video);
 
       const launch = gst.parseLaunch(
-        `videotestsrc ! video/x-raw,width=640,height=480,format=I420 ! vp8enc ! rtpvp8pay picture-id-mode=1 ! udpsink host=127.0.0.1 port=${video}`
+        `videotestsrc ! video/x-raw,width=640,height=480,format=I420 ! vp8enc keyframe-max-dist=30 ! rtpvp8pay picture-id-mode=1 ! udpsink host=127.0.0.1 port=${video}`
       );
       launch.setState(gst.State.PLAYING);
 
