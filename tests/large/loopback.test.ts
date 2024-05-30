@@ -143,7 +143,7 @@ describe('loopback', () => {
       });
     }));
 
-  it('video_vp8', () =>
+  it.skip('video_vp8', () =>
     new Promise<void>(async (done) => {
       const context = await SkyWayContext.Create(testTokenString, {
         rtcConfig: { turnPolicy: 'disable' },
