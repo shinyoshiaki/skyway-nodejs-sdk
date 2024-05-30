@@ -84,7 +84,7 @@ describe('loopback', () => {
       });
     }));
 
-  it('video', () =>
+  it('video_h264', () =>
     new Promise<void>(async (done) => {
       const context = await SkyWayContext.Create(testTokenString, {
         rtcConfig: { turnPolicy: 'disable' },
@@ -133,6 +133,60 @@ describe('loopback', () => {
         await receiver.subscribe<RemoteVideoStream>(publication);
       remoteStream.track.onReceiveRtp.subscribe(async (rtp) => {
         const codec = dePacketizeRtpPackets('mpeg4/iso/avc', [rtp]);
+        if (codec.isKeyframe) {
+          console.log('receive keyframe');
+          await room.close();
+          context.dispose();
+          launch.setState(gst.State.NULL);
+          done();
+        }
+      });
+    }));
+
+  it('video_vp8', () =>
+    new Promise<void>(async (done) => {
+      const context = await SkyWayContext.Create(testTokenString, {
+        rtcConfig: { turnPolicy: 'disable' },
+      });
+      const room = await SkyWayRoom.Create(context, {
+        type: 'sfu',
+      });
+      console.log('roomId', room.id);
+      const sender = await room.join();
+
+      const video = await randomPort();
+      const onVideo = new Event<Buffer>();
+      createSocket('udp4')
+        .on('message', (buf) => {
+          onVideo.emit(buf);
+        })
+        .bind(video);
+
+      const launch = gst.parseLaunch(
+        `videotestsrc ! video/x-raw,width=640,height=480,format=I420 ! vp8enc ! rtpvp8pay picture-id-mode=1 ! udpsink host=127.0.0.1 port=${video}`
+      );
+      launch.setState(gst.State.PLAYING);
+
+      const track = new MediaStreamTrack({ kind: 'video' });
+      onVideo.add((data) => {
+        track.writeRtp(data);
+      });
+
+      const publication = await sender.publish(new LocalVideoStream(track), {
+        codecCapabilities: [
+          {
+            mimeType: 'video/vp8',
+          },
+        ],
+      });
+
+      const receiver = await (
+        await SkyWayRoom.Find(context, room, 'sfu')
+      ).join();
+      const { stream: remoteStream } =
+        await receiver.subscribe<RemoteVideoStream>(publication);
+      remoteStream.track.onReceiveRtp.subscribe(async (rtp) => {
+        const codec = dePacketizeRtpPackets('vp8', [rtp]);
         if (codec.isKeyframe) {
           console.log('receive keyframe');
           await room.close();
