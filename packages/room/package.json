@@ -51,7 +51,8 @@
     "@shinyoshiaki/skyway-nodejs-sdk-sfu-bot": "^1.6.3",
     "msc-node": "^0.0.26",
     "uuid": "^9.0.0",
-    "werift": "^0.19.1"
+    "werift": "^0.19.1",
+    "multicast-dns": "^7.2.5"
   },
   "devDependencies": {
     "@types/node": "^20.8.8",
