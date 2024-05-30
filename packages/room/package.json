@@ -1,7 +1,12 @@
 {
   "name": "@shinyoshiaki/skyway-nodejs-sdk",
-  "version": "1.6.2",
+  "version": "1.6.10",
   "description": "The unofficial Next Generation NodeJs SDK for SkyWay",
+  "keywords": [
+    "webrtc",
+    "skyway",
+    "conferencing"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/shinyoshiaki/skyway-nodejs-sdk.git"
@@ -10,7 +15,7 @@
   "author": "shinyoshiaki2012@gmail.com",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
+  "types": "dist/room/src/index.d.ts",
   "files": [
     "dist",
     "LICENSE"
@@ -18,25 +23,19 @@
   "scripts": {
     "bootstrap": "lerna bootstrap",
     "build": "zx bundle.mjs",
-    "compile": "npm run compile:tsc && npm run compile:esbuild",
-    "compile:esbuild": "esbuild src/index.ts --bundle --platform=node --format=esm --target=es2020 --outfile=dist/index.mjs",
-    "compile:tsc": "rm -rf dist && tsc -p tsconfig.build.json",
+    "compile": "run-s compile:type compile:esm compile:cjs",
+    "compile:type": "rm -rf dist && tsc -p tsconfig.build.json",
+    "compile:esm": "esbuild src/index.ts --bundle --platform=node --format=esm --target=es2020 --outfile=dist/index.mjs",
+    "compile:cjs": "esbuild src/index.ts --bundle --platform=node --format=cjs --target=es2020 --outfile=dist/index.js",
     "doc": "npm run doc:html && npm run doc:md",
     "doc:html": "rm -rf docs/html && typedoc --excludePrivate --disableSources --excludeInternal --tsconfig ./tsconfig.build.json --out docs/html --plugin none ./src/index.ts ",
     "doc:md": "rm -rf docs/md && typedoc --excludePrivate --disableSources --excludeInternal --tsconfig ./tsconfig.build.json --out docs/md ./src/index.ts ",
-    "test": "npm run e2e",
-    "e2e": "npm-run-all -p jest test-large test-extra",
-    "e2e:firefox": "karma start ./karma.large.js --single-run --browsers FirefoxHeadlessAutoAllowGUM && karma start ./karma.extra.js --single-run --browsers FirefoxHeadlessAutoAllowGUM",
-    "e2e:safari": "karma start ./karma.large.js --single-run --browsers safari && karma start ./karma.extra.js --single-run --browsers safari",
     "format": "eslint ./src --fix && eslint ./tests --fix",
     "graph": "dependency-cruiser --include-only '^src' --output-type dot src | dot -T svg > docs/dependencygraph.svg",
     "jest": "jest",
     "lint": "eslint ./src --fix && eslint ./tests --fix",
     "publish:npm": "npx can-npm-publish --verbose && npm run build && npm publish --access public",
-    "test-extra": "karma start ./karma.extra.js --single-run --browsers chrome_headless_with_fake_device",
-    "test-extra:dev": "karma start ./karma.extra.js --browsers chrome_with_fake_device",
-    "test-large": "karma start ./karma.large.js --single-run --browsers chrome_headless_with_fake_device",
-    "test-large:dev": "karma start ./karma.large.js --browsers chrome_with_fake_device",
+    "test": "vitest run ./tests",
     "type": "npm run type:main",
     "type:main": "tsc --noEmit -p ./tsconfig.json",
     "type:prod": "tsc --noEmit -p ./tsconfig.build.json",
@@ -45,18 +44,23 @@
     "watch:tsc": "tsc -p tsconfig.build.json -w"
   },
   "dependencies": {
-    "@shinyoshiaki/skyway-nodejs-sdk-core": "^1.6.1",
-    "@shinyoshiaki/skyway-nodejs-sdk-sfu-bot": "^1.6.1",
-    "msc-node": "^0.0.17",
-    "uuid": "^9.0.0"
+    "@shinyoshiaki/binary-data": "^0.6.1",
+    "@shinyoshiaki/ebml-builder": "^0.0.1",
+    "@shinyoshiaki/jspack": "^0.0.6",
+    "@shinyoshiaki/skyway-nodejs-sdk-core": "^1.6.3",
+    "@shinyoshiaki/skyway-nodejs-sdk-sfu-bot": "^1.6.3",
+    "msc-node": "^0.0.26",
+    "uuid": "^9.0.0",
+    "werift": "^0.19.1",
+    "multicast-dns": "^7.2.5"
   },
   "devDependencies": {
     "@types/node": "^20.8.8",
-    "@types/uuid": "^9.0.1"
-  },
-  "keywords": [
-    "webrtc",
-    "skyway",
-    "conferencing"
-  ]
+    "@types/uuid": "^9.0.1",
+    "werift-common": "^0.0.2",
+    "werift-dtls": "^0.5.4",
+    "werift-ice": "^0.0.16",
+    "werift-rtp": "^0.8.1",
+    "werift-sctp": "^0.0.5"
+  }
 }

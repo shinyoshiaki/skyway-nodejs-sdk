@@ -5,24 +5,23 @@ import {
   LocalPersonImpl,
   RemoteStream,
   SkyWayContext,
-  statsToArray,
   SubscriptionImpl,
   uuidV4,
-} from '@shinyoshiaki/skyway-nodejs-sdk-core';
-import { createRemoteStream } from '@shinyoshiaki/skyway-nodejs-sdk-core';
-import { SfuRestApiClient } from '@skyway-sdk/sfu-api-client';
-import { Consumer } from 'msc-node/lib/types';
+  createRemoteStream,
+} from '../imports/core';
+import { SfuRestApiClient } from '../imports/sfu';
 
 import { errors } from '../errors';
 import { SfuBotMember } from '../member';
 import { getLayerFromEncodings } from '../util';
 import { SfuTransport } from './transport/transport';
 import { TransportRepository } from './transport/transportRepository';
+import { MediaStreamTrack, types } from '../imports/mediasoup';
 
 const log = new Logger('packages/sfu-bot/src/connection/receiver.ts');
 
 export class Receiver {
-  consumer?: Consumer;
+  consumer?: types.Consumer;
   transport?: SfuTransport;
 
   private _disposer = new EventDisposer();
@@ -160,7 +159,11 @@ export class Receiver {
 
     const [selectedCodec] = consumer.rtpParameters.codecs;
 
-    const stream = createRemoteStream(uuidV4(), consumer.track, selectedCodec);
+    const stream = createRemoteStream(
+      uuidV4(),
+      consumer.track as any as MediaStreamTrack,
+      selectedCodec
+    );
     const codec = {
       mimeType: selectedCodec.mimeType,
       parameters: selectedCodec.parameters,
@@ -172,7 +175,7 @@ export class Receiver {
 
   private _setupTransportAccessForStream(
     stream: RemoteStream,
-    consumer: Consumer
+    consumer: types.Consumer
   ) {
     const transport = this.transport!;
     const pc = this.pc!;

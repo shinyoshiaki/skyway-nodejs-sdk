@@ -5,9 +5,9 @@ import {
   createLogPayload,
   SkyWayChannelImpl,
   SkyWayPlugin,
-} from '@shinyoshiaki/skyway-nodejs-sdk-core';
+} from './imports/core';
 import model from '@skyway-sdk/model';
-import { SfuApiOptions, SfuRestApiClient } from '@skyway-sdk/sfu-api-client';
+import { SfuApiOptions, SfuRestApiClient } from './imports/sfu';
 
 import { TransportRepository } from './connection/transport/transportRepository';
 import { errors } from './errors';

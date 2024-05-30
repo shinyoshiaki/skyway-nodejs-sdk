@@ -8,11 +8,8 @@ import {
   RemoteVideoStream,
   SubscriptionImpl,
   SubscriptionOptions,
-} from '@shinyoshiaki/skyway-nodejs-sdk-core';
-import {
-  errors as sfuErrors,
-  SfuBotMember,
-} from '@shinyoshiaki/skyway-nodejs-sdk-sfu-bot';
+} from '../../imports/core';
+import { errors as sfuErrors, SfuBotMember } from '../../imports/sfu';
 
 import { defaultMaxSubscribers } from '../../const';
 import { errors } from '../../errors';
@@ -148,7 +145,7 @@ export class LocalSFURoomMemberImpl
     );
 
     return {
-      subscription: roomSubscription as RoomSubscription<T>,
+      subscription: roomSubscription as any as RoomSubscription<T>,
       stream: stream as T,
     };
   }

@@ -1,7 +1,4 @@
-import {
-  defaultSfuApiOptions,
-  SfuApiOptions,
-} from '@skyway-sdk/sfu-api-client';
+import { defaultSfuApiOptions, SfuApiOptions } from './imports/sfu';
 
 export type SfuBotPluginOptions = Omit<SfuApiOptions, 'log'> & {
   endpointTimeout: number;

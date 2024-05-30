@@ -4,7 +4,7 @@ import {
   SkyWayContext,
   SkyWayRoom,
   randomPort,
-} from '@shinyoshiaki/skyway-nodejs-sdk';
+} from '../../packages/room/src/index';
 import { testTokenString } from './fixture';
 import { createSocket } from 'dgram';
 import Gst from '@girs/node-gst-1.0';
@@ -34,7 +34,16 @@ gst.init([]);
 
   const stream = new LocalVideoStream(track);
   const publication = await member.publish(stream, {
-    codecCapabilities: [{ mimeType: 'video/vp8' }],
+    codecCapabilities: [
+      {
+        mimeType: 'video/h264',
+        parameters: {
+          'level-asymmetry-allowed': 1,
+          'packetization-mode': 0,
+          'profile-level-id': '42001f',
+        },
+      },
+    ],
   });
 
   const src = gst.ElementFactory.make('videotestsrc', null)!;
@@ -45,15 +54,15 @@ gst.init([]);
       'video/x-raw,width=640,height=480,format=I420,framerate=60/1'
     )
   );
-  // const enc = gst.ElementFactory.make('x264enc', null)!;
-  // // every seconds
-  // enc.setProperty('key-int-max', 60);
-  const enc = gst.ElementFactory.make('vp8enc', null)!;
-  enc.setProperty('keyframe-max-dist', 60);
-  enc.setProperty('cpu-used', 5);
+  const enc = gst.ElementFactory.make('x264enc', null)!;
+  // every seconds
+  enc.setProperty('key-int-max', 60);
+  // const enc = gst.ElementFactory.make('vp8enc', null)!;
+  // enc.setProperty('keyframe-max-dist', 60);
+  // enc.setProperty('cpu-used', 5);
 
-  // const pay = gst.ElementFactory.make('rtph264pay', null)!;
-  const pay = gst.ElementFactory.make('rtpvp8pay', null)!;
+  const pay = gst.ElementFactory.make('rtph264pay', null)!;
+  // const pay = gst.ElementFactory.make('rtpvp8pay', null)!;
   pay.setProperty('picture-id-mode', 1);
 
   const sink = gst.ElementFactory.make('udpsink', null)!;

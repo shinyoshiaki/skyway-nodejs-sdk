@@ -12,7 +12,7 @@
     "noEmitOnError": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
-    "strict": true
+    "strict": false
   },
   "exclude": [
     "node_modules",

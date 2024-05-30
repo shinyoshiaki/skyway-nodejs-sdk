@@ -16,15 +16,10 @@ import {
   SubscriptionImpl,
   TransportConnectionState,
   uuidV4,
-} from '@shinyoshiaki/skyway-nodejs-sdk-core';
-import { SfuRestApiClient } from '@skyway-sdk/sfu-api-client';
+} from '../imports/core';
+import { SfuRestApiClient } from '../imports/sfu';
 import isEqual from 'lodash/isEqual';
-import { Producer, ProducerOptions } from 'msc-node/lib/types';
-import {
-  RtpCodecCapability,
-  RtpCodecParameters,
-  RtpParameters,
-} from 'msc-node/lib/types';
+import { MediaStreamTrack, types } from '../imports/mediasoup';
 
 import { errors } from '../errors';
 import { Forwarding, ForwardingConfigure } from '../forwarding';
@@ -32,14 +27,13 @@ import { SfuBotMember } from '../member';
 import { createWarnPayload } from '../util';
 import { SfuTransport } from './transport/transport';
 import { TransportRepository } from './transport/transportRepository';
-import { MediaStreamTrack } from 'msc-node';
 
 const log = new Logger('packages/sfu-bot/src/connection/sender.ts');
 
 export class Sender {
   forwarding?: Forwarding;
   forwardingId?: string;
-  private _producer?: Producer;
+  private _producer?: types.Producer;
   /**@private */
   _broadcasterTransport?: SfuTransport;
   private _disposer = new EventDisposer();
@@ -130,13 +124,17 @@ export class Sender {
       broadcasterTransportOptions,
       rtpCapabilities,
       identifierKey,
-    } = await this._api.startForwarding({
-      botId: this._bot.id,
-      publicationId: this.publication.id,
-      contentType: this.publication.contentType,
-      maxSubscribers: configure.maxSubscribers,
-      publisherId: this.publication.publisher.id,
-    });
+    } = await this._api
+      .startForwarding({
+        botId: this._bot.id,
+        publicationId: this.publication.id,
+        contentType: this.publication.contentType,
+        maxSubscribers: configure.maxSubscribers,
+        publisherId: this.publication.publisher.id,
+      })
+      .catch((e) => {
+        throw e;
+      });
     this.forwardingId = forwardingId;
 
     if (broadcasterTransportOptions) {
@@ -284,7 +282,7 @@ export class Sender {
     this._listenStreamEnableChange(stream);
 
     const transactionId = uuidV4();
-    const producerOptions: ProducerOptions = {
+    const producerOptions: types.ProducerOptions = {
       track: stream.track,
       // mediasoup-clientはデフォルトでunproduce時にtrack.stopを実行する
       stopTracks: false,
@@ -306,57 +304,23 @@ export class Sender {
       .disposer(this._disposer);
 
     const codecCapabilities = this.publication.codecCapabilities;
-    const deviceCodecs =
-      this._transportRepository.rtpCapabilities?.codecs ?? [];
-    log.debug('select codec', { codecCapabilities, deviceCodecs });
+    const [cap] = codecCapabilities;
+    const kind = cap.mimeType.split('/')[0] as 'audio' | 'video';
+    const codec: types.RtpCodecCapability = {
+      ...cap,
+      kind,
+      clockRate: 90000,
+    };
+    if (kind === 'audio') {
+      codec.channels ??= 2;
+      codec.clockRate = 48000;
+    }
 
-    const [codec] = codecCapabilities.map((cap) => {
-      if (cap.mimeType.toLowerCase().includes('video')) {
-        const codec = deviceCodecs.find((c) => {
-          if (c.mimeType.toLowerCase() !== cap.mimeType.toLowerCase()) {
-            return false;
-          }
-          if (
-            Object.keys(cap.parameters ?? {}).length > 0 &&
-            !isEqual(cap.parameters, c.parameters)
-          ) {
-            return false;
-          }
-          return true;
-        });
-        return codec;
-      }
-      const codec = deviceCodecs.find(
-        (c) => c.mimeType.toLowerCase() === cap.mimeType.toLowerCase()
-      );
-      return codec;
-    });
     log.debug('selected codec', { codec });
 
-    if (codec) {
-      const [codecType, codecName] = codec.mimeType.split('/');
-      producerOptions.codec = {
-        ...codec,
-        mimeType: `${codecType}/${codecName.toUpperCase()}`,
-      };
-
-      if (stream.contentType === 'video') {
-        this._fixVideoCodecWithParametersOrder(codec);
-      }
-    } else if (codecCapabilities.length > 0) {
-      log.warn(
-        'preferred codec not supported',
-        createWarnPayload({
-          channel: this.channel,
-          detail: 'preferred codec not supported',
-          operationName: 'Sender._produce',
-          bot: this._bot,
-          payload: {
-            codecCapabilities,
-            deviceCodecs,
-          },
-        })
-      );
+    producerOptions.codec = codec;
+    if (stream.contentType === 'video') {
+      this._fixVideoCodecWithParametersOrder(codec);
     }
 
     if (stream.contentType === 'audio') {
@@ -438,12 +402,12 @@ export class Sender {
   /** @description 引数のParametersを持ったCodecを優先度配列の先頭に持ってくる
    *  @description H264対応のため
    */
-  private _fixVideoCodecWithParametersOrder(codec: RtpCodecCapability) {
+  private _fixVideoCodecWithParametersOrder(codec: types.RtpCodecCapability) {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     //@ts-ignore
-    const handler = this._broadcasterTransport!.msTransport._handler;
+    const handler = this._broadcasterTransport!.msTransport._handler as any;
 
-    const findCodecWithParameters = (c: RtpCodecParameters) => {
+    const findCodecWithParameters = (c: types.RtpCodecParameters) => {
       if (c.mimeType === codec.mimeType) {
         if (codec.parameters && Object.keys(codec.parameters).length > 0) {
           if (isEqual(c.parameters, codec.parameters)) {
@@ -457,8 +421,8 @@ export class Sender {
     };
 
     const copyCodecExceptPayloadType = (
-      target: RtpCodecParameters,
-      src: RtpCodecParameters
+      target: types.RtpCodecParameters,
+      src: types.RtpCodecParameters
     ) => {
       for (const key of Object.keys(target)) {
         if (key === 'payloadType') {
@@ -471,7 +435,7 @@ export class Sender {
     };
 
     if (handler._sendingRtpParametersByKind) {
-      const parameters: RtpParameters =
+      const parameters: types.RtpParameters =
         handler._sendingRtpParametersByKind['video'];
       const target = parameters.codecs.find(findCodecWithParameters);
 
@@ -491,7 +455,7 @@ export class Sender {
       }
     }
     if (handler._sendingRemoteRtpParametersByKind) {
-      const parameters: RtpParameters =
+      const parameters: types.RtpParameters =
         handler._sendingRemoteRtpParametersByKind['video'];
       const target = parameters.codecs.find(findCodecWithParameters);
 
@@ -515,7 +479,7 @@ export class Sender {
   private _setupTransportAccessForStream(
     stream: LocalStream,
     transport: SfuTransport,
-    producer: Producer
+    producer: types.Producer
   ) {
     stream._getTransportCallbacks[this._bot.id] = () => ({
       rtcPeerConnection: transport.pc,

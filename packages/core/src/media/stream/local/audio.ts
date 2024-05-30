@@ -1,5 +1,5 @@
 import { Logger, PromiseQueue } from '@skyway-sdk/common';
-import { MediaStreamTrack } from 'msc-node';
+import { MediaStreamTrack } from '../../../imports/mediasoup';
 
 import { errors } from '../../../errors';
 import { createError } from '../../../util';

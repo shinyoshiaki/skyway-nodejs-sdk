@@ -35,7 +35,7 @@ import {
   SenderRestartIceMessage,
   SenderUnproduceMessage,
 } from './sender';
-import { RTCRtpTransceiver } from 'msc-node';
+import { RTCRtpTransceiver } from '../../../../imports/mediasoup';
 
 const log = new Logger(
   'packages/core/src/plugin/internal/person/connection/receiver.ts'

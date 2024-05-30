@@ -5,7 +5,7 @@ import { Member } from '../../../member';
 import { RemoteMember } from '../../../member/remoteMember';
 import { Transport, TransportConnectionState } from '../../../plugin/interface';
 import { ContentType, Stream, WebRTCStats } from '../base';
-import { RTCPeerConnection } from 'msc-node';
+import { RTCPeerConnection } from '../../../imports/mediasoup';
 
 export abstract class LocalStreamBase implements Stream {
   readonly side = 'local';
@@ -84,7 +84,7 @@ export abstract class LocalStreamBase implements Stream {
   /**@internal */
   _getStats(selector: Member | string): Promise<WebRTCStats> {
     const id = typeof selector === 'string' ? selector : selector.id;
-    return this._getStatsCallbacks[id]?.() ?? [];
+    return this._getStatsCallbacks[id]?.() ?? ([] as any);
   }
 
   /**@internal */

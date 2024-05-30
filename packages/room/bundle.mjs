@@ -21,10 +21,10 @@ await $`cp -r ../../bundler/shims ./ `;
 await $`esbuild src/index.ts --bundle --platform=node --inject:./shims/process.js --format=esm --target=es2020 --outfile=${dist}/index.mjs`;
 await $`esbuild src/index.ts --bundle --platform=node --inject:./shims/process.js --format=iife --global-name=${globalName} --target=es2020 --outfile=${dist}/${globalName}-latest.js`;
 
-const licenses = await createLicenses();
-await appendLicenses(`${dist}/index.mjs`, licenses);
-await appendLicenses(`${dist}/${globalName}-latest.js`, licenses);
-await fs.writeFile('../../THIRD_PARTY_LICENSE', licenses);
+// const licenses = await createLicenses();
+// await appendLicenses(`${dist}/index.mjs`, licenses);
+// await appendLicenses(`${dist}/${globalName}-latest.js`, licenses);
+// await fs.writeFile('../../THIRD_PARTY_LICENSE', licenses);
 
 await $`cp ${dist}/${globalName}-latest.js ${dist}/${globalName}-${pkg.version}.js`;
 

@@ -1,6 +1,6 @@
 {
   "name": "@shinyoshiaki/skyway-nodejs-sdk-core",
-  "version": "1.6.1",
+  "version": "1.6.3",
   "description": "The official Next Generation JavaScript SDK for SkyWay",
   "keywords": [
     "webrtc",
@@ -57,7 +57,7 @@
     "bowser": "^2.11.0",
     "deepmerge": "^4.2.2",
     "lodash": "4.17.21",
-    "msc-node": "^0.0.17",
+    "msc-node": "^0.0.21",
     "sdp-transform": "^2.14.1",
     "ua-parser-js": "^1.0.35",
     "uuid": "^9.0.0"

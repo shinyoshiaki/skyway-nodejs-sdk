@@ -6,7 +6,7 @@ import {
   SkyWayChannelImpl,
   Subscription,
   SubscriptionImpl,
-} from '@shinyoshiaki/skyway-nodejs-sdk-core';
+} from '../imports/core';
 
 import {
   LocalP2PRoomMember,

@@ -7,7 +7,7 @@ import { RemoteStream } from '.';
 import { RemoteAudioStream } from './audio';
 import { RemoteDataStream } from './data';
 import { RemoteVideoStream } from './video';
-import { MediaStreamTrack, RTCDataChannel } from 'msc-node';
+import { MediaStreamTrack, RTCDataChannel } from '../../../imports/mediasoup';
 
 const log = new Logger('packages/core/src/media/stream/remote/factory.ts');
 

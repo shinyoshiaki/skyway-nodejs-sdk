@@ -4,9 +4,8 @@ import {
   getRuntimeInfo,
   IceManager,
   SkyWayContext,
-} from '@shinyoshiaki/skyway-nodejs-sdk-core';
-import { SfuRestApiClient } from '@skyway-sdk/sfu-api-client';
-import { TransportOptions, RtpCapabilities, Device } from 'msc-node/lib/types';
+} from '../../imports/core';
+import { SfuRestApiClient } from '../../imports/sfu';
 
 import { errors } from '../../errors';
 import { SfuBotMember } from '../../member';
@@ -14,11 +13,14 @@ import { SfuTransport } from './transport';
 import {
   RTCRtpCodecParameters,
   useAbsSendTime,
+  useAudioLevelIndication,
   useNACK,
   usePLI,
   useREMB,
   useSdesMid,
-} from 'msc-node';
+  types,
+  Device,
+} from '../../imports/mediasoup';
 
 const log = new Logger(
   'packages/sfu-bot/src/connection/transport/transportRepository.ts'
@@ -27,7 +29,7 @@ const log = new Logger(
 export class TransportRepository {
   onTransportCreated = new Event<string>();
 
-  private readonly _device: Device;
+  private readonly _device: types.Device;
   /**@private */
   _transports: { [id: string]: SfuTransport } = {};
 
@@ -57,9 +59,43 @@ export class TransportRepository {
     // } else {
     //   this._device = new Device();
     // }
+
+    const videoCodecs = [
+      ...(() => {
+        const parameters: RTCRtpCodecParameters[] = [];
+        const packetizationModeArr = [0, 1];
+        const profileLevelArr = ['42001f', '42e01f', '4d001f'];
+        const levelAsymmetryArr = [0, 1];
+
+        for (const packetizationMode of packetizationModeArr) {
+          for (const profileLevel of profileLevelArr) {
+            for (const levelAsymmetry of levelAsymmetryArr) {
+              parameters.push(
+                new RTCRtpCodecParameters({
+                  mimeType: 'video/H264',
+                  clockRate: 90000,
+                  payloadType: 101,
+                  rtcpFeedback: [useNACK(), usePLI(), useREMB()],
+                  parameters: `packetization-mode:${packetizationMode};profile-level-id:${profileLevel};level-asymmetry-allowed:${levelAsymmetry}`,
+                })
+              );
+            }
+          }
+        }
+        return parameters;
+      })(),
+      new RTCRtpCodecParameters({
+        mimeType: 'video/VP8',
+        clockRate: 90000,
+        payloadType: 102,
+        rtcpFeedback: [useNACK(), usePLI(), useREMB()],
+      }),
+    ];
+
     this._device = new Device({
       headerExtensions: {
         video: [useSdesMid(), useAbsSendTime()],
+        audio: [useSdesMid(), useAbsSendTime(), useAudioLevelIndication()],
       },
       codecs: {
         audio: [
@@ -71,25 +107,12 @@ export class TransportRepository {
             channels: 2,
           }),
         ],
-        video: [
-          new RTCRtpCodecParameters({
-            mimeType: 'video/H264',
-            clockRate: 90000,
-            payloadType: 101,
-            rtcpFeedback: [useNACK(), usePLI(), useREMB()],
-          }),
-          new RTCRtpCodecParameters({
-            mimeType: 'video/VP8',
-            clockRate: 90000,
-            payloadType: 102,
-            rtcpFeedback: [useNACK(), usePLI(), useREMB()],
-          }),
-        ],
+        video: videoCodecs,
       },
     });
   }
 
-  async loadDevice(rtpCapabilities: RtpCapabilities) {
+  async loadDevice(rtpCapabilities: types.RtpCapabilities) {
     if (!this._device.loaded) {
       await this._device
         .load({
@@ -116,14 +139,14 @@ export class TransportRepository {
   createTransport(
     personId: string,
     bot: SfuBotMember,
-    transportOptions: TransportOptions,
+    transportOptions: types.TransportOptions,
     direction: 'send' | 'recv',
     iceManager: IceManager
   ) {
     const createTransport =
       direction === 'send'
-        ? (o: TransportOptions) => this._device.createSendTransport(o)
-        : (o: TransportOptions) => this._device.createRecvTransport(o);
+        ? (o: types.TransportOptions) => this._device.createSendTransport(o)
+        : (o: types.TransportOptions) => this._device.createRecvTransport(o);
 
     const msTransport = createTransport({
       ...transportOptions,

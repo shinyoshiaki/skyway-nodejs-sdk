@@ -42,7 +42,7 @@ import {
   RTCDataChannel,
   RTCRtpTransceiver,
   RTCSessionDescription,
-} from 'msc-node';
+} from '../../../../imports/mediasoup';
 
 const log = new Logger(
   'packages/core/src/plugin/internal/person/connection/sender.ts'

@@ -1,4 +1,4 @@
-import { MediaStreamTrack } from 'msc-node';
+import { MediaStreamTrack } from '../../../imports/mediasoup';
 import { attachElement, ContentType, detachElement } from '../base';
 import { RemoteStreamBase } from './base';
 

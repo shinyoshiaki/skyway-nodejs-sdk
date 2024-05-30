@@ -1,6 +1,6 @@
 {
   "name": "@shinyoshiaki/skyway-nodejs-sdk-sfu-bot",
-  "version": "1.6.1",
+  "version": "1.6.4",
   "description": "The official Next Generation JavaScript SDK for SkyWay",
   "homepage": "https://skyway.ntt.com/",
   "repository": {
@@ -37,15 +37,15 @@
     "type": "npm-run-all --parallel type:main",
     "type:main": "tsc --noEmit -p ./tsconfig.json",
     "watch": "npm-run-all --parallel watch:tsc watch:esbuild",
-    "watch:esbuild": "esbuild src/index.ts --bundle --watch --format=esm --target=es2020 --outfile=dist/index.mjs",
+    "watch:esbuild": "esbuild src/index.ts --bundle --platform=node  --watch --format=esm --target=es2020 --outfile=dist/index.mjs",
     "watch:tsc": "tsc -p tsconfig.build.json -w"
   },
   "dependencies": {
-    "@shinyoshiaki/skyway-nodejs-sdk-core": "^1.6.1",
+    "@shinyoshiaki/skyway-nodejs-sdk-core": "file:../core",
     "@skyway-sdk/sfu-api-client": "^1.4.5",
     "@types/node": "^20.8.8",
     "lodash": "4.17.21",
-    "msc-node": "^0.0.17"
+    "msc-node": "^0.0.24"
   },
   "devDependencies": {
     "@types/lodash": "^4.14.200"

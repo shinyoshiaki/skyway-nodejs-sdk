@@ -1,0 +1,6 @@
+{
+    "cSpell.words": [
+        "mediasoup"
+    ],
+    "typescript.tsdk": "node_modules/typescript/lib"
+}

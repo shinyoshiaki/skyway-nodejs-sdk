@@ -4,8 +4,8 @@ import {
   Publication,
   SkyWayContext,
   Subscription,
-} from '@shinyoshiaki/skyway-nodejs-sdk-core';
-import { SfuRestApiClient } from '@skyway-sdk/sfu-api-client';
+} from './imports/core';
+import { SfuRestApiClient } from './imports/sfu';
 
 import { errors } from './errors';
 

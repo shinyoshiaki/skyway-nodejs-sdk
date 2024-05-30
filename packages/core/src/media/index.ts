@@ -1,9 +1,23 @@
 export type Codec = {
+  /**
+   * The codec MIME media type/subtype (e.g. 'audio/opus', 'video/VP8').
+   */
   mimeType: string;
   /**
-   * @description [japanese] fmtpのパラメータを設定する */
-  parameters?: Partial<CodecParameters>;
-  rate?: number;
+   * The preferred RTP payload type.
+   */
+  preferredPayloadType?: number;
+  /**
+   * The number of channels supported (e.g. two for stereo). Just for audio.
+   * Default 1.
+   */
+  channels?: number;
+  /**
+   * Codec specific parameters. Some parameters (such as 'packetization-mode'
+   * and 'profile-level-id' in H264 or 'profile-id' in VP9) are critical for
+   * codec matching.
+   */
+  parameters?: any;
 };
 
 export type CodecParameters = {
