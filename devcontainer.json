@@ -3,19 +3,13 @@
       "codespaces": {
         "repositories": {
           "shinyoshiaki/mediasoup-client-node": {
-            "permissions": {
-              "issues": "write"
-            }
+            "permissions": "write-all"
           },
           "shinyoshiaki/node-gtk": {
-            "permissions": {
-              "issues": "write"
-            }
+            "permissions": "write-all"
           },
           "shinyoshiaki/werift-webrtc": {
-            "permissions": {
-              "issues": "write"
-            }
+            "permissions": "write-all"
           }
         }
       }
