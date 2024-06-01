@@ -1,0 +1,24 @@
+{
+    "customizations": {
+      "codespaces": {
+        "repositories": {
+          "shinyoshiaki/mediasoup-client-node": {
+            "permissions": {
+              "issues": "write"
+            }
+          },
+          "shinyoshiaki/node-gtk": {
+            "permissions": {
+              "issues": "write"
+            }
+          },
+          "shinyoshiaki/werift-webrtc": {
+            "permissions": {
+              "issues": "write"
+            }
+          }
+        }
+      }
+    }
+  }
+  
