@@ -1,4 +1,4 @@
-import { afterAll, describe, expect, it } from 'vitest';
+import { describe, it } from 'vitest';
 import {
   Event,
   LocalVideoStream,
@@ -9,6 +9,7 @@ import {
   SkyWayContext,
   SkyWayRoom,
   randomPort,
+  MediaStreamTrackFactory,
 } from '../../packages/room/src';
 import { createSocket } from 'dgram';
 
@@ -33,34 +34,27 @@ describe('loopback', () => {
       console.log('roomId', room.id);
       const sender = await room.join();
 
-      const audio = await randomPort();
-      const onAudio = new Event<Buffer>();
-      createSocket('udp4')
-        .on('message', (buf) => {
-          onAudio.emit(buf);
-        })
-        .bind(audio);
-      const launch = gst.parseLaunch(
-        `audiotestsrc wave=ticks ! audioconvert ! audioresample ! queue ! opusenc ! rtpopuspay ! udpsink host=127.0.0.1 port=${audio}`
-      );
-      launch.setState(gst.State.PLAYING);
-      const audioTrack = new MediaStreamTrack({ kind: 'audio' });
-      onAudio.add((buf) => {
-        const rtp = RtpPacket.deSerialize(buf);
-        rtp.header.extension = true;
-        rtp.header.extensions.push({
-          id: 3,
-          payload: serializeAudioLevelIndication(25),
-        });
-        audioTrack.writeRtp(rtp);
+      const [track, port, disposer] = await MediaStreamTrackFactory.rtpSource({
+        kind: 'audio',
+        cb: (buf) => {
+          const rtp = RtpPacket.deSerialize(buf);
+          rtp.header.extension = true;
+          rtp.header.extensions.push({
+            id: 3,
+            payload: serializeAudioLevelIndication(25),
+          });
+          return rtp.serialize();
+        },
       });
 
-      const publication = await sender.publish(
-        new LocalAudioStream(audioTrack),
-        {
-          codecCapabilities: [{ mimeType: 'audio/opus' }],
-        }
+      const launch = gst.parseLaunch(
+        `audiotestsrc wave=ticks ! audioconvert ! audioresample ! queue ! opusenc ! rtpopuspay ! udpsink host=127.0.0.1 port=${port}`
       );
+      launch.setState(gst.State.PLAYING);
+
+      const publication = await sender.publish(new LocalAudioStream(track), {
+        codecCapabilities: [{ mimeType: 'audio/opus' }],
+      });
 
       const receiver = await (
         await SkyWayRoom.Find(context, room, 'sfu')
@@ -78,7 +72,7 @@ describe('loopback', () => {
           await room.close();
           context.dispose();
           launch.setState(gst.State.NULL);
-          // Gst.deinit();
+          disposer();
           done();
         }
       });
@@ -95,23 +89,13 @@ describe('loopback', () => {
       console.log('roomId', room.id);
       const sender = await room.join();
 
-      const video = await randomPort();
-      const onVideo = new Event<Buffer>();
-      createSocket('udp4')
-        .on('message', (buf) => {
-          onVideo.emit(buf);
-        })
-        .bind(video);
-
+      const [track, port, disposer] = await MediaStreamTrackFactory.rtpSource({
+        kind: 'video',
+      });
       const launch = gst.parseLaunch(
-        `videotestsrc ! video/x-raw,width=640,height=480,format=I420 ! x264enc key-int-max=60 ! rtph264pay ! udpsink host=127.0.0.1 port=${video}`
+        `videotestsrc ! video/x-raw,width=640,height=480,format=I420 ! x264enc key-int-max=60 ! rtph264pay ! udpsink host=127.0.0.1 port=${port}`
       );
       launch.setState(gst.State.PLAYING);
-
-      const track = new MediaStreamTrack({ kind: 'video' });
-      onVideo.add((data) => {
-        track.writeRtp(data);
-      });
 
       const publication = await sender.publish(new LocalVideoStream(track), {
         codecCapabilities: [
@@ -138,6 +122,7 @@ describe('loopback', () => {
           await room.close();
           context.dispose();
           launch.setState(gst.State.NULL);
+          disposer();
           done();
         }
       });

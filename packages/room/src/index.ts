@@ -73,4 +73,5 @@ export {
   RtpHeader,
   dePacketizeRtpPackets,
   RtpBuilder,
+  MediaStreamTrackFactory,
 } from './imports/mediasoup';
