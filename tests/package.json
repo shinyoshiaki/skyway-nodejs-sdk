@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "vitest -c large/vitest.config.ts run ./large --dangerouslyIgnoreUnhandledErrors"
+    "test": "run-s test-small test-large",
+    "test-small": "vitest -c large/vitest.config.ts run ./small",
+    "test-large": "vitest -c large/vitest.config.ts run ./large --dangerouslyIgnoreUnhandledErrors"
   },
   "keywords": [],
   "author": "",
