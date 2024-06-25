@@ -20,7 +20,9 @@ const gst = require('node-gtk').require('Gst', '1.0') as typeof Gst;
 gst.init([]);
 
 (async () => {
-  const context = await SkyWayContext.Create(testTokenString);
+  const context = await SkyWayContext.Create(testTokenString, {
+    codecCapabilities: [{ mimeType: 'audio/opus' }],
+  });
   const room = await SkyWayRoom.Create(context, {
     type: 'sfu',
   });
@@ -48,9 +50,7 @@ gst.init([]);
     audioTrack.writeRtp(rtp);
   });
 
-  const publication = await sender.publish(new LocalAudioStream(audioTrack), {
-    codecCapabilities: [{ mimeType: 'audio/opus' }],
-  });
+  const publication = await sender.publish(new LocalAudioStream(audioTrack));
 
   const receiver = await (await SkyWayRoom.Find(context, room, 'sfu')).join();
   const { stream: remoteStream } = await receiver.subscribe<RemoteVideoStream>(

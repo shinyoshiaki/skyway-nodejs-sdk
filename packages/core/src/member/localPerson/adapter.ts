@@ -109,7 +109,7 @@ export class LocalPersonAdapter implements LocalPerson {
     return this._impl.unsubscribe(subscription);
   }
 
-  publish<T extends LocalStream>(stream: T, options: PublicationOptions) {
+  publish<T extends LocalStream>(stream: T, options: PublicationOptions = {}) {
     return this._impl.publish(stream, options);
   }
 

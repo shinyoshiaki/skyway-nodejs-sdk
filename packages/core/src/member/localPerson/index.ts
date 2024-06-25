@@ -75,7 +75,7 @@ export interface LocalPerson extends Person {
    */
   publish: <T extends LocalStream = LocalStream>(
     stream: T,
-    options: PublicationOptions
+    options?: PublicationOptions
   ) => Promise<Publication<T>>;
   /**
    * @description [japanese] StreamのPublicationをUnpublishする
@@ -428,7 +428,7 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
   /**@throws {@link SkyWayError} */
   async publish<T extends LocalStream>(
     stream: T,
-    options: PublicationOptions
+    options: PublicationOptions = {}
   ): Promise<Publication<T>> {
     const timestamp = log.info(
       '[start] publish',
@@ -472,6 +472,17 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
       contentType: stream.contentType,
       codecCapabilities: options.codecCapabilities ?? [],
     };
+    if (stream.contentType !== 'data') {
+      if (init.codecCapabilities.length === 0) {
+        init.codecCapabilities = this.context.config.codecCapabilities.filter(
+          (c) =>
+            init.contentType === 'audio'
+              ? c.mimeType.toLowerCase().startsWith('audio/')
+              : c.mimeType.toLowerCase().startsWith('video/')
+        );
+      }
+    }
+
     if (
       stream.contentType === 'video' &&
       init.codecCapabilities!.length === 0
@@ -912,7 +923,7 @@ export type PublicationOptions = {
    * publishする際に優先して利用するCodec設定を指定する。
    * 利用するCodecは配列の先頭が優先される。
    */
-  codecCapabilities: Codec[];
+  codecCapabilities?: Codec[];
   /**
    * @description [japanese]
    * メディアのエンコードの設定を行うことができる。

@@ -1,6 +1,7 @@
 import { LogFormat, LogLevel } from '@skyway-sdk/common';
 import { RtcApiConfig, RtcRpcApiConfig } from '@skyway-sdk/rtc-api-client';
 import deepmerge from 'deepmerge';
+import { Codec } from './media';
 
 export { RtcApiConfig, RtcRpcApiConfig };
 
@@ -31,6 +32,7 @@ export type SkyWayConfigOptions = {
   /**@internal */
   internal: { disableDPlane?: boolean };
   member: Partial<MemberKeepAliveConfig>;
+  codecCapabilities: Codec[];
 };
 
 /**
@@ -99,6 +101,8 @@ export class ContextConfig implements SkyWayConfigOptions {
     keepaliveIntervalGapSec: 30,
     keepaliveIntervalSec: 30,
   };
+  codecCapabilities: Codec[];
+
   /**@internal */
   constructor(options: Partial<SkyWayConfigOptions> = {}) {
     Object.assign(this, deepmerge(this, options));

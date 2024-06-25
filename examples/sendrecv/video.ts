@@ -17,6 +17,16 @@ gst.init([]);
 
 (async () => {
   const context = await SkyWayContext.Create(testTokenString, {
+    codecCapabilities: [
+      {
+        mimeType: 'video/h264',
+        parameters: {
+          'level-asymmetry-allowed': 1,
+          'packetization-mode': 0,
+          'profile-level-id': '42001f',
+        },
+      },
+    ],
     rtcConfig: { turnPolicy: 'disable' },
   });
   const room = await SkyWayRoom.Create(context, {
@@ -42,18 +52,7 @@ gst.init([]);
     track.writeRtp(data);
   });
 
-  const publication = await sender.publish(new LocalVideoStream(track), {
-    codecCapabilities: [
-      {
-        mimeType: 'video/h264',
-        parameters: {
-          'level-asymmetry-allowed': 1,
-          'packetization-mode': 0,
-          'profile-level-id': '42001f',
-        },
-      },
-    ],
-  });
+  const publication = await sender.publish(new LocalVideoStream(track));
 
   const receiver = await (await SkyWayRoom.Find(context, room, 'sfu')).join();
   const { stream: remoteStream } = await receiver.subscribe<RemoteVideoStream>(

@@ -27,7 +27,9 @@ gst.init([]);
 describe('loopback', () => {
   it('audio', () =>
     new Promise<void>(async (done) => {
-      const context = await SkyWayContext.Create(testTokenString);
+      const context = await SkyWayContext.Create(testTokenString, {
+        codecCapabilities: [{ mimeType: 'audio/opus' }],
+      });
       const room = await SkyWayRoom.Create(context, {
         type: 'sfu',
       });
@@ -52,9 +54,7 @@ describe('loopback', () => {
       );
       launch.setState(gst.State.PLAYING);
 
-      const publication = await sender.publish(new LocalAudioStream(track), {
-        codecCapabilities: [{ mimeType: 'audio/opus' }],
-      });
+      const publication = await sender.publish(new LocalAudioStream(track));
 
       const receiver = await (
         await SkyWayRoom.Find(context, room, 'sfu')
@@ -81,6 +81,16 @@ describe('loopback', () => {
   it('video_h264', () =>
     new Promise<void>(async (done) => {
       const context = await SkyWayContext.Create(testTokenString, {
+        codecCapabilities: [
+          {
+            mimeType: 'video/h264',
+            parameters: {
+              'level-asymmetry-allowed': 1,
+              'packetization-mode': 0,
+              'profile-level-id': '42001f',
+            },
+          },
+        ],
         rtcConfig: { turnPolicy: 'disable' },
       });
       const room = await SkyWayRoom.Create(context, {
@@ -97,18 +107,7 @@ describe('loopback', () => {
       );
       launch.setState(gst.State.PLAYING);
 
-      const publication = await sender.publish(new LocalVideoStream(track), {
-        codecCapabilities: [
-          {
-            mimeType: 'video/h264',
-            parameters: {
-              'level-asymmetry-allowed': 1,
-              'packetization-mode': 0,
-              'profile-level-id': '42001f',
-            },
-          },
-        ],
-      });
+      const publication = await sender.publish(new LocalVideoStream(track));
 
       const receiver = await (
         await SkyWayRoom.Find(context, room, 'sfu')
@@ -131,6 +130,11 @@ describe('loopback', () => {
   it.skip('video_vp8', () =>
     new Promise<void>(async (done) => {
       const context = await SkyWayContext.Create(testTokenString, {
+        codecCapabilities: [
+          {
+            mimeType: 'video/vp8',
+          },
+        ],
         rtcConfig: { turnPolicy: 'disable' },
       });
       const room = await SkyWayRoom.Create(context, {
@@ -157,13 +161,7 @@ describe('loopback', () => {
         track.writeRtp(data);
       });
 
-      const publication = await sender.publish(new LocalVideoStream(track), {
-        codecCapabilities: [
-          {
-            mimeType: 'video/vp8',
-          },
-        ],
-      });
+      const publication = await sender.publish(new LocalVideoStream(track));
 
       const receiver = await (
         await SkyWayRoom.Find(context, room, 'sfu')

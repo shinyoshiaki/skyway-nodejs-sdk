@@ -12,6 +12,7 @@ import { registerPersonPlugin } from './plugin/internal/person/plugin';
 import { UnknownPlugin } from './plugin/internal/unknown/plugin';
 import { createError, getRuntimeInfo } from './util';
 import { PACKAGE_VERSION } from './version';
+import { Codec } from './media';
 
 const log = new Logger('packages/core/src/context.ts');
 
@@ -24,7 +25,9 @@ export class SkyWayContext {
    */
   static async Create(
     authTokenString: string,
-    configOptions: Partial<SkyWayConfigOptions> = {}
+    configOptions: Partial<SkyWayConfigOptions> & {
+      codecCapabilities: Codec[];
+    }
   ) {
     const config = new ContextConfig(configOptions);
     Logger.level = config.log.level;

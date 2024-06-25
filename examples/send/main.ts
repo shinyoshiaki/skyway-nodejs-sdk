@@ -14,7 +14,16 @@ gst.init([]);
 
 (async () => {
   const context = await SkyWayContext.Create(testTokenString, {
-    // log: { level: 'debug', format: 'object' },
+    codecCapabilities: [
+      {
+        mimeType: 'video/h264',
+        parameters: {
+          'level-asymmetry-allowed': 1,
+          'packetization-mode': 0,
+          'profile-level-id': '42001f',
+        },
+      },
+    ],
   });
   const room = await SkyWayRoom.Create(context, {
     type: 'sfu',
@@ -33,18 +42,7 @@ gst.init([]);
   });
 
   const stream = new LocalVideoStream(track);
-  const publication = await member.publish(stream, {
-    codecCapabilities: [
-      {
-        mimeType: 'video/h264',
-        parameters: {
-          'level-asymmetry-allowed': 1,
-          'packetization-mode': 0,
-          'profile-level-id': '42001f',
-        },
-      },
-    ],
-  });
+  const publication = await member.publish(stream);
 
   const src = gst.ElementFactory.make('videotestsrc', null)!;
   const capsfilter = gst.ElementFactory.make('capsfilter', null)!;
