@@ -9,7 +9,7 @@
   "scripts": {
     "build": "npm run build --workspaces --if-present",
     "compile": "npm run compile --workspaces --if-present",
-    "first": "npm i && npm run submodule:install && npm run compile",
+    "first": "npm i && run-s submodule:init submodule:install compile",
     "format": "npm run format --workspaces --if-present",
     "playground": "cd examples/playground && npm run dev",
     "playground-room": "cd examples/playground-room && npm run dev",
@@ -41,6 +41,6 @@
   },
   "packageManager": "npm@10.1.0",
   "engines": {
-    "node": ">=18.0.0"
+    "node": "=20"
   }
 }
