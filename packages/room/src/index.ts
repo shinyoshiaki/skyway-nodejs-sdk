@@ -64,6 +64,7 @@ export {
   TurnProtocol,
   VideoMediaTrackConstraints,
   WebRTCStats,
+  SkyWayStreamFactory,
 } from './imports/core';
 export * from '@skyway-sdk/token';
 export {

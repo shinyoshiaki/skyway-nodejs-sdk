@@ -1,17 +1,12 @@
 import { describe, it } from 'vitest';
 import {
-  Event,
-  LocalVideoStream,
-  LocalAudioStream,
-  MediaStreamTrack,
   RemoteVideoStream,
   RtpPacket,
   SkyWayContext,
   SkyWayRoom,
-  randomPort,
   MediaStreamTrackFactory,
+  SkyWayStreamFactory,
 } from '../../packages/room/src';
-import { createSocket } from 'dgram';
 
 import Gst from '@girs/node-gst-1.0';
 import { testTokenString } from './fixture';
@@ -48,13 +43,15 @@ describe('loopback', () => {
           return rtp.serialize();
         },
       });
-
       const launch = gst.parseLaunch(
         `audiotestsrc wave=ticks ! audioconvert ! audioresample ! queue ! opusenc ! rtpopuspay ! udpsink host=127.0.0.1 port=${port}`
       );
       launch.setState(gst.State.PLAYING);
+      const factory = new SkyWayStreamFactory({ audio: track });
 
-      const publication = await sender.publish(new LocalAudioStream(track));
+      const publication = await sender.publish(
+        await factory.createMicrophoneAudioStream()
+      );
 
       const receiver = await (
         await SkyWayRoom.Find(context, room, 'sfu')
@@ -106,8 +103,11 @@ describe('loopback', () => {
         `videotestsrc ! video/x-raw,width=640,height=480,format=I420 ! x264enc key-int-max=60 ! rtph264pay ! udpsink host=127.0.0.1 port=${port}`
       );
       launch.setState(gst.State.PLAYING);
+      const factory = new SkyWayStreamFactory({ video: track });
 
-      const publication = await sender.publish(new LocalVideoStream(track));
+      const publication = await sender.publish(
+        await factory.createCameraVideoStream()
+      );
 
       const receiver = await (
         await SkyWayRoom.Find(context, room, 'sfu')
@@ -127,7 +127,7 @@ describe('loopback', () => {
       });
     }));
 
-  it.skip('video_vp8', () =>
+  it('video_vp8', () =>
     new Promise<void>(async (done) => {
       const context = await SkyWayContext.Create(testTokenString, {
         codecCapabilities: [
@@ -143,25 +143,18 @@ describe('loopback', () => {
       console.log('roomId', room.id);
       const sender = await room.join();
 
-      const video = await randomPort();
-      const onVideo = new Event<Buffer>();
-      createSocket('udp4')
-        .on('message', (buf) => {
-          onVideo.emit(buf);
-        })
-        .bind(video);
-
+      const [track, port, disposer] = await MediaStreamTrackFactory.rtpSource({
+        kind: 'video',
+      });
       const launch = gst.parseLaunch(
-        `videotestsrc ! video/x-raw,width=640,height=480,format=I420 ! vp8enc keyframe-max-dist=30 ! rtpvp8pay picture-id-mode=1 ! udpsink host=127.0.0.1 port=${video}`
+        `videotestsrc ! video/x-raw,width=640,height=480,format=I420 ! vp8enc keyframe-max-dist=30 ! rtpvp8pay picture-id-mode=1 ! udpsink host=127.0.0.1 port=${port}`
       );
       launch.setState(gst.State.PLAYING);
+      const factory = new SkyWayStreamFactory({ video: track });
 
-      const track = new MediaStreamTrack({ kind: 'video' });
-      onVideo.add((data) => {
-        track.writeRtp(data);
-      });
-
-      const publication = await sender.publish(new LocalVideoStream(track));
+      const publication = await sender.publish(
+        await factory.createCameraVideoStream()
+      );
 
       const receiver = await (
         await SkyWayRoom.Find(context, room, 'sfu')
