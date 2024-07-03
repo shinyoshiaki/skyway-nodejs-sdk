@@ -10,16 +10,19 @@ import {
 } from './stream/local/customVideo';
 import { DataStreamOptions, LocalDataStream } from './stream/local/data';
 import { LocalVideoStream } from './stream/local/video';
-import { Navigator } from '../imports/mediasoup';
+import { MediaDevices, Navigator } from '../imports/mediasoup';
 
 const log = new Logger('packages/core/src/media/factory.ts');
 
-export class SkyWayStreamFactory {
+export class StreamFactory {
   readonly navigator: Navigator;
 
-  /**@private */
   constructor(props: ConstructorParameters<typeof Navigator>[0] = {}) {
     this.navigator = new Navigator(props);
+  }
+
+  registerMediaDevices(props: ConstructorParameters<typeof MediaDevices>[0]) {
+    this.navigator.mediaDevices = new MediaDevices(props);
   }
 
   /**
@@ -159,6 +162,8 @@ export class SkyWayStreamFactory {
     };
   }
 }
+
+export const SkyWayStreamFactory = new StreamFactory();
 
 /**@internal */
 export class MediaDevice {

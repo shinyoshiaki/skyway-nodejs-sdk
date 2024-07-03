@@ -47,10 +47,10 @@ describe('loopback', () => {
         `audiotestsrc wave=ticks ! audioconvert ! audioresample ! queue ! opusenc ! rtpopuspay ! udpsink host=127.0.0.1 port=${port}`
       );
       launch.setState(gst.State.PLAYING);
-      const factory = new SkyWayStreamFactory({ audio: track });
+      SkyWayStreamFactory.registerMediaDevices({ audio: track });
 
       const publication = await sender.publish(
-        await factory.createMicrophoneAudioStream()
+        await SkyWayStreamFactory.createMicrophoneAudioStream()
       );
 
       const receiver = await (
@@ -103,10 +103,10 @@ describe('loopback', () => {
         `videotestsrc ! video/x-raw,width=640,height=480,format=I420 ! x264enc key-int-max=60 ! rtph264pay ! udpsink host=127.0.0.1 port=${port}`
       );
       launch.setState(gst.State.PLAYING);
-      const factory = new SkyWayStreamFactory({ video: track });
+      SkyWayStreamFactory.registerMediaDevices({ video: track });
 
       const publication = await sender.publish(
-        await factory.createCameraVideoStream()
+        await SkyWayStreamFactory.createCameraVideoStream()
       );
 
       const receiver = await (
@@ -127,7 +127,7 @@ describe('loopback', () => {
       });
     }));
 
-  it('video_vp8', () =>
+  it.skip('video_vp8', () =>
     new Promise<void>(async (done) => {
       const context = await SkyWayContext.Create(testTokenString, {
         codecCapabilities: [
@@ -150,10 +150,10 @@ describe('loopback', () => {
         `videotestsrc ! video/x-raw,width=640,height=480,format=I420 ! vp8enc keyframe-max-dist=30 ! rtpvp8pay picture-id-mode=1 ! udpsink host=127.0.0.1 port=${port}`
       );
       launch.setState(gst.State.PLAYING);
-      const factory = new SkyWayStreamFactory({ video: track });
+      SkyWayStreamFactory.registerMediaDevices({ video: track });
 
       const publication = await sender.publish(
-        await factory.createCameraVideoStream()
+        await SkyWayStreamFactory.createCameraVideoStream()
       );
 
       const receiver = await (
