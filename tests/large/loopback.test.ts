@@ -6,6 +6,7 @@ import {
   SkyWayRoom,
   MediaStreamTrackFactory,
   SkyWayStreamFactory,
+  RoomPublication,
 } from '../../packages/room/src';
 
 import Gst from '@girs/node-gst-1.0';
@@ -74,6 +75,72 @@ describe('loopback', () => {
         }
       });
     }));
+
+  it('audio_multiple', async () => {
+    const context = await SkyWayContext.Create(testTokenString, {
+      codecCapabilities: [{ mimeType: 'audio/opus' }],
+    });
+    const room = await SkyWayRoom.Create(context, {
+      type: 'sfu',
+    });
+    console.log('roomId', room.id);
+    const sender = await room.join();
+
+    const [track, port, disposer] = await MediaStreamTrackFactory.rtpSource({
+      kind: 'audio',
+      cb: (buf) => {
+        const rtp = RtpPacket.deSerialize(buf);
+        rtp.header.extension = true;
+        rtp.header.extensions.push({
+          id: 3,
+          payload: serializeAudioLevelIndication(25),
+        });
+        return rtp.serialize();
+      },
+    });
+    const launch = gst.parseLaunch(
+      `audiotestsrc wave=ticks ! audioconvert ! audioresample ! queue ! opusenc ! rtpopuspay ! udpsink host=127.0.0.1 port=${port}`
+    );
+    launch.setState(gst.State.PLAYING);
+    SkyWayStreamFactory.registerMediaDevices({ audio: track });
+
+    const publication1 = await sender.publish(
+      await SkyWayStreamFactory.createMicrophoneAudioStream()
+    );
+
+    const receiver = await (await SkyWayRoom.Find(context, room, 'sfu')).join();
+
+    const subscribe = async (publication: RoomPublication) =>
+      new Promise<void>(async (done) => {
+        {
+          const { stream: remoteStream } =
+            await receiver.subscribe<RemoteVideoStream>(publication);
+          remoteStream.track.onReceiveRtp.subscribe(async (rtp) => {
+            const extensions = rtp.header.extensions;
+
+            const audioLevel = extensions.find((e) => e.id === 10);
+            const p = deserializeAudioLevelIndication(audioLevel!.payload);
+
+            if (p.level === 25) {
+              done();
+            }
+          });
+        }
+      });
+
+    await subscribe(publication1);
+
+    const publication2 = await sender.publish(
+      await SkyWayStreamFactory.createMicrophoneAudioStream()
+    );
+
+    await subscribe(publication2);
+
+    await room.close();
+    context.dispose();
+    launch.setState(gst.State.NULL);
+    disposer();
+  }, 15_000);
 
   it('video_h264', () =>
     new Promise<void>(async (done) => {

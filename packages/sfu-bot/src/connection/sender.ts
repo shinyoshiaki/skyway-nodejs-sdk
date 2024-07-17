@@ -124,17 +124,13 @@ export class Sender {
       broadcasterTransportOptions,
       rtpCapabilities,
       identifierKey,
-    } = await this._api
-      .startForwarding({
-        botId: this._bot.id,
-        publicationId: this.publication.id,
-        contentType: this.publication.contentType,
-        maxSubscribers: configure.maxSubscribers,
-        publisherId: this.publication.publisher.id,
-      })
-      .catch((e) => {
-        throw e;
-      });
+    } = await this._api.startForwarding({
+      botId: this._bot.id,
+      publicationId: this.publication.id,
+      contentType: this.publication.contentType,
+      maxSubscribers: configure.maxSubscribers,
+      publisherId: this.publication.publisher.id,
+    });
     this.forwardingId = forwardingId;
 
     if (broadcasterTransportOptions) {
@@ -146,7 +142,7 @@ export class Sender {
       this._broadcasterTransport = this._transportRepository.createTransport(
         this._localPerson.id,
         this._bot,
-        broadcasterTransportOptions as any,
+        broadcasterTransportOptions,
         'send',
         this._iceManager
       );

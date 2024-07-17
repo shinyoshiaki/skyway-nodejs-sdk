@@ -1,1 +1,1 @@
-export default ['tests'];
+export default ['./tests'];
