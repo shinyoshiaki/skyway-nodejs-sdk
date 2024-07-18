@@ -1,6 +1,6 @@
 import { Events, Logger, RuntimeInfo, SkyWayError } from '@skyway-sdk/common';
 import model, { MemberType } from '@skyway-sdk/model';
-import { RtcApiClient } from '@skyway-sdk/rtc-api-client';
+import { RtcApiClient } from './imports/rtcApi';
 import { SkyWayAuthToken } from '@skyway-sdk/token';
 
 import { SkyWayChannelImpl } from './channel';

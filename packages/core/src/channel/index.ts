@@ -8,7 +8,7 @@ import {
   ChannelQuery,
   MemberInit,
   PublicationInit,
-} from '@skyway-sdk/rtc-api-client';
+} from '../imports/rtcApi';
 
 import { MemberInternalConfig, MemberKeepAliveConfig } from '../config';
 import { SkyWayContext } from '../context';

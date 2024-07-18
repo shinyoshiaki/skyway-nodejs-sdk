@@ -6,7 +6,7 @@ import {
   SkyWayError,
 } from '@skyway-sdk/common';
 import { Encoding } from '@skyway-sdk/model';
-import { PublicationInit } from '@skyway-sdk/rtc-api-client';
+import { PublicationInit } from '../../imports/rtcApi';
 
 import { PersonInit, SkyWayChannelImpl } from '../../channel';
 import { SkyWayContext } from '../../context';
