@@ -264,8 +264,10 @@ export class RPC {
           handleMessage(),
           // 返信待ち中に接続が切れた場合
           (async (): Promise<ResponseMessage & { result: Result }> => {
-            await this.onDisconnected.asPromise(rpcTimeout + 100);
-            if (promiseResolved || this.closed) {
+            const timeout = await this.onDisconnected
+              .asPromise(rpcTimeout + 100)
+              .catch((e) => e as Error);
+            if ((promiseResolved || this.closed) && timeout) {
               return {} as any;
             }
 
@@ -287,31 +289,45 @@ export class RPC {
               });
             }
           })(),
-          this.onFatalError.asPromise(rpcTimeout + 100).then((e) => {
-            if (promiseResolved || this.closed) {
-              return {} as any;
-            }
-            throw createError({
-              operationName: 'RPC.request',
-              info: {
-                ...errors.internalError,
-                detail: 'onFatalError while requesting',
-              },
-              path: log.prefix,
-              error: e,
-            });
-          }),
-          this.onClosed.asPromise(rpcTimeout + 100).then(() => {
-            if (promiseResolved || this.closed) {
-              return {} as any;
-            }
-            throw createError({
-              operationName: 'RPC.request',
-              info: errors.onClosedWhileRequesting,
-              path: log.prefix,
-              payload: { method, params },
-            });
-          }),
+          this.onFatalError
+            .asPromise(rpcTimeout + 100)
+            .then((e) => {
+              if (promiseResolved || this.closed) {
+                return {} as any;
+              }
+              throw createError({
+                operationName: 'RPC.request',
+                info: {
+                  ...errors.internalError,
+                  detail: 'onFatalError while requesting',
+                },
+                path: log.prefix,
+                error: e,
+              });
+            })
+            .catch(() => {
+              if (promiseResolved || this.closed) {
+                return {} as any;
+              }
+            }),
+          this.onClosed
+            .asPromise(rpcTimeout + 100)
+            .then(() => {
+              if (promiseResolved || this.closed) {
+                return {} as any;
+              }
+              throw createError({
+                operationName: 'RPC.request',
+                info: errors.onClosedWhileRequesting,
+                path: log.prefix,
+                payload: { method, params },
+              });
+            })
+            .catch(() => {
+              if (promiseResolved || this.closed) {
+                return {} as any;
+              }
+            }),
         ]);
         promiseResolved = true;
       } else {
