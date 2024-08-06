@@ -1,4 +1,4 @@
-import { describe, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
   RemoteVideoStream,
   SkyWayContext,
@@ -56,12 +56,17 @@ describe('turn', () => {
         const receiver = await (
           await SkyWayRoom.Find(context, room, 'sfu')
         ).join();
-        const { stream: remoteStream } =
+        const { stream: remoteStream, subscription } =
           await receiver.subscribe<RemoteVideoStream>(publication);
         remoteStream.track.onReceiveRtp.subscribe(async (rtp) => {
           const codec = dePacketizeRtpPackets('mpeg4/iso/avc', [rtp]);
           if (codec.isKeyframe) {
             console.log('receive keyframe');
+
+            const pc = subscription.getRTCPeerConnection();
+            const [ice] = pc.iceTransports;
+            expect(ice.connection.nominated!.protocol.type).toBe('turn');
+
             await room.close();
             context.dispose();
             launch.setState(gst.State.NULL);
