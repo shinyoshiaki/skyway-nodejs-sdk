@@ -10,6 +10,8 @@ JS-SDK と API はほとんど同じですが、一部機能に対応してい�
 
 # skyway-js-sdk との違い
 
+## 仕様
+
 - 提供パッケージ
   - room
 - 対応動作環境
@@ -24,6 +26,10 @@ JS-SDK と API はほとんど同じですが、一部機能に対応してい�
   - getStats
   - restartIce
   - simulcast
+
+## 使い方
+
+[./examples/sendrecv/audio.ts](./examples/sendrecv/audio.ts)
 
 # SDK のインストール方法
 
