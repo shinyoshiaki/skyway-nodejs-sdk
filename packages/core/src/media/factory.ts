@@ -22,7 +22,10 @@ export class StreamFactory {
   }
 
   registerMediaDevices(props: ConstructorParameters<typeof MediaDevices>[0]) {
-    this.navigator.mediaDevices = new MediaDevices(props);
+    this.navigator.mediaDevices = new MediaDevices({
+      ...this.navigator.mediaDevices.props,
+      ...props,
+    });
   }
 
   /**

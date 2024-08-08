@@ -1,6 +1,6 @@
 import {
   MediaStreamTrackFactory,
-  RemoteVideoStream,
+  RemoteAudioStream,
   RtpPacket,
   SkyWayContext,
   SkyWayRoom,
@@ -54,7 +54,7 @@ gst.init([]);
   );
 
   const receiver = await (await SkyWayRoom.Find(context, room, 'sfu')).join();
-  const { stream: remoteStream } = await receiver.subscribe<RemoteVideoStream>(
+  const { stream: remoteStream } = await receiver.subscribe<RemoteAudioStream>(
     publication
   );
   // trackからRTPパケットを受信することができる
