@@ -17,7 +17,7 @@ export type Codec = {
    * and 'profile-level-id' in H264 or 'profile-id' in VP9) are critical for
    * codec matching.
    */
-  parameters?: any;
+  parameters?: Partial<CodecParameters>;
 };
 
 export type CodecParameters = {
