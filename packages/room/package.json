@@ -1,6 +1,6 @@
 {
   "name": "@shinyoshiaki/skyway-nodejs-sdk",
-  "version": "1.6.20",
+  "version": "1.6.21",
   "description": "The unofficial Next Generation NodeJs SDK for SkyWay",
   "keywords": [
     "webrtc",
