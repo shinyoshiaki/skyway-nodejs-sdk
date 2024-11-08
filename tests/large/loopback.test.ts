@@ -1,21 +1,21 @@
-import { describe, expect, it } from 'vitest';
-import {
-  RemoteVideoStream,
-  RtpPacket,
-  SkyWayContext,
-  SkyWayRoom,
-  MediaStreamTrackFactory,
-  SkyWayStreamFactory,
-  RoomPublication,
-} from '../../packages/room/src';
-
 import Gst from '@girs/node-gst-1.0';
-import { testTokenString } from './fixture';
+import { describe, expect, it } from 'vitest';
 import {
   dePacketizeRtpPackets,
   deserializeAudioLevelIndication,
   serializeAudioLevelIndication,
 } from 'werift';
+
+import {
+  MediaStreamTrackFactory,
+  RemoteVideoStream,
+  RoomPublication,
+  RtpPacket,
+  SkyWayContext,
+  SkyWayRoom,
+  SkyWayStreamFactory,
+} from '../../packages/room/src';
+import { testTokenString } from './fixture';
 
 const gst = require('node-gtk').require('Gst', '1.0') as typeof Gst;
 gst.init([]);
@@ -26,15 +26,15 @@ describe('loopback', () => {
       const context = await SkyWayContext.Create(testTokenString, {
         codecCapabilities: [{ mimeType: 'audio/opus' }],
       });
+      SkyWayStreamFactory.registerNodeGtkGst(gst);
       const room = await SkyWayRoom.Create(context, {
         type: 'sfu',
       });
       console.log('roomId', room.id);
       const sender = await room.join();
 
-      const [track, port, disposer] = await MediaStreamTrackFactory.rtpSource({
-        kind: 'audio',
-        cb: (buf) => {
+      const disposer = await SkyWayStreamFactory.registerGstAudio({
+        rtpProcessor: (buf) => {
           const rtp = RtpPacket.deSerialize(buf);
           rtp.header.extension = true;
           rtp.header.extensions.push({
@@ -44,11 +44,6 @@ describe('loopback', () => {
           return rtp.serialize();
         },
       });
-      const launch = gst.parseLaunch(
-        `audiotestsrc wave=ticks ! audioconvert ! audioresample ! queue ! opusenc ! rtpopuspay ! udpsink host=127.0.0.1 port=${port}`
-      );
-      launch.setState(gst.State.PLAYING);
-      SkyWayStreamFactory.registerMediaDevices({ audio: track });
 
       const publication = await sender.publish(
         await SkyWayStreamFactory.createMicrophoneAudioStream()
@@ -69,7 +64,6 @@ describe('loopback', () => {
           console.log('audioLevel', p);
           await room.close();
           context.dispose();
-          launch.setState(gst.State.NULL);
           disposer();
           done();
         }
@@ -157,21 +151,15 @@ describe('loopback', () => {
         ],
         rtcConfig: { turnPolicy: 'disable' },
       });
+      SkyWayStreamFactory.registerNodeGtkGst(gst);
+
       const room = await SkyWayRoom.Create(context, {
         type: 'sfu',
       });
       console.log('roomId', room.id);
       const sender = await room.join();
 
-      const [track, port, disposer] = await MediaStreamTrackFactory.rtpSource({
-        kind: 'video',
-      });
-      const launch = gst.parseLaunch(
-        `videotestsrc ! video/x-raw,width=640,height=480,format=I420 ! x264enc key-int-max=60 ! rtph264pay ! udpsink host=127.0.0.1 port=${port}`
-      );
-      launch.setState(gst.State.PLAYING);
-      SkyWayStreamFactory.registerMediaDevices({ video: track });
-
+      const disposer = await SkyWayStreamFactory.registerGstVideo();
       const publication = await sender.publish(
         await SkyWayStreamFactory.createCameraVideoStream()
       );
@@ -191,7 +179,6 @@ describe('loopback', () => {
 
           await room.close();
           context.dispose();
-          launch.setState(gst.State.NULL);
           disposer();
           done();
         }

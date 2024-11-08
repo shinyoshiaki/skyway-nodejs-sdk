@@ -1,21 +1,22 @@
 import { Event, Logger } from '@skyway-sdk/common';
 
-import { errors } from '../errors';
+import {
+  MediaDevices,
+  MediaStreamTrackFactory,
+  Navigator,
+} from '../imports/mediasoup';
 import { createError, createWarnPayload } from '../util';
 import { LocalMediaStreamOptions } from './stream';
 import { LocalAudioStream } from './stream/local/audio';
-import {
-  LocalCustomVideoStream,
-  ProcessedStream,
-} from './stream/local/customVideo';
+import { ProcessedStream } from './stream/local/customVideo';
 import { DataStreamOptions, LocalDataStream } from './stream/local/data';
 import { LocalVideoStream } from './stream/local/video';
-import { MediaDevices, Navigator } from '../imports/mediasoup';
 
 const log = new Logger('packages/core/src/media/factory.ts');
 
 export class StreamFactory {
   readonly navigator: Navigator;
+  private gst: any;
 
   constructor(props: ConstructorParameters<typeof Navigator>[0] = {}) {
     this.navigator = new Navigator(props);
@@ -26,6 +27,49 @@ export class StreamFactory {
       ...this.navigator.mediaDevices.props,
       ...props,
     });
+  }
+
+  registerNodeGtkGst(gst: any) {
+    this.gst = gst;
+  }
+
+  async registerGstAudio({
+    wave,
+    rtpProcessor,
+  }: { wave?: string; rtpProcessor?: (b: Buffer) => Buffer } = {}) {
+    wave ??= 'ticks';
+
+    const [track, port, disposer] = await MediaStreamTrackFactory.rtpSource({
+      kind: 'audio',
+      cb: rtpProcessor,
+    });
+    const launch = this.gst.parseLaunch(
+      `audiotestsrc wave=${wave} ! audioconvert ! audioresample ! queue ! opusenc ! rtpopuspay ! udpsink host=127.0.0.1 port=${port}`
+    );
+    launch.setState(this.gst.State.PLAYING);
+    SkyWayStreamFactory.registerMediaDevices({ audio: track });
+
+    return () => {
+      disposer();
+      launch.setState(this.gst.State.NULL);
+    };
+  }
+
+  /**h264 only */
+  async registerGstVideo(_: any = {}) {
+    const [track, port, disposer] = await MediaStreamTrackFactory.rtpSource({
+      kind: 'video',
+    });
+    const launch = this.gst.parseLaunch(
+      `videotestsrc ! video/x-raw,width=640,height=480,format=I420 ! x264enc key-int-max=60 ! rtph264pay ! udpsink host=127.0.0.1 port=${port}`
+    );
+    launch.setState(this.gst.State.PLAYING);
+    SkyWayStreamFactory.registerMediaDevices({ video: track });
+
+    return () => {
+      disposer();
+      launch.setState(this.gst.State.NULL);
+    };
   }
 
   /**
