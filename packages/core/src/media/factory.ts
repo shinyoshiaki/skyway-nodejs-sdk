@@ -56,12 +56,20 @@ export class StreamFactory {
   }
 
   /**h264 only */
-  async registerGstVideo(_: any = {}) {
+  async registerGstVideo({
+    keyframeIntervalSec,
+  }: {
+    keyframeIntervalSec?: number;
+  } = {}) {
+    keyframeIntervalSec ??= 2;
+
+    const keyIntMax = Math.round(keyframeIntervalSec * 30);
+
     const [track, port, disposer] = await MediaStreamTrackFactory.rtpSource({
       kind: 'video',
     });
     const launch = this.gst.parseLaunch(
-      `videotestsrc ! video/x-raw,width=640,height=480,format=I420 ! x264enc key-int-max=60 ! rtph264pay ! udpsink host=127.0.0.1 port=${port}`
+      `videotestsrc ! video/x-raw,width=640,height=480,format=I420 ! x264enc key-int-max=${keyIntMax} ! rtph264pay ! udpsink host=127.0.0.1 port=${port}`
     );
     launch.setState(this.gst.State.PLAYING);
     SkyWayStreamFactory.registerMediaDevices({ video: track });
