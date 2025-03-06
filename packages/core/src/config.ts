@@ -26,6 +26,7 @@ export type SkyWayConfigOptions = {
      * @description ms
      * */
     iceDisconnectBufferTimeout?: number;
+    iceUseLinkLocalAddress?: boolean;
   };
   token: { updateReminderSec?: number };
   log: Partial<{ level: LogLevel; format: LogFormat }>;

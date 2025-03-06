@@ -25,6 +25,7 @@ describe('loopback', () => {
     new Promise<void>(async (done) => {
       const context = await SkyWayContext.Create(testTokenString, {
         codecCapabilities: [{ mimeType: 'audio/opus' }],
+        rtcConfig: { iceUseLinkLocalAddress: true },
       });
       SkyWayStreamFactory.registerNodeGtkGst(gst);
       const room = await SkyWayRoom.Create(context, {
