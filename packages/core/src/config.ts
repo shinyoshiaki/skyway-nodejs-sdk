@@ -86,6 +86,7 @@ export class ContextConfig implements SkyWayConfigOptions {
     turnProtocol: 'all',
     encodedInsertableStreams: false,
     iceDisconnectBufferTimeout: 5000,
+    iceUseLinkLocalAddress: false,
   };
   token: Required<SkyWayConfigOptions['token']> = {
     updateReminderSec: 30,
