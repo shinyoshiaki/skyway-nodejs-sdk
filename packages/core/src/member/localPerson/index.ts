@@ -581,7 +581,9 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
       publication.stream._unpublished();
     }
 
-    await this._requestQueue.push(() => this.channel._unpublish(publicationId));
+    this.channel._unpublish(publicationId).catch((e) => {
+      log.error('[failed] unpublish', e, { publication });
+    });
 
     publication.subscriptions
       .map((s) => s.subscriber)

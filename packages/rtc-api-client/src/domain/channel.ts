@@ -574,7 +574,10 @@ export class ChannelImpl implements model.Channel {
           f(e);
         });
       this.onStreamUnpublished
-        .watch((e) => e.publication.id === publicationId)
+        .watch(
+          (e) => e.publication.id === publicationId,
+          this.config.rtcApi.timeout
+        )
         .then(() => r())
         .catch((error) => {
           if (!failed)
@@ -640,7 +643,10 @@ export class ChannelImpl implements model.Channel {
           f(e);
         });
       this.onPublicationDisabled
-        .watch((e) => e.publication.id === publicationId)
+        .watch(
+          (e) => e.publication.id === publicationId,
+          this.config.rtcApi.timeout
+        )
         .then(() => r())
         .catch((error) => {
           if (!failed)
