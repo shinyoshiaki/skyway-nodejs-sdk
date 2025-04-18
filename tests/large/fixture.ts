@@ -1,3 +1,5 @@
+import Gst from '@girs/node-gst-1.0';
+
 import { SkyWayAuthToken, uuidV4 } from '../../packages/room/src';
 import { appId, secret } from '../../env';
 
@@ -44,3 +46,7 @@ const testToken = new SkyWayAuthToken({
   },
 });
 export const testTokenString = testToken.encode(secret);
+
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+export const gst = require('node-gtk').require('Gst', '1.0') as typeof Gst;
+gst.init([]);

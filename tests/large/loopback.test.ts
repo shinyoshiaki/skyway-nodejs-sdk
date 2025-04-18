@@ -1,4 +1,3 @@
-import Gst from '@girs/node-gst-1.0';
 import { describe, expect, it } from 'vitest';
 import {
   dePacketizeRtpPackets,
@@ -15,10 +14,7 @@ import {
   SkyWayRoom,
   SkyWayStreamFactory,
 } from '../../packages/room/src';
-import { testTokenString } from './fixture';
-
-const gst = require('node-gtk').require('Gst', '1.0') as typeof Gst;
-gst.init([]);
+import { gst, testTokenString } from './fixture';
 
 describe('loopback', () => {
   it('audio', () =>
