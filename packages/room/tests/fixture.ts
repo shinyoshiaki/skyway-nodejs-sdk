@@ -1,5 +1,5 @@
-import { nowInSec, SkyWayAuthToken, uuidV4 } from '../src';
 import { appId, secret } from '../../../env';
+import { nowInSec, SkyWayAuthToken, uuidV4 } from '../src';
 
 const testToken = new SkyWayAuthToken({
   jti: uuidV4(),
@@ -10,11 +10,11 @@ const testToken = new SkyWayAuthToken({
     appId: appId,
     rooms: [
       {
-        name: "*",
-        methods: ["create", "close", "updateMetadata"],
+        name: '*',
+        methods: ['create', 'close', 'updateMetadata'],
         member: {
-          name: "*",
-          methods: ["publish", "subscribe", "updateMetadata"],
+          name: '*',
+          methods: ['publish', 'subscribe', 'updateMetadata'],
         },
         sfu: {
           enabled: true,
@@ -22,7 +22,7 @@ const testToken = new SkyWayAuthToken({
       },
     ],
     turn: {
-      enabled: true
+      enabled: true,
     },
   },
 });

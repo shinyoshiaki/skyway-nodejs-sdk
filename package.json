@@ -11,6 +11,7 @@
     "compile": "npm run compile --workspaces --if-present",
     "first": "run-s submodule:init submodule:install && npm i && npm run compile",
     "format": "npm run format --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
     "playground": "cd examples/playground && npm run dev",
     "playground-room": "cd examples/playground-room && npm run dev",
     "submodule:init": "git submodule update --init --recursive",

@@ -1,6 +1,6 @@
 import { Logger } from '@skyway-sdk/common';
-import { RTCRtpTransceiver } from '../../../imports/mediasoup';
 
+import { RTCRtpTransceiver } from '../../../imports/mediasoup';
 import { detectDevice } from '../../../util';
 import { TransportConnectionState } from '../../interface';
 

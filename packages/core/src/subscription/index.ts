@@ -4,6 +4,7 @@ import { Event } from '@skyway-sdk/common';
 import { SkyWayChannelImpl } from '../channel';
 import { SkyWayContext } from '../context';
 import { errors } from '../errors';
+import { RTCPeerConnection } from '../imports/mediasoup';
 import { Codec } from '../media';
 import { ContentType, WebRTCStats } from '../media/stream';
 import { RemoteStream } from '../media/stream/remote';
@@ -17,7 +18,6 @@ import {
 import { TransportConnectionState } from '../plugin/interface';
 import { Publication, PublicationImpl } from '../publication';
 import { createError } from '../util';
-import { RTCPeerConnection } from '../imports/mediasoup';
 
 export * from './factory';
 

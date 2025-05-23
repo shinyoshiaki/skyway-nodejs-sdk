@@ -1,4 +1,8 @@
 import { Logger } from '@skyway-sdk/common';
+import model from '@skyway-sdk/model';
+
+import { TransportRepository } from './connection/transport/transportRepository';
+import { errors } from './errors';
 import {
   Channel,
   createError,
@@ -6,11 +10,7 @@ import {
   SkyWayChannelImpl,
   SkyWayPlugin,
 } from './imports/core';
-import model from '@skyway-sdk/model';
 import { SfuApiOptions, SfuRestApiClient } from './imports/sfu';
-
-import { TransportRepository } from './connection/transport/transportRepository';
-import { errors } from './errors';
 import { SfuBotMember } from './member';
 import {
   defaultSfuBotPluginOptions,

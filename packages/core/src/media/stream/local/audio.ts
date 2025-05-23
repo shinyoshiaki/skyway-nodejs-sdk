@@ -1,7 +1,7 @@
 import { Logger, PromiseQueue } from '@skyway-sdk/common';
-import { MediaStreamTrack } from '../../../imports/mediasoup';
 
 import { errors } from '../../../errors';
+import { MediaStreamTrack } from '../../../imports/mediasoup';
 import { createError } from '../../../util';
 import { AudioMediaTrackConstraints } from '../../factory';
 import { LocalMediaStreamBase, LocalMediaStreamOptions } from './media';

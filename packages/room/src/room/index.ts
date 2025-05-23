@@ -1,4 +1,7 @@
 import { Logger } from '@skyway-sdk/common';
+import { v4 as uuidV4 } from 'uuid';
+
+import { errors } from '../errors';
 import {
   createError,
   SkyWayChannel,
@@ -10,9 +13,6 @@ import {
   SfuBotPlugin,
   SfuBotPluginOptions,
 } from '../imports/sfu';
-import { v4 as uuidV4 } from 'uuid';
-
-import { errors } from '../errors';
 import { PACKAGE_VERSION } from '../version';
 import { P2PRoom, P2PRoomImpl } from './p2p';
 import { SfuRoom, SfuRoomImpl } from './sfu';

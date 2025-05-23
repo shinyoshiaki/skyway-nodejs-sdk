@@ -35,10 +35,10 @@ export async function createLocalPerson(
 
   const { iceParamServer } = context.config;
 
-  const signalingSession =
-    disableSignaling === true
-      ? undefined
-      : await setupSignalingSession(context, channel, memberDto);
+  const signalingSession = undefined;
+  // disableSignaling === true
+  //   ? undefined
+  //   : await setupSignalingSession(context, channel, memberDto);
 
   const decodedToken = SkyWayAuthToken.Decode(context.authTokenString);
   const existAnalyticsScope = decodedToken.getAnalyticsEnabled();

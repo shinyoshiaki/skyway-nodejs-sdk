@@ -1,7 +1,7 @@
 import { Event, EventDisposer, Logger } from '@skyway-sdk/common';
-import { Member, RemotePersonImpl } from '../../imports/core';
 
 import { errors } from '../../errors';
+import { Member, RemotePersonImpl } from '../../imports/core';
 import { RoomMember, RoomMemberImpl } from '../../member';
 import { RoomImpl } from '../../room/base';
 import { RoomSubscription } from '../../subscription';

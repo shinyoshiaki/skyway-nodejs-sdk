@@ -1,10 +1,10 @@
 import { Event } from '@skyway-sdk/common';
 
+import { RTCPeerConnection } from '../../imports/mediasoup';
 import { Member } from '../../member';
 import { LocalPersonImpl } from '../../member/localPerson';
 import { PublicationImpl } from '../../publication';
 import { SubscriptionImpl } from '../../subscription';
-import { RTCPeerConnection } from '../../imports/mediasoup';
 
 /**@internal */
 export interface SkyWayConnection {

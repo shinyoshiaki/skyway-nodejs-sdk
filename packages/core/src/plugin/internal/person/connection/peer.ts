@@ -1,9 +1,4 @@
 import { Event, Logger } from '@skyway-sdk/common';
-import {
-  RTCIceCandidate,
-  RTCPeerConnection,
-  RTCPeerConnectionIceEvent,
-} from '../../../../imports/mediasoup';
 import { uuidV4 } from '@skyway-sdk/token';
 
 import { SkyWayContext } from '../../../../context';
@@ -11,6 +6,11 @@ import { errors } from '../../../../errors';
 import { AnalyticsSession } from '../../../../external/analytics';
 import { IceManager } from '../../../../external/ice';
 import { SignalingSession } from '../../../../external/signaling';
+import {
+  RTCIceCandidate,
+  RTCPeerConnection,
+  RTCPeerConnectionIceEvent,
+} from '../../../../imports/mediasoup';
 import { LocalPersonImpl } from '../../../../member/localPerson';
 import { RemoteMember } from '../../../../member/remoteMember';
 import { createError, createWarnPayload } from '../../../../util';

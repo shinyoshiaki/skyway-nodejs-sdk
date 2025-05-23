@@ -14,6 +14,7 @@ import { errors } from '../../../../errors';
 import { AnalyticsSession } from '../../../../external/analytics';
 import { IceManager } from '../../../../external/ice';
 import { SignalingSession } from '../../../../external/signaling';
+import { RTCRtpTransceiver } from '../../../../imports/mediasoup';
 import { Codec } from '../../../../media';
 import { RemoteStream } from '../../../../media/stream';
 import { createRemoteStream } from '../../../../media/stream/remote/factory';
@@ -36,7 +37,6 @@ import {
   SenderRestartIceMessage,
   SenderUnproduceMessage,
 } from './sender';
-import { RTCRtpTransceiver } from '../../../../imports/mediasoup';
 
 const log = new Logger(
   'packages/core/src/plugin/internal/person/connection/receiver.ts'

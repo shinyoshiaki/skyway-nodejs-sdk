@@ -5,20 +5,20 @@ import model, {
   Publication,
   Subscription,
 } from '@skyway-sdk/model';
-import {
-  PublicationDisabledEvent,
-  PublicationEnabledEvent,
-  PublicationSummary,
-  StreamSubscribedEvent,
-  StreamUnsubscribedEvent,
-  SubscriptionSummary,
-  PublicationMetadataUpdatedEvent,
-  StreamPublishedEvent,
-  StreamUnpublishedEvent,
-} from '../imports/rpc';
 
 import { Config } from '../config';
 import { errors } from '../errors';
+import {
+  PublicationDisabledEvent,
+  PublicationEnabledEvent,
+  PublicationMetadataUpdatedEvent,
+  PublicationSummary,
+  StreamPublishedEvent,
+  StreamSubscribedEvent,
+  StreamUnpublishedEvent,
+  StreamUnsubscribedEvent,
+  SubscriptionSummary,
+} from '../imports/rpc';
 import * as event from '../model/event';
 import { createError } from '../util';
 import { MemberInit, PublicationInit, RtcApi, SubscriptionInit } from './api';

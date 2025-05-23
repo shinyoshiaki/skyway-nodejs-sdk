@@ -1,4 +1,8 @@
 import { Event, EventDisposer, Logger } from '@skyway-sdk/common';
+import isEqual from 'lodash/isEqual';
+
+import { errors } from '../errors';
+import { Forwarding, ForwardingConfigure } from '../forwarding';
 import {
   createError,
   createLogPayload,
@@ -17,12 +21,8 @@ import {
   TransportConnectionState,
   uuidV4,
 } from '../imports/core';
-import { SfuRestApiClient } from '../imports/sfu';
-import isEqual from 'lodash/isEqual';
 import { MediaStreamTrack, types } from '../imports/mediasoup';
-
-import { errors } from '../errors';
-import { Forwarding, ForwardingConfigure } from '../forwarding';
+import { SfuRestApiClient } from '../imports/sfu';
 import { SfuBotMember } from '../member';
 import { createWarnPayload } from '../util';
 import { SfuTransport } from './transport/transport';

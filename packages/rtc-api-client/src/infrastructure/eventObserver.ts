@@ -1,10 +1,10 @@
 import { Event, Logger } from '@skyway-sdk/common';
 import model from '@skyway-sdk/model';
-import { ChannelEvent, RtcRpcApiClient } from '../imports/rpc';
 
 import { RtcApiConfig } from '../config';
 import { EventObserver } from '../domain/eventObserver';
 import { errors } from '../errors';
+import { ChannelEvent, RtcRpcApiClient } from '../imports/rpc';
 import { createError, createWarnPayload } from '../util';
 
 const log = new Logger(

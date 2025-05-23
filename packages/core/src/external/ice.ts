@@ -1,7 +1,7 @@
 import { BackOff, HttpClient, Logger } from '@skyway-sdk/common';
-import { RTCIceServer } from '../imports/mediasoup';
 
 import { SkyWayContext } from '../context';
+import { RTCIceServer } from '../imports/mediasoup';
 
 const log = new Logger('packages/core/src/external/ice.ts');
 

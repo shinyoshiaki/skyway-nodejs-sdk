@@ -1,4 +1,5 @@
 import { Logger } from '@skyway-sdk/common';
+
 import {
   LocalPersonAdapter,
   Member,
@@ -7,7 +8,6 @@ import {
   Subscription,
   SubscriptionImpl,
 } from '../imports/core';
-
 import {
   LocalP2PRoomMember,
   LocalP2PRoomMemberImpl,

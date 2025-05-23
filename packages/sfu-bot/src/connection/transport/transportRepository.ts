@@ -1,4 +1,6 @@
 import { Event, Logger } from '@skyway-sdk/common';
+
+import { errors } from '../../errors';
 import {
   AnalyticsSession,
   createError,
@@ -6,22 +8,20 @@ import {
   IceManager,
   SkyWayContext,
 } from '../../imports/core';
-import { SfuRestApiClient } from '../../imports/sfu';
-
-import { errors } from '../../errors';
-import { SfuBotMember } from '../../member';
-import { SfuTransport } from './transport';
 import {
+  Device,
   RTCRtpCodecParameters,
+  types,
   useAbsSendTime,
   useAudioLevelIndication,
   useNACK,
   usePLI,
   useREMB,
   useSdesMid,
-  types,
-  Device,
 } from '../../imports/mediasoup';
+import { SfuRestApiClient } from '../../imports/sfu';
+import { SfuBotMember } from '../../member';
+import { SfuTransport } from './transport';
 
 const log = new Logger(
   'packages/sfu-bot/src/connection/transport/transportRepository.ts'

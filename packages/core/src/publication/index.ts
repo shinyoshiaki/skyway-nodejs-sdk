@@ -10,6 +10,7 @@ import {
 import { SkyWayContext } from '../context';
 import { errors } from '../errors';
 import { AnalyticsSession } from '../external/analytics';
+import { RTCPeerConnection } from '../imports/mediasoup';
 import { Codec, EncodingParameters } from '../media';
 import { ContentType, WebRTCStats } from '../media/stream';
 import { LocalMediaStreamBase, LocalStream } from '../media/stream/local';
@@ -25,7 +26,6 @@ import {
 import { TransportConnectionState } from '../plugin/interface';
 import { Subscription } from '../subscription';
 import { createError, createLogPayload, createWarnPayload } from '../util';
-import { RTCPeerConnection } from '../imports/mediasoup';
 
 export * from './factory';
 

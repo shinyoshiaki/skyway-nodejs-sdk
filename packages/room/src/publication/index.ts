@@ -1,5 +1,7 @@
 import { EventDisposer, Logger } from '@skyway-sdk/common';
 import { Event, Events } from '@skyway-sdk/common';
+
+import { errors } from '../errors';
 import {
   Codec,
   ContentType,
@@ -14,15 +16,13 @@ import {
   TransportConnectionState,
   WebRTCStats,
 } from '../imports/core';
+import { RTCPeerConnection } from '../imports/mediasoup';
 import { SfuBotMember } from '../imports/sfu';
-
-import { errors } from '../errors';
 import { RoomMember, RoomMemberImpl } from '../member';
 import { RoomImpl } from '../room/base';
 import { StreamSubscribedEvent, StreamUnsubscribedEvent } from '../room/event';
 import { RoomSubscription } from '../subscription';
 import { createError } from '../util';
-import { RTCPeerConnection } from '../imports/mediasoup';
 
 const path = 'packages/room/src/publication/index.ts';
 const logger = new Logger(path);

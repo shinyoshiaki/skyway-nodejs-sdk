@@ -1,6 +1,5 @@
 import { Event, Logger, SkyWayError } from '@skyway-sdk/common';
 import { Channel, Member, Publication, Subscription } from '@skyway-sdk/model';
-import { errors as rpcErrors, RtcRpcApiClient } from '../imports/rpc';
 import { SkyWayAuthToken } from '@skyway-sdk/token';
 
 import {
@@ -12,6 +11,7 @@ import {
   SubscriptionInit,
 } from '../domain/api';
 import { errors } from '../errors';
+import { errors as rpcErrors, RtcRpcApiClient } from '../imports/rpc';
 import { createError } from '../util';
 
 const log = new Logger('packages/rtc-api-client/src/infrastructure/api.ts');

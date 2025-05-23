@@ -1,18 +1,18 @@
 import { Events, Logger, RuntimeInfo, SkyWayError } from '@skyway-sdk/common';
 import model, { MemberType } from '@skyway-sdk/model';
-import { RtcApiClient } from './imports/rtcApi';
 import { SkyWayAuthToken } from '@skyway-sdk/token';
 
 import { SkyWayChannelImpl } from './channel';
 import { ContextConfig, SkyWayConfigOptions } from './config';
 import { errors } from './errors';
+import { RtcApiClient } from './imports/rtcApi';
+import { Codec } from './media';
 import { RemoteMemberImplInterface } from './member/remoteMember';
 import { SkyWayPlugin } from './plugin/interface/plugin';
 import { registerPersonPlugin } from './plugin/internal/person/plugin';
 import { UnknownPlugin } from './plugin/internal/unknown/plugin';
 import { createError, getRuntimeInfo } from './util';
 import { PACKAGE_VERSION } from './version';
-import { Codec } from './media';
 
 const log = new Logger('packages/core/src/context.ts');
 

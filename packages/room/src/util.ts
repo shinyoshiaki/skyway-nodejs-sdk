@@ -1,6 +1,6 @@
 import { ErrorInfo, SkyWayError } from '@skyway-sdk/common';
-import { SkyWayContext } from './imports/core';
 
+import { SkyWayContext } from './imports/core';
 import { RoomImpl } from './room/base';
 
 export function createError({

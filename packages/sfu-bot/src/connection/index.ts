@@ -1,4 +1,6 @@
 import { Event, Logger, PromiseQueue } from '@skyway-sdk/common';
+
+import { errors } from '../errors';
 import {
   createError,
   LocalAudioStream,
@@ -14,8 +16,6 @@ import {
   SubscriptionImpl,
 } from '../imports/core';
 import { SfuRestApiClient } from '../imports/sfu';
-
-import { errors } from '../errors';
 import { SfuBotMember } from '../member';
 import { getLayerFromEncodings } from '../util';
 import { Receiver } from './receiver';

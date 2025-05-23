@@ -1,4 +1,7 @@
 import { Event, Events, Logger } from '@skyway-sdk/common';
+import { v4 } from 'uuid';
+
+import { errors } from '../errors';
 import {
   ChannelState,
   LocalStream,
@@ -8,9 +11,6 @@ import {
   SkyWayChannelImpl,
   SubscriptionImpl,
 } from '../imports/core';
-import { v4 } from 'uuid';
-
-import { errors } from '../errors';
 import { RoomMember, RoomMemberImpl } from '../member';
 import { LocalRoomMember, LocalRoomMemberImpl } from '../member/local/base';
 import { RemoteRoomMember, RemoteRoomMemberImpl } from '../member/remote/base';

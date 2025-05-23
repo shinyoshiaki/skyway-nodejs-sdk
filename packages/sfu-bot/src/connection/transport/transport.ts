@@ -1,4 +1,6 @@
 import { BackOff, Event, SkyWayError } from '@skyway-sdk/common';
+
+import { errors } from '../../errors';
 import {
   AnalyticsSession,
   createError,
@@ -8,14 +10,12 @@ import {
   SkyWayContext,
   TransportConnectionState,
 } from '../../imports/core';
-import { SfuRestApiClient } from '../../imports/sfu';
 import {
   ConnectionState,
   RTCPeerConnection,
   types,
 } from '../../imports/mediasoup';
-
-import { errors } from '../../errors';
+import { SfuRestApiClient } from '../../imports/sfu';
 import { SfuBotMember } from '../../member';
 import { SfuBotPluginOptions } from '../../option';
 import { SfuBotPlugin } from '../../plugin';

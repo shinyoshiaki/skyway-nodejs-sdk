@@ -6,7 +6,6 @@ import {
   SkyWayError,
 } from '@skyway-sdk/common';
 import { Encoding } from '@skyway-sdk/model';
-import { PublicationInit } from '../../imports/rtcApi';
 
 import { PersonInit, SkyWayChannelImpl } from '../../channel';
 import { SkyWayContext } from '../../context';
@@ -14,6 +13,7 @@ import { errors } from '../../errors';
 import { AnalyticsSession } from '../../external/analytics';
 import { IceManager } from '../../external/ice';
 import { SignalingSession } from '../../external/signaling';
+import { PublicationInit } from '../../imports/rtcApi';
 import { Codec, EncodingParameters } from '../../media';
 import { LocalStream } from '../../media/stream';
 import {

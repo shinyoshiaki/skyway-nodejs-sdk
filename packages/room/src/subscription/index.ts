@@ -1,4 +1,6 @@
 import { Logger } from '@skyway-sdk/common';
+
+import { errors } from '../errors';
 import {
   Codec,
   ContentType,
@@ -12,13 +14,11 @@ import {
   TransportConnectionState,
   WebRTCStats,
 } from '../imports/core';
-
-import { errors } from '../errors';
+import { RTCPeerConnection } from '../imports/mediasoup';
 import { RemoteRoomMember } from '../member/remote/base';
 import { RoomPublication } from '../publication';
 import { RoomImpl } from '../room/base';
 import { createError } from '../util';
-import { RTCPeerConnection } from '../imports/mediasoup';
 
 const log = new Logger('packages/room/src/subscription/index.ts');
 

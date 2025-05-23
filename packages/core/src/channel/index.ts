@@ -2,6 +2,10 @@ import { Event, SkyWayError } from '@skyway-sdk/common';
 import { Logger } from '@skyway-sdk/common';
 import { Events } from '@skyway-sdk/common';
 import model from '@skyway-sdk/model';
+
+import { MemberInternalConfig, MemberKeepAliveConfig } from '../config';
+import { SkyWayContext } from '../context';
+import { errors } from '../errors';
 import {
   ChannelImpl,
   ChannelInit,
@@ -9,10 +13,6 @@ import {
   MemberInit,
   PublicationInit,
 } from '../imports/rtcApi';
-
-import { MemberInternalConfig, MemberKeepAliveConfig } from '../config';
-import { SkyWayContext } from '../context';
-import { errors } from '../errors';
 import { Member } from '../member';
 import {
   createLocalPerson,

@@ -15,6 +15,12 @@ import { errors } from '../../../../errors';
 import { AnalyticsSession } from '../../../../external/analytics';
 import { IceManager } from '../../../../external/ice';
 import { SignalingSession } from '../../../../external/signaling';
+import {
+  MediaStreamTrack,
+  RTCDataChannel,
+  RTCRtpTransceiver,
+  RTCSessionDescription,
+} from '../../../../imports/mediasoup';
 import { Codec } from '../../../../media';
 import {
   LocalAudioStream,
@@ -38,12 +44,6 @@ import { P2PMessage } from '.';
 import { DataChannelNegotiationLabel } from './datachannel';
 import { IceCandidateMessage, Peer } from './peer';
 import { ReceiverAnswerMessage } from './receiver';
-import {
-  MediaStreamTrack,
-  RTCDataChannel,
-  RTCRtpTransceiver,
-  RTCSessionDescription,
-} from '../../../../imports/mediasoup';
 
 const log = new Logger(
   'packages/core/src/plugin/internal/person/connection/sender.ts'
