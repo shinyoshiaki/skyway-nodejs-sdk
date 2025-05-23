@@ -522,7 +522,7 @@ export class RtcApiImpl implements RtcApi {
   }
 
   /**@throws {@link SkyWayError} */
-  async publish(appId: string, init: PublicationInit): Promise<Publication> {
+  async publish(appId: string, init: PublicationInit): Promise<string> {
     const { publicationId } = await this._client
       .publishStream({
         channelId: init.channel,
@@ -532,6 +532,7 @@ export class RtcApiImpl implements RtcApi {
         origin: init.origin,
         codecCapabilities: init.codecCapabilities,
         encodings: init.encodings,
+        isEnabled: init.isEnabled,
         appId,
       })
       .catch((e) => {
@@ -554,19 +555,7 @@ export class RtcApiImpl implements RtcApi {
             });
         }
       });
-
-    const publication: Publication = {
-      id: publicationId,
-      channelId: init.channel,
-      publisherId: init.publisher,
-      origin: init.origin,
-      contentType: init.contentType,
-      metadata: init.metadata,
-      codecCapabilities: init.codecCapabilities ?? [],
-      encodings: init.encodings ?? [],
-      isEnabled: true,
-    };
-    return publication;
+    return publicationId;
   }
 
   async updatePublicationMetadata(
@@ -728,10 +717,7 @@ export class RtcApiImpl implements RtcApi {
   }
 
   /**@throws {@link SkyWayError} */
-  async subscribe(
-    appId: string,
-    init: SubscriptionInit
-  ): Promise<Subscription> {
+  async subscribe(appId: string, init: SubscriptionInit): Promise<string> {
     const { subscriptionId } = await this._client
       .subscribeStream({
         channelId: init.channel.id,
@@ -773,16 +759,7 @@ export class RtcApiImpl implements RtcApi {
             });
         }
       });
-
-    const subscription: Subscription = {
-      id: subscriptionId,
-      publicationId: init.publication.id,
-      channelId: init.channel.id,
-      publisherId: init.publication.publisherId,
-      subscriberId: init.subscriber.id,
-      contentType: init.publication.contentType,
-    };
-    return subscription;
+    return subscriptionId;
   }
 
   async unsubscribe(

@@ -1,45 +1,28 @@
-import { SkyWayAuthToken, uuidV4 } from '../src';
+import { nowInSec, SkyWayAuthToken, uuidV4 } from '../src';
 import { appId, secret } from '../../../env';
 
 const testToken = new SkyWayAuthToken({
   jti: uuidV4(),
-  exp: Date.now() / 1000 + 60 * 60,
-  iat: Date.now() / 1000,
+  iat: nowInSec(),
+  exp: nowInSec() + 60 * 60 * 24,
+  version: 3,
   scope: {
-    app: {
-      turn: true,
-      id: appId,
-      actions: ['read'],
-      channels: [
-        {
-          id: '*',
-          name: '*',
-          actions: ['read', 'write'],
-          members: [
-            {
-              id: '*',
-              name: '*',
-              actions: ['write'],
-              publication: {
-                actions: ['write'],
-              },
-              subscription: {
-                actions: ['write'],
-              },
-            },
-          ],
-          sfuBots: [
-            {
-              actions: ['write'],
-              forwardings: [
-                {
-                  actions: ['write'],
-                },
-              ],
-            },
-          ],
+    appId: appId,
+    rooms: [
+      {
+        name: "*",
+        methods: ["create", "close", "updateMetadata"],
+        member: {
+          name: "*",
+          methods: ["publish", "subscribe", "updateMetadata"],
         },
-      ],
+        sfu: {
+          enabled: true,
+        },
+      },
+    ],
+    turn: {
+      enabled: true
     },
   },
 });

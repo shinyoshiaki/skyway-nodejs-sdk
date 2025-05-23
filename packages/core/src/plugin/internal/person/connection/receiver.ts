@@ -11,6 +11,7 @@ import { v4 } from 'uuid';
 
 import { SkyWayContext } from '../../../../context';
 import { errors } from '../../../../errors';
+import { AnalyticsSession } from '../../../../external/analytics';
 import { IceManager } from '../../../../external/ice';
 import { SignalingSession } from '../../../../external/signaling';
 import { Codec } from '../../../../media';
@@ -69,10 +70,19 @@ export class Receiver extends Peer {
     context: SkyWayContext,
     iceManager: IceManager,
     signaling: SignalingSession,
+    analytics: AnalyticsSession | undefined,
     localPerson: LocalPersonImpl,
     endpoint: RemoteMember
   ) {
-    super(context, iceManager, signaling, localPerson, endpoint, 'receiver');
+    super(
+      context,
+      iceManager,
+      signaling,
+      analytics,
+      localPerson,
+      endpoint,
+      'receiver'
+    );
     this._log.debug('spawned');
 
     this.signaling.onMessage
@@ -255,6 +265,21 @@ export class Receiver extends Peer {
     this.onConnectionStateChanged
       .add((state) => {
         stream._setConnectionState(state);
+        if (
+          this.localPerson._analytics &&
+          !this.localPerson._analytics.isClosed()
+        ) {
+          void this.localPerson._analytics.client.sendRtcPeerConnectionEventReport(
+            {
+              rtcPeerConnectionId: this.rtcPeerConnectionId,
+              type: 'skywayConnectionStateChange',
+              data: {
+                skywayConnectionState: state,
+              },
+              createdAt: Date.now(),
+            }
+          );
+        }
       })
       .disposer(this._disposer);
   }
@@ -528,6 +553,21 @@ export class Receiver extends Peer {
     await this.pc.setRemoteDescription(sdp);
     const answer = await this.pc.createAnswer();
 
+    if (
+      this.localPerson._analytics &&
+      !this.localPerson._analytics.isClosed()
+    ) {
+      // 再送時に他の処理をブロックしないためにawaitしない
+      void this.localPerson._analytics.client.sendRtcPeerConnectionEventReport({
+        rtcPeerConnectionId: this.rtcPeerConnectionId,
+        type: 'answer',
+        data: {
+          answer: JSON.stringify(answer),
+        },
+        createdAt: Date.now(),
+      });
+    }
+
     const offerObject = sdpTransform.parse(this.pc.remoteDescription!.sdp);
     const answerObject = sdpTransform.parse(answer.sdp!);
 
@@ -560,6 +600,10 @@ export class Receiver extends Peer {
     );
 
     this._log.debug(`[receiver] end: sendAnswer`);
+  }
+
+  get subscriptions() {
+    return this._subscriptions;
   }
 }
 

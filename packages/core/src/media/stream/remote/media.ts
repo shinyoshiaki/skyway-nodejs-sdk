@@ -12,6 +12,10 @@ export abstract class RemoteMediaStreamBase extends RemoteStreamBase {
     super(id, contentType);
   }
 
+  /**
+   * @deprecated
+   * @use {@link Publication.state}
+   */
   get isEnabled() {
     return this.track.enabled;
   }

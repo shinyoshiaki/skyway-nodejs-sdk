@@ -1,6 +1,6 @@
 {
   "name": "@shinyoshiaki/skyway-nodejs-sdk-core",
-  "version": "1.6.3",
+  "version": "1.12.0",
   "description": "The official Next Generation JavaScript SDK for SkyWay",
   "keywords": [
     "webrtc",
@@ -22,28 +22,26 @@
     "LICENSE"
   ],
   "scripts": {
-    "bootstrap": "lerna bootstrap",
     "build": "zx bundle.mjs",
     "compile": "npm run compile:tsc && npm run compile:esbuild",
     "compile:esbuild": "esbuild src/index.ts --bundle --platform=node --format=esm --target=es2020 --outfile=dist/index.mjs",
     "compile:tsc": "rm -rf dist && tsc -p tsconfig.build.json",
     "doc": "npm run doc:html && npm run doc:md",
-    "doc:html": "rm -rf docs/html && typedoc --excludePrivate --disableSources --excludeInternal --tsconfig ./tsconfig.build.json --out docs/html --plugin none ./src/index.ts ",
-    "doc:md": "rm -rf docs/md && typedoc --excludePrivate --disableSources --excludeInternal --tsconfig ./tsconfig.build.json --out docs/md ./src/index.ts ",
+    "doc:html": "rm -rf docs/html && typedoc --excludePrivate --disableSources --excludeInternal --tsconfig ./tsconfig.build.json --out docs/html ./src/index.ts ",
+    "doc:md": "rm -rf docs/md && typedoc --excludePrivate --disableSources --excludeInternal --tsconfig ./tsconfig.build.json --out docs/md --plugin typedoc-plugin-markdown ./src/index.ts ",
     "e2e": "npm run test-large",
-    "e2e:firefox": "karma start ./karma.all.js --single-run --browsers FirefoxHeadlessAutoAllowGUM",
     "format": "eslint ./src --fix && eslint ./tests --fix",
     "graph": "dependency-cruiser --include-only '^src' --output-type dot src | dot -T svg > docs/dependencygraph.svg",
     "lint": "eslint ./src --fix && eslint ./tests --fix",
     "pre:test": "cd ../../ && npm run build && cd packages/core",
     "publish:npm": "npx can-npm-publish --verbose && npm run build && npm publish --access public",
     "test-all": "npm-run-all -p test-large test-middle test-small",
-    "test-large": "karma start ./karma.large.js --single-run --browsers chrome_headless_with_fake_device",
-    "test-large:dev": "karma start ./karma.large.js --browsers chrome_with_fake_device",
-    "test-middle": "karma start ./karma.middle.js --single-run --browsers chrome_headless_with_fake_device",
-    "test-middle:dev": "karma start ./karma.middle.js --browsers chrome_with_fake_device",
-    "test-small": "jest && karma start ./karma.small.js --single-run --browsers chrome_headless_with_fake_device",
-    "test-small:dev": "karma start ./karma.small.js --browsers chrome_with_fake_device",
+    "test-large": "vitest --config vitest.large.ts run ./tests/large",
+    "test-large:dev": "vitest --config vitest.large.ts --browser.headless=false run ./tests/large",
+    "test-middle": "vitest --config vitest.middle.ts run ./tests/middle",
+    "test-middle:dev": "vitest --config vitest.middle.ts --browser.headless=false run ./tests/middle",
+    "test-small": "vitest --config vitest.small.ts run ./tests/small",
+    "test-small:dev": "vitest --config vitest.small.ts --browser.headless=false run ./tests/small",
     "type": "npm-run-all --parallel type:main",
     "type:main": "tsc --noEmit -p ./tsconfig.json",
     "type:prod": "tsc --noEmit -p ./tsconfig.build.json",
@@ -52,21 +50,22 @@
     "watch:tsc": "tsc -p tsconfig.build.json -w"
   },
   "dependencies": {
-    "@skyway-sdk/rtc-api-client": "^1.4.5",
-    "@skyway-sdk/signaling-client": "^1.0.3",
+    "@skyway-sdk/analytics-client": "^1.0.1",
+    "@skyway-sdk/rtc-api-client": "^1.8.0",
+    "@skyway-sdk/signaling-client": "^1.0.7",
     "bowser": "^2.11.0",
-    "deepmerge": "^4.2.2",
     "lodash": "4.17.21",
     "msc-node": "^0.0.21",
-    "sdp-transform": "^2.14.1",
+    "deepmerge": "^4.3.1",
+    "sdp-transform": "^2.14.2",
     "ua-parser-js": "^1.0.35",
     "uuid": "^9.0.0"
   },
   "devDependencies": {
     "@types/lodash": "^4.14.200",
     "@types/node": "^20.8.8",
-    "@types/sdp-transform": "^2.4.5",
-    "@types/ua-parser-js": "^0.7.36",
+    "@types/sdp-transform": "^2.4.9",
+    "@types/ua-parser-js": "^0.7.39",
     "@types/uuid": "^9.0.1"
   }
 }

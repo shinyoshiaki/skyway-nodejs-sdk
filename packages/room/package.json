@@ -1,12 +1,13 @@
 {
   "name": "@shinyoshiaki/skyway-nodejs-sdk",
-  "version": "1.6.26",
   "description": "The unofficial Next Generation NodeJs SDK for SkyWay",
   "keywords": [
     "webrtc",
     "skyway",
     "conferencing"
   ],
+  "version": "1.12.0",
+  "homepage": "https://skyway.ntt.com/",
   "repository": {
     "type": "git",
     "url": "https://github.com/shinyoshiaki/skyway-nodejs-sdk.git"
@@ -21,21 +22,25 @@
     "LICENSE"
   ],
   "scripts": {
-    "bootstrap": "lerna bootstrap",
     "build": "zx bundle.mjs",
     "compile": "run-s compile:type compile:esm compile:cjs",
     "compile:type": "rm -rf dist && tsc -p tsconfig.build.json",
     "compile:esm": "esbuild src/index.ts --bundle --platform=node --format=esm --target=es2020 --outfile=dist/index.mjs",
     "compile:cjs": "esbuild src/index.ts --bundle --platform=node --format=cjs --target=es2020 --outfile=dist/index.js",
     "doc": "npm run doc:html && npm run doc:md",
-    "doc:html": "rm -rf docs/html && typedoc --excludePrivate --disableSources --excludeInternal --tsconfig ./tsconfig.build.json --out docs/html --plugin none ./src/index.ts ",
-    "doc:md": "rm -rf docs/md && typedoc --excludePrivate --disableSources --excludeInternal --tsconfig ./tsconfig.build.json --out docs/md ./src/index.ts ",
+    "doc:html": "rm -rf docs/html && typedoc --excludePrivate --disableSources --excludeInternal --tsconfig ./tsconfig.build.json --out docs/html ./src/index.ts ",
+    "doc:md": "rm -rf docs/md && typedoc --excludePrivate --disableSources --excludeInternal --tsconfig ./tsconfig.build.json --out docs/md --plugin typedoc-plugin-markdown ./src/index.ts ",
+    "test": "npm run e2e",
+    "e2e": "npm-run-all -p jest test-large test-extra",
     "format": "eslint ./src --fix && eslint ./tests --fix",
     "graph": "dependency-cruiser --include-only '^src' --output-type dot src | dot -T svg > docs/dependencygraph.svg",
     "jest": "jest",
     "lint": "eslint ./src --fix && eslint ./tests --fix",
     "publish:npm": "npx can-npm-publish --verbose && npm run build && npm publish --access public",
-    "test": "vitest run ./tests",
+    "test-extra": "vitest --config vitest.extra.ts run ./tests/extra",
+    "test-extra:dev": "vitest --config vitest.extra.ts --browser.headless=false run ./tests/extra",
+    "test-large": "vitest --config vitest.large.ts run ./tests/large",
+    "test-large:dev": "vitest --config vitest.large.ts --browser.headless=false run ./tests/large",
     "type": "npm run type:main",
     "type:main": "tsc --noEmit -p ./tsconfig.json",
     "type:prod": "tsc --noEmit -p ./tsconfig.build.json",
@@ -50,9 +55,11 @@
     "@shinyoshiaki/skyway-nodejs-sdk-core": "^1.6.3",
     "@shinyoshiaki/skyway-nodejs-sdk-sfu-bot": "^1.6.3",
     "msc-node": "^0.0.26",
-    "uuid": "^9.0.0",
     "werift": "^0.19.1",
-    "multicast-dns": "^7.2.5"
+    "multicast-dns": "^7.2.5",
+    "@skyway-sdk/core": "^1.12.0",
+    "@skyway-sdk/sfu-bot": "^1.12.0",
+    "uuid": "^9.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.8.8",

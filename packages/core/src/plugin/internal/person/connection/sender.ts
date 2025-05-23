@@ -12,6 +12,7 @@ import { v4 } from 'uuid';
 
 import { SkyWayContext } from '../../../../context';
 import { errors } from '../../../../errors';
+import { AnalyticsSession } from '../../../../external/analytics';
 import { IceManager } from '../../../../external/ice';
 import { SignalingSession } from '../../../../external/signaling';
 import { Codec } from '../../../../media';
@@ -61,7 +62,7 @@ export class Sender extends Peer {
   private _disposer = new EventDisposer();
   private _ms = new MediaStream();
   private _backoffIceRestarted = new BackOff({
-    times: 10,
+    times: 8,
     interval: 100,
     jitter: 100,
   });
@@ -82,10 +83,19 @@ export class Sender extends Peer {
     context: SkyWayContext,
     iceManager: IceManager,
     signaling: SignalingSession,
+    analytics: AnalyticsSession | undefined,
     localPerson: LocalPersonImpl,
     endpoint: RemoteMember
   ) {
-    super(context, iceManager, signaling, localPerson, endpoint, 'sender');
+    super(
+      context,
+      iceManager,
+      signaling,
+      analytics,
+      localPerson,
+      endpoint,
+      'sender'
+    );
     this._log.debug('spawned');
 
     this.signaling.onMessage
@@ -478,6 +488,22 @@ export class Sender extends Peer {
         error: err,
       });
     });
+
+    if (
+      this.localPerson._analytics &&
+      !this.localPerson._analytics.isClosed()
+    ) {
+      // 再送時に他の処理をブロックしないためにawaitしない
+      void this.localPerson._analytics.client.sendRtcPeerConnectionEventReport({
+        rtcPeerConnectionId: this.rtcPeerConnectionId,
+        type: 'offer',
+        data: {
+          offer: JSON.stringify(offer),
+        },
+        createdAt: Date.now(),
+      });
+    }
+
     await this.pc.setLocalDescription(offer);
     const sdpObject = sdpTransform.parse(this.pc.localDescription!.sdp);
     this._log.debug('<add> create offer base', sdpObject);
@@ -565,6 +591,21 @@ export class Sender extends Peer {
     this.onConnectionStateChanged
       .add((state) => {
         stream._setConnectionState(this.endpoint, state);
+        if (
+          this.localPerson._analytics &&
+          !this.localPerson._analytics.isClosed()
+        ) {
+          void this.localPerson._analytics.client.sendRtcPeerConnectionEventReport(
+            {
+              rtcPeerConnectionId: this.rtcPeerConnectionId,
+              type: 'skywayConnectionStateChange',
+              data: {
+                skywayConnectionState: state,
+              },
+              createdAt: Date.now(),
+            }
+          );
+        }
       })
       .disposer(this._disposer);
 
@@ -645,6 +686,22 @@ export class Sender extends Peer {
         error: err,
       });
     });
+
+    if (
+      this.localPerson._analytics &&
+      !this.localPerson._analytics.isClosed()
+    ) {
+      // 再送時に他の処理をブロックしないためにawaitしない
+      void this.localPerson._analytics.client.sendRtcPeerConnectionEventReport({
+        rtcPeerConnectionId: this.rtcPeerConnectionId,
+        type: 'offer',
+        data: {
+          offer: JSON.stringify(offer),
+        },
+        createdAt: Date.now(),
+      });
+    }
+
     await this.pc.setLocalDescription(offer);
 
     const message: SenderUnproduceMessage = {
