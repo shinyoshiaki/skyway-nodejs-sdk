@@ -1,18 +1,22 @@
+import Gst from '@girs/node-gst-1.0';
 import { describe, expect, it } from 'vitest';
+import { dePacketizeRtpPackets } from 'werift';
+
 import {
+  MediaStreamTrackFactory,
   RemoteVideoStream,
   SkyWayContext,
   SkyWayRoom,
-  MediaStreamTrackFactory,
   SkyWayStreamFactory,
 } from '../../packages/room/src';
-
-import Gst from '@girs/node-gst-1.0';
 import { testTokenString } from './fixture';
-import { dePacketizeRtpPackets } from 'werift';
 
-const gst = require('node-gtk').require('Gst', '1.0') as typeof Gst;
-gst.init([]);
+let gst: typeof Gst;
+(async () => {
+  const nodeGtk = await import('node-gtk');
+  gst = nodeGtk.require('Gst', '1.0') as typeof Gst;
+  gst.init([]);
+})();
 
 describe('turn', () => {
   it(
