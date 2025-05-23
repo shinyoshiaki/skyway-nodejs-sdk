@@ -39,7 +39,6 @@ describe('turn', () => {
         const room = await SkyWayRoom.Create(context, {
           type: 'sfu',
         });
-        console.log('roomId', room.id);
         const sender = await room.join();
 
         const [track, port, disposer] = await MediaStreamTrackFactory.rtpSource(
@@ -65,8 +64,6 @@ describe('turn', () => {
         remoteStream.track.onReceiveRtp.subscribe(async (rtp) => {
           const codec = dePacketizeRtpPackets('mpeg4/iso/avc', [rtp]);
           if (codec.isKeyframe) {
-            console.log('receive keyframe');
-
             const pc = subscription.getRTCPeerConnection();
             const [ice] = pc.iceTransports;
             expect(ice.connection.nominated!.protocol.type).toBe('turn');

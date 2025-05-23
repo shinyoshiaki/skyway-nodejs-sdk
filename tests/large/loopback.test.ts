@@ -17,8 +17,12 @@ import {
 } from '../../packages/room/src';
 import { testTokenString } from './fixture';
 
-const gst = require('node-gtk').require('Gst', '1.0') as typeof Gst;
-gst.init([]);
+let gst: typeof Gst;
+(async () => {
+  const nodeGtk = await import('node-gtk');
+  gst = nodeGtk.require('Gst', '1.0') as typeof Gst;
+  gst.init([]);
+})();
 
 describe('loopback', () => {
   it('audio', () =>
@@ -31,7 +35,6 @@ describe('loopback', () => {
       const room = await SkyWayRoom.Create(context, {
         type: 'sfu',
       });
-      console.log('roomId', room.id);
       const sender = await room.join();
 
       const disposer = await SkyWayStreamFactory.registerGstAudio({
@@ -62,7 +65,6 @@ describe('loopback', () => {
         const p = deserializeAudioLevelIndication(audioLevel!.payload);
 
         if (p.level === 25) {
-          console.log('audioLevel', p);
           await room.close();
           context.dispose();
           disposer();
@@ -78,7 +80,6 @@ describe('loopback', () => {
     const room = await SkyWayRoom.Create(context, {
       type: 'sfu',
     });
-    console.log('roomId', room.id);
     const sender = await room.join();
 
     const [track, port, disposer] = await MediaStreamTrackFactory.rtpSource({
@@ -157,7 +158,6 @@ describe('loopback', () => {
       const room = await SkyWayRoom.Create(context, {
         type: 'sfu',
       });
-      console.log('roomId', room.id);
       const sender = await room.join();
 
       const disposer = await SkyWayStreamFactory.registerGstVideo();
@@ -176,7 +176,6 @@ describe('loopback', () => {
           const pc = subscription.getRTCPeerConnection();
           const [ice] = pc.iceTransports;
           expect(ice.connection.nominated!.protocol.type).toBe('stun');
-          console.log('receive keyframe');
 
           await room.close();
           context.dispose();
@@ -199,7 +198,6 @@ describe('loopback', () => {
       const room = await SkyWayRoom.Create(context, {
         type: 'sfu',
       });
-      console.log('roomId', room.id);
       const sender = await room.join();
 
       const [track, port, disposer] = await MediaStreamTrackFactory.rtpSource({
@@ -223,7 +221,6 @@ describe('loopback', () => {
       remoteStream.track.onReceiveRtp.subscribe(async (rtp) => {
         const codec = dePacketizeRtpPackets('vp8', [rtp]);
         if (codec.isKeyframe) {
-          console.log('receive keyframe');
           await room.close();
           context.dispose();
           launch.setState(gst.State.NULL);
