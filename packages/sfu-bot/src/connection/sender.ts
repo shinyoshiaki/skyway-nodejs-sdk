@@ -20,6 +20,7 @@ import {
   SubscriptionImpl,
   TransportConnectionState,
   uuidV4,
+  waitForLocalStats,
 } from '../imports/core';
 import { MediaStreamTrack, types } from '../imports/mediasoup';
 import { SfuRestApiClient } from '../imports/sfu';
