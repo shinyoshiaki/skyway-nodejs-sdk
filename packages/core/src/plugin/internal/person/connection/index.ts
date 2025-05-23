@@ -328,16 +328,16 @@ export class P2PConnection implements SkyWayConnection {
             return;
           }
 
-          const stats = await this.getStats(stream);
-          if (stats) {
-            // 再送時に他の処理をブロックしないためにawaitしない
-            void this._analytics.client.sendSubscriptionStatsReport(stats, {
-              subscriptionId: subscriptionId,
-              role: role,
-              contentType: stream.contentType,
-              createdAt: Date.now(),
-            });
-          }
+          // const stats = await this.getStats(stream);
+          // if (stats) {
+          //   // 再送時に他の処理をブロックしないためにawaitしない
+          //   void this._analytics.client.sendSubscriptionStatsReport(stats, {
+          //     subscriptionId: subscriptionId,
+          //     role: role,
+          //     contentType: stream.contentType,
+          //     createdAt: Date.now(),
+          //   });
+          // }
         }, intervalSec * 1000)
       );
     }

@@ -76,7 +76,7 @@ export class SfuTransport {
     ) as SfuBotPlugin;
     this._options = sfuPlugin.options;
 
-    // log.debug('peerConfig', this.pc?.getConfiguration?.() ?? {});
+    log.debug('peerConfig', this.pc?.getConfiguration?.() ?? {});
 
     msTransport.on('connect', (params, callback, errback) =>
       this._onConnect(msTransport.id)(

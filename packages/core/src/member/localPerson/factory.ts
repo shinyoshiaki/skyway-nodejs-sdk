@@ -35,6 +35,7 @@ export async function createLocalPerson(
 
   const { iceParamServer } = context.config;
 
+  // todo fix p2p対応時に
   const signalingSession = undefined;
   // disableSignaling === true
   //   ? undefined

@@ -19,7 +19,7 @@ import {
   MediaStreamTrack,
   RTCDataChannel,
   RTCRtpTransceiver,
-  RTCSessionDescription,
+  MediaStream,
 } from '../../../../imports/mediasoup';
 import { Codec } from '../../../../media';
 import {
@@ -60,7 +60,7 @@ export class Sender extends Peer {
   private _isNegotiating = false;
   private readonly promiseQueue = new PromiseQueue();
   private _disposer = new EventDisposer();
-  private _ms = new MediaStream();
+  private _ms = new MediaStream([]);
   private _backoffIceRestarted = new BackOff({
     times: 8,
     interval: 100,
@@ -143,7 +143,7 @@ export class Sender extends Peer {
                   context.config.rtcConfig.iceDisconnectBufferTimeout
                 ).catch((e) => e as SkyWayError);
                 if (e && this._connectionState !== 'reconnecting') {
-                  // await this.restartIce();
+                  await this.restartIce();
                 }
               }
               break;
@@ -177,151 +177,182 @@ export class Sender extends Peer {
   }
 
   /**@throws */
-  // readonly restartIce = async () => {
-  //   if (this._backoffIceRestarted.exceeded) {
-  //     this._log.error(
-  //       createError({
-  //         operationName: 'Sender.restartIce',
-  //         context: this._context,
-  //         channel: this.localPerson.channel,
-  //         info: { ...errors.internal, detail: 'restartIce limit exceeded' },
-  //         path: log.prefix,
-  //       })
-  //     );
-  //     this._setConnectionState('disconnected');
-  //     return;
-  //   }
-  //   this._log.warn(
-  //     '[start] restartIce',
-  //     createWarnPayload({
-  //       operationName: 'Sender.restartIce',
-  //       detail: 'start restartIce',
-  //       channel: this.localPerson.channel,
-  //       payload: { count: this._backoffIceRestarted.count },
-  //     })
-  //   );
+  readonly restartIce = async () => {
+    if (this._backoffIceRestarted.exceeded) {
+      this._log.error(
+        createError({
+          operationName: 'Sender.restartIce',
+          context: this._context,
+          channel: this.localPerson.channel,
+          info: { ...errors.internal, detail: 'restartIce limit exceeded' },
+          path: log.prefix,
+        })
+      );
+      this._setConnectionState('disconnected');
+      return;
+    }
+    this._log.warn(
+      '[start] restartIce',
+      createWarnPayload({
+        operationName: 'Sender.restartIce',
+        detail: 'start restartIce',
+        channel: this.localPerson.channel,
+        payload: { count: this._backoffIceRestarted.count },
+      })
+    );
 
-  //   const checkNeedEnd = () => {
-  //     if (this.endpoint.state === 'left') {
-  //       this._log.warn(
-  //         'endpointMemberLeft',
-  //         createWarnPayload({
-  //           operationName: 'restartIce',
-  //           detail: 'endpointMemberLeft',
-  //           channel: this.localPerson.channel,
-  //           payload: { endpointId: this.endpoint.id },
-  //         })
-  //       );
-  //       this._setConnectionState('disconnected');
-  //       return true;
-  //     }
+    const checkNeedEnd = () => {
+      if (this.endpoint.state === 'left') {
+        this._log.warn(
+          'endpointMemberLeft',
+          createWarnPayload({
+            operationName: 'restartIce',
+            detail: 'endpointMemberLeft',
+            channel: this.localPerson.channel,
+            payload: { endpointId: this.endpoint.id },
+          })
+        );
+        this._setConnectionState('disconnected');
+        return true;
+      }
 
-  //     if ((this.pc.connectionState as RTCPeerConnectionState) === 'connected') {
-  //       this._log.warn(
-  //         '[end] restartIce',
-  //         createWarnPayload({
-  //           operationName: 'restartIce',
-  //           detail: 'reconnected',
-  //           channel: this.localPerson.channel,
-  //           payload: { count: this._backoffIceRestarted.count },
-  //         })
-  //       );
-  //       this._backoffIceRestarted.reset();
-  //       this._setConnectionState('connected');
-  //       return true;
-  //     }
-  //   };
+      if ((this.pc.connectionState as RTCPeerConnectionState) === 'connected') {
+        this._log.warn(
+          '[end] restartIce',
+          createWarnPayload({
+            operationName: 'restartIce',
+            detail: 'reconnected',
+            channel: this.localPerson.channel,
+            payload: { count: this._backoffIceRestarted.count },
+          })
+        );
+        this._backoffIceRestarted.reset();
+        this._setConnectionState('connected');
 
-  //   this._setConnectionState('reconnecting');
-  //   await this._backoffIceRestarted.wait();
+        if (
+          this.localPerson._analytics &&
+          !this.localPerson._analytics.isClosed()
+        ) {
+          // 再送時に他の処理をブロックしないためにawaitしない
+          void this.localPerson._analytics.client.sendRtcPeerConnectionEventReport(
+            {
+              rtcPeerConnectionId: this.id,
+              type: 'restartIce',
+              data: undefined,
+              createdAt: Date.now(),
+            }
+          );
+        }
+        return true;
+      }
+    };
 
-  //   if (checkNeedEnd()) return;
+    this._setConnectionState('reconnecting');
+    await this._backoffIceRestarted.wait();
 
-  //   let e = await this._iceManager.updateIceParams().catch((e) => e as Error);
-  //   if (e) {
-  //     this._log.warn(
-  //       '[failed] restartIce',
-  //       createWarnPayload({
-  //         operationName: 'restartIce',
-  //         detail: 'update IceParams failed',
-  //         channel: this.localPerson.channel,
-  //         payload: { count: this._backoffIceRestarted.count },
-  //       }),
-  //       e
-  //     );
-  //     await this.restartIce();
-  //     return;
-  //   }
-  //   if (this.pc.setConfiguration) {
-  //     this.pc.setConfiguration({
-  //       ...this.pc.getConfiguration(),
-  //       iceServers: this._iceManager.iceServers,
-  //     });
-  //     this._log.debug('<restartIce> setConfiguration', {
-  //       iceServers: this._iceManager.iceServers,
-  //     });
-  //   }
+    if (checkNeedEnd()) return;
 
-  //   if (checkNeedEnd()) return;
+    let e = await this._iceManager.updateIceParams().catch((e) => e as Error);
+    if (e) {
+      this._log.warn(
+        '[failed] restartIce',
+        createWarnPayload({
+          operationName: 'restartIce',
+          detail: 'update IceParams failed',
+          channel: this.localPerson.channel,
+          payload: { count: this._backoffIceRestarted.count },
+        }),
+        e
+      );
+      await this.restartIce();
+      return;
+    }
+    if (this.pc.setConfiguration) {
+      this.pc.setConfiguration({
+        ...this.pc.getConfiguration(),
+        iceServers: this._iceManager.iceServers,
+      });
+      this._log.debug('<restartIce> setConfiguration', {
+        iceServers: this._iceManager.iceServers,
+      });
+    }
 
-  //   if (this.signaling.connectionState !== 'connected') {
-  //     this._log.warn(
-  //       '<restartIce> reconnect signaling service',
-  //       createWarnPayload({
-  //         operationName: 'restartIce',
-  //         detail: 'reconnect signaling service',
-  //         channel: this.localPerson.channel,
-  //         payload: { count: this._backoffIceRestarted.count },
-  //       })
-  //     );
-  //     e = await this.signaling.onConnectionStateChanged
-  //       .watch((s) => s === 'connected', 10_000)
-  //       .catch((e) => e as SkyWayError)
-  //       .then(() => {});
+    if (checkNeedEnd()) return;
 
-  //     if (e instanceof SkyWayError) {
-  //       await this.restartIce();
-  //       return;
-  //     }
+    if (this.signaling.connectionState !== 'connected') {
+      this._log.warn(
+        '<restartIce> reconnect signaling service',
+        createWarnPayload({
+          operationName: 'restartIce',
+          detail: 'reconnect signaling service',
+          channel: this.localPerson.channel,
+          payload: { count: this._backoffIceRestarted.count },
+        })
+      );
+      e = await this.signaling.onConnectionStateChanged
+        .watch((s) => s === 'connected', 10_000)
+        .catch((e) => e as SkyWayError)
+        .then(() => {});
 
-  //     if (checkNeedEnd()) return;
-  //   }
+      if (e instanceof SkyWayError) {
+        await this.restartIce();
+        return;
+      }
 
-  //   const offer = await this.pc.createOffer({ iceRestart: true });
-  //   await this.pc.setLocalDescription(offer);
+      if (checkNeedEnd()) return;
+    }
 
-  //   const message: SenderRestartIceMessage = {
-  //     kind: 'senderRestartIceMessage',
-  //     payload: { sdp: this.pc.localDescription! },
-  //   };
-  //   e = await this.signaling
-  //     .send(this.endpoint, message, 10_000)
-  //     .catch((e) => e);
-  //   if (e) {
-  //     this._log.warn(
-  //       '<restartIce> [failed]',
-  //       createWarnPayload({
-  //         operationName: 'restartIce',
-  //         detail: 'timeout send signaling message',
-  //         channel: this.localPerson.channel,
-  //         payload: { count: this._backoffIceRestarted.count },
-  //       }),
-  //       e
-  //     );
-  //     await this.restartIce();
-  //     return;
-  //   }
+    const offer = await this.pc.createOffer({ iceRestart: true });
 
-  //   e = await this.waitForConnectionState(
-  //     'connected',
-  //     this._context.config.rtcConfig.iceDisconnectBufferTimeout
-  //   ).catch((e) => e);
-  //   if (!e) {
-  //     if (checkNeedEnd()) return;
-  //   }
+    if (
+      this.localPerson._analytics &&
+      !this.localPerson._analytics.isClosed()
+    ) {
+      // 再送時に他の処理をブロックしないためにawaitしない
+      void this.localPerson._analytics.client.sendRtcPeerConnectionEventReport({
+        rtcPeerConnectionId: this.rtcPeerConnectionId,
+        type: 'offer',
+        data: {
+          offer: JSON.stringify(offer),
+        },
+        createdAt: Date.now(),
+      });
+    }
 
-  //   await this.restartIce();
-  // };
+    await this.pc.setLocalDescription(offer);
+
+    const message: SenderRestartIceMessage = {
+      kind: 'senderRestartIceMessage',
+      payload: { sdp: this.pc.localDescription! },
+    };
+    e = await this.signaling
+      .send(this.endpoint, message, 10_000)
+      .catch((e) => e);
+    if (e) {
+      this._log.warn(
+        '<restartIce> [failed]',
+        createWarnPayload({
+          operationName: 'restartIce',
+          detail: 'timeout send signaling message',
+          channel: this.localPerson.channel,
+          payload: { count: this._backoffIceRestarted.count },
+        }),
+        e
+      );
+      await this.restartIce();
+      return;
+    }
+
+    e = await this.waitForConnectionState(
+      'connected',
+      this._context.config.rtcConfig.iceDisconnectBufferTimeout
+    ).catch((e) => e);
+    if (!e) {
+      if (checkNeedEnd()) return;
+    }
+
+    await this.restartIce();
+  };
 
   get hasMedia() {
     const count = Object.keys(this.publications).length;
@@ -462,7 +493,7 @@ export class Sender extends Peer {
 
       const transceiver = this.pc.addTransceiver(stream.track, {
         direction: 'sendonly',
-        // streams: [this._ms],
+        streams: [this._ms],
       });
 
       publication._onEncodingsChanged
@@ -520,18 +551,18 @@ export class Sender extends Peer {
       await this.pc.setLocalDescription({ type: 'offer', sdp: offerSdp });
       this._log.debug('<add> create offer', this.pc.localDescription);
 
-      // if (publication.encodings?.length > 0) {
-      //   if (isSafari()) {
-      //     // this._safariSetupEncoding(
-      //     //   publication as PublicationImpl<LocalVideoStream>
-      //     // );
-      //   } else {
-      //     const transceiver = this.transceivers[publication.id];
-      //     await setEncodingParams(transceiver.sender, [
-      //       publication.encodings[0],
-      //     ]);
-      //   }
-      // }
+      if (publication.encodings?.length > 0) {
+        if (isSafari()) {
+          // this._safariSetupEncoding(
+          //   publication as PublicationImpl<LocalVideoStream>
+          // );
+        } else {
+          const transceiver = this.transceivers[publication.id];
+          await setEncodingParams(transceiver.sender, [
+            publication.encodings[0],
+          ]);
+        }
+      }
     }
 
     const message: SenderProduceMessage = {
