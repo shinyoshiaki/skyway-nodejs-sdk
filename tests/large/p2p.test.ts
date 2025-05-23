@@ -1,16 +1,8 @@
 import Gst from '@girs/node-gst-1.0';
 import { describe, expect, it } from 'vitest';
-import {
-  dePacketizeRtpPackets,
-  deserializeAudioLevelIndication,
-  serializeAudioLevelIndication,
-} from 'werift';
 
 import {
-  MediaStreamTrackFactory,
   RemoteVideoStream,
-  RoomPublication,
-  RtpPacket,
   SkyWayContext,
   SkyWayRoom,
   SkyWayStreamFactory,
@@ -30,13 +22,12 @@ describe('p2p', () => {
       const context = await SkyWayContext.Create(testTokenString, {
         codecCapabilities: [{ mimeType: 'audio/opus' }],
       });
-      SkyWayStreamFactory.registerNodeGtkGst(gst);
       const room = await SkyWayRoom.Create(context, {
         type: 'p2p',
       });
       const sender = await room.join();
 
-      const disposer = await SkyWayStreamFactory.registerGstAudio({});
+      const disposer = await SkyWayStreamFactory.registerAudioTestSrc({ gst });
 
       const publication = await sender.publish(
         await SkyWayStreamFactory.createMicrophoneAudioStream()
