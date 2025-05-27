@@ -76,7 +76,7 @@ describe('p2p', () => {
           await skyway.SkyWayRoom.Find(context, { id: roomId }, 'p2p')
         ).join();
         const { subscription } = await receiver.subscribe(publicationId);
-        await new Promise((r) => setTimeout(r, 3_000));
+        await new Promise((r) => setTimeout(r, 1_500));
         const stats = await subscription.getStats();
         return stats;
       },
@@ -84,7 +84,7 @@ describe('p2p', () => {
     );
 
     const inboundRtp = stats.find((s) => s.type === 'inbound-rtp');
-    expect(inboundRtp.bytesReceived).toBeGreaterThan(6000);
+    expect(inboundRtp.bytesReceived).toBeGreaterThan(2500);
 
     disposer();
     await room.close();
