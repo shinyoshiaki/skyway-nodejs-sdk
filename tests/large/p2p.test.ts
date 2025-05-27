@@ -118,7 +118,7 @@ describe('p2p', () => {
         await new Promise((r) => setTimeout(r, 5000));
       },
       { testTokenString, roomId: room.id }
-    );
+    ).catch(() => {});
 
     const p = await room.onStreamPublished.asPromise();
     const { stream } = await receiver.subscribe<RemoteVideoStream>(

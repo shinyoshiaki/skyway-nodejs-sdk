@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 import { dePacketizeRtpPackets } from 'werift';
 
 import {
-  MediaStreamTrackFactory,
   RemoteVideoStream,
   SkyWayContext,
   SkyWayRoom,
@@ -41,16 +40,10 @@ describe('turn', () => {
         });
         const sender = await room.join();
 
-        const [track, port, disposer] = await MediaStreamTrackFactory.rtpSource(
-          {
-            kind: 'video',
-          }
-        );
-        const launch = gst.parseLaunch(
-          `videotestsrc ! video/x-raw,width=640,height=480,format=I420 ! x264enc key-int-max=60 ! rtph264pay ! udpsink host=127.0.0.1 port=${port}`
-        );
-        launch.setState(gst.State.PLAYING);
-        SkyWayStreamFactory.registerMediaDevices({ video: track });
+        const disposer = await SkyWayStreamFactory.registerVideoTestSrc({
+          gst,
+          codec: 'h264',
+        });
 
         const publication = await sender.publish(
           await SkyWayStreamFactory.createCameraVideoStream()
@@ -61,20 +54,19 @@ describe('turn', () => {
         ).join();
         const { stream: remoteStream, subscription } =
           await receiver.subscribe<RemoteVideoStream>(publication);
-        remoteStream.track.onReceiveRtp.subscribe(async (rtp) => {
+        await remoteStream.track.onReceiveRtp.watch((rtp) => {
           const codec = dePacketizeRtpPackets('mpeg4/iso/avc', [rtp]);
-          if (codec.isKeyframe) {
-            const pc = subscription.getRTCPeerConnection();
-            const [ice] = pc.iceTransports;
-            expect(ice.connection.nominated!.protocol.type).toBe('turn');
-
-            await room.close();
-            context.dispose();
-            launch.setState(gst.State.NULL);
-            disposer();
-            done();
-          }
+          return codec.isKeyframe === true;
         });
+
+        const pc = subscription.getRTCPeerConnection();
+        const [ice] = pc.iceTransports;
+        expect(ice.connection.nominated!.protocol.type).toBe('turn');
+
+        await room.close();
+        context.dispose();
+        disposer();
+        done();
       }),
     60_000
   );
