@@ -48,7 +48,7 @@ describe('p2p', () => {
       done();
     }));
 
-  it.only('node-to-browser', async () => {
+  it('node-to-browser', async () => {
     const context = await SkyWayContext.Create(testTokenString, {
       codecCapabilities: [{ mimeType: 'audio/opus' }],
     });
@@ -89,4 +89,42 @@ describe('p2p', () => {
     disposer();
     await room.close();
   }, 15_000);
+
+  it('browser-to-node', async () => {
+    const context = await SkyWayContext.Create(testTokenString, {
+      codecCapabilities: [{ mimeType: 'audio/opus' }],
+    });
+    const room = await SkyWayRoom.Create(context, {
+      type: 'p2p',
+    });
+    const receiver = await room.join();
+
+    browserExec(
+      async ({ testTokenString, roomId }) => {
+        // vite用のハック
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const __vite_ssr_import_3__ = (...args) => {};
+        const load = new Function('url', 'return import(url)');
+        const skyway = await load(
+          'https://cdn.jsdelivr.net/npm/@skyway-sdk/room@1.12.0/+esm'
+        );
+        const context = await skyway.SkyWayContext.Create(testTokenString);
+        const sender = await (
+          await skyway.SkyWayRoom.Find(context, { id: roomId }, 'p2p')
+        ).join();
+        const stream =
+          await skyway.SkyWayStreamFactory.createMicrophoneAudioStream();
+        await sender.publish(stream);
+        await new Promise((r) => setTimeout(r, 5000));
+      },
+      { testTokenString, roomId: room.id }
+    );
+
+    const p = await room.onStreamPublished.asPromise();
+    const { stream } = await receiver.subscribe<RemoteVideoStream>(
+      p.publication.id
+    );
+    const [rtp] = await stream.track.onReceiveRtp.asPromise();
+    expect(rtp.payload).toBeDefined();
+  });
 });
