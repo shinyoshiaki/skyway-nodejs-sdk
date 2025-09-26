@@ -10,6 +10,7 @@ import {
   RTCIceCandidate,
   RTCPeerConnection,
   RTCPeerConnectionIceEvent,
+  useAudioLevelIndication,
 } from '../../../../imports/mediasoup';
 import { LocalPersonImpl } from '../../../../member/localPerson';
 import { RemoteMember } from '../../../../member/remoteMember';
@@ -30,6 +31,7 @@ export abstract class Peer {
         ? 'relay'
         : undefined,
     iceServers: this._iceManager.iceServers,
+    headerExtensions: { audio: [useAudioLevelIndication()] },
   });
   readonly onSignalingStateChanged = new Event<RTCSignalingState>();
   readonly onPeerConnectionStateChanged = new Event<RTCPeerConnectionState>();

@@ -1,4 +1,3 @@
-import Gst from '@girs/node-gst-1.0';
 import { describe, expect, it } from 'vitest';
 import {
   dePacketizeRtpPackets,
@@ -9,68 +8,79 @@ import {
 import {
   RemoteVideoStream,
   RoomPublication,
+  roomTypes,
   RtpPacket,
   SkyWayContext,
   SkyWayRoom,
   SkyWayStreamFactory,
 } from '../../packages/room/src';
-import { testTokenString } from './fixture';
-
-let gst: typeof Gst;
-(async () => {
-  const nodeGtk = await import('node-gtk');
-  gst = nodeGtk.require('Gst', '1.0') as typeof Gst;
-  gst.init([]);
-})();
+import { gst, testTokenString } from './fixture';
+import { RTCPeerConnection } from '../../submodules/mediasoup/src';
 
 describe('loopback', () => {
-  it('audio', () =>
-    new Promise<void>(async (done) => {
-      const context = await SkyWayContext.Create(testTokenString, {
-        codecCapabilities: [{ mimeType: 'audio/opus' }],
-        rtcConfig: { iceUseLinkLocalAddress: true },
-      });
-      const room = await SkyWayRoom.Create(context, {
-        type: 'sfu',
-      });
-      const sender = await room.join();
+  it.each(['p2p'] as const)(
+    'audio',
+    (type) =>
+      new Promise<void>(async (done) => {
+        const context = await SkyWayContext.Create(testTokenString, {
+          codecCapabilities: [{ mimeType: 'audio/opus' }],
+          rtcConfig: { iceUseLinkLocalAddress: true },
+        });
+        const room = await SkyWayRoom.Create(context, {
+          type,
+        });
+        const sender = await room.join();
 
-      const disposer = await SkyWayStreamFactory.registerAudioTestSrc({
-        rtpProcessor: (buf) => {
-          const rtp = RtpPacket.deSerialize(buf);
-          rtp.header.extension = true;
-          rtp.header.extensions.push({
-            id: 3,
-            payload: serializeAudioLevelIndication(25),
-          });
-          return rtp.serialize();
-        },
-        gst,
-      });
+        const receiver = await (
+          await SkyWayRoom.Find(context, room, type)
+        ).join();
 
-      const publication = await sender.publish(
-        await SkyWayStreamFactory.createMicrophoneAudioStream()
-      );
+        let getSenderPc = (): undefined | RTCPeerConnection => undefined;
+        const disposer = await SkyWayStreamFactory.registerAudioTestSrc({
+          rtpProcessor: (buf) => {
+            const id =
+              getSenderPc()?._localDescription?.media[0]?.rtp
+                ?.headerExtensions[0]?.id;
+            if (id == undefined) {
+              return buf;
+            }
 
-      const receiver = await (
-        await SkyWayRoom.Find(context, room, 'sfu')
-      ).join();
-      const { stream: remoteStream } =
-        await receiver.subscribe<RemoteVideoStream>(publication);
-      remoteStream.track.onReceiveRtp.subscribe(async (rtp) => {
-        const extensions = rtp.header.extensions;
+            const rtp = RtpPacket.deSerialize(buf);
+            rtp.header.extension = true;
+            rtp.header.extensions.push({
+              id,
+              payload: serializeAudioLevelIndication(25),
+            });
+            return rtp.serialize();
+          },
+          gst,
+        });
+        const publication = await sender.publish(
+          await SkyWayStreamFactory.createMicrophoneAudioStream()
+        );
+        getSenderPc = () => publication?.getRTCPeerConnection(receiver);
 
-        const audioLevel = extensions.find((e) => e.id === 10);
-        const p = deserializeAudioLevelIndication(audioLevel!.payload);
+        const { stream, subscription } =
+          await receiver.subscribe<RemoteVideoStream>(publication);
+        stream.track.onReceiveRtp.subscribe(async (rtp) => {
+          const extensions = rtp.header.extensions;
 
-        if (p.level === 25) {
-          await room.close();
-          context.dispose();
-          disposer();
-          done();
-        }
-      });
-    }));
+          const pc = subscription.getRTCPeerConnection();
+          const id =
+            pc._localDescription?.media[0]?.rtp?.headerExtensions[0]?.id;
+
+          const audioLevel = extensions.find((e) => e.id === id);
+          const p = deserializeAudioLevelIndication(audioLevel!.payload);
+
+          if (p.level === 25) {
+            await room.close();
+            context.dispose();
+            disposer();
+            done();
+          }
+        });
+      })
+  );
 
   it('audio_multiple', async () => {
     const context = await SkyWayContext.Create(testTokenString, {

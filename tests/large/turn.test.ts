@@ -1,4 +1,3 @@
-import Gst from '@girs/node-gst-1.0';
 import { describe, expect, it } from 'vitest';
 import { dePacketizeRtpPackets } from 'werift';
 
@@ -8,14 +7,7 @@ import {
   SkyWayRoom,
   SkyWayStreamFactory,
 } from '../../packages/room/src';
-import { testTokenString } from './fixture';
-
-let gst: typeof Gst;
-(async () => {
-  const nodeGtk = await import('node-gtk');
-  gst = nodeGtk.require('Gst', '1.0') as typeof Gst;
-  gst.init([]);
-})();
+import { gst, testTokenString } from './fixture';
 
 describe('turn', () => {
   it(

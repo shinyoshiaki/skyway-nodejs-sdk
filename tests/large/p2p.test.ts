@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
-import Gst from '@girs/node-gst-1.0';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -8,15 +6,8 @@ import {
   SkyWayRoom,
   SkyWayStreamFactory,
 } from '../../packages/room/src';
-import { testTokenString } from './fixture';
+import { gst, testTokenString } from './fixture';
 import { browserExec } from './util';
-
-let gst: typeof Gst;
-(async () => {
-  const nodeGtk = await import('node-gtk');
-  gst = nodeGtk.require('Gst', '1.0') as typeof Gst;
-  gst.init([]);
-})();
 
 describe('p2p', () => {
   it('node-to-node', () =>
