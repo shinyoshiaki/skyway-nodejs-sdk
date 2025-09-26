@@ -1,3 +1,10 @@
+import Gst from '@girs/node-gst-1.0';
+import nodeGtk from 'node-gtk';
+import {
+  deserializeAudioLevelIndication,
+  serializeAudioLevelIndication,
+} from 'werift';
+
 import {
   MediaStreamTrackFactory,
   RemoteAudioStream,
@@ -7,13 +14,7 @@ import {
   SkyWayStreamFactory,
 } from '../../packages/room/src';
 import { testTokenString } from './fixture';
-import Gst from '@girs/node-gst-1.0';
-import {
-  deserializeAudioLevelIndication,
-  serializeAudioLevelIndication,
-} from 'werift';
-
-const gst = require('node-gtk').require('Gst', '1.0') as typeof Gst;
+const gst = nodeGtk.require('Gst', '1.0') as typeof Gst;
 gst.init([]);
 
 (async () => {

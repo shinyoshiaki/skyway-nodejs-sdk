@@ -32,6 +32,7 @@ jobs:
           sudo corepack enable npm
           npm i
           npm run submodule:install
+          npx playwright install chromium
           npx zx ./scripts/create_env.mjs
       - name: test
         env:

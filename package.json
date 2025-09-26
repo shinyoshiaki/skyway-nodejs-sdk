@@ -20,12 +20,10 @@
     "upgrade-interactive": "pnpm dlx npm-check --update",
     "first": "pnpm i && pnpm run compile",
     "update-mirror": "zx scripts/update-mirror-repo.mjs",
-    "changeset": "changeset",
-    "changeset:version": "changeset version && pnpm i",
-    "changeset:version:ci": "pnpm run changeset:version && pnpm run doc && pnpm run build",
-    "changeset:publish": "pnpm run build && changeset publish"
+    "debug": "tsx examples/sendrecv/p2p.ts"
   },
   "devDependencies": {
+    "@skyway-sdk/room": "^1.12.0",
     "@types/node": "^20.12.12",
     "@typescript-eslint/eslint-plugin": "^4.32.0",
     "@typescript-eslint/parser": "^4.32.0",
@@ -40,8 +38,9 @@
     "lerna": "^8.2.2",
     "npm-run-all2": "^6.2.0",
     "organize-imports-cli": "^0.10.0",
-    "playwright": "^1.50.1",
+    "playwright": "^1.52.0",
     "prettier": "^2.4.1",
+    "tsx": "^4.19.4",
     "typedoc": "^0.22.17",
     "typedoc-plugin-markdown": "3.12.1",
     "typescript": "4.7.4",

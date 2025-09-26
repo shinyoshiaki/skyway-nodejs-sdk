@@ -1,5 +1,8 @@
-import { SkyWayAuthToken, uuidV4 } from '../../packages/room/src';
+import Gst from '@girs/node-gst-1.0';
+import nodeGtk from 'node-gtk';
+
 import { appId, secret } from '../../env';
+import { SkyWayAuthToken, uuidV4 } from '../../packages/room/src';
 
 const testToken = new SkyWayAuthToken({
   jti: uuidV4(),
@@ -44,3 +47,6 @@ const testToken = new SkyWayAuthToken({
   },
 });
 export const testTokenString = testToken.encode(secret);
+
+export const gst = nodeGtk.require('Gst', '1.0') as typeof Gst;
+gst.init([]);

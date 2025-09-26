@@ -33,11 +33,15 @@ export class StreamFactory {
     this.gst = gst;
   }
 
-  async registerGstAudio({
+  async registerAudioTestSrc({
     wave,
     rtpProcessor,
-  }: { wave?: string; rtpProcessor?: (b: Buffer) => Buffer } = {}) {
+    gst,
+  }: { wave?: string; rtpProcessor?: (b: Buffer) => Buffer; gst?: any } = {}) {
     wave ??= 'ticks';
+    if (gst) {
+      this.registerNodeGtkGst(gst);
+    }
 
     const [track, port, disposer] = await MediaStreamTrackFactory.rtpSource({
       kind: 'audio',
@@ -55,13 +59,19 @@ export class StreamFactory {
     };
   }
 
-  /**h264 only */
-  async registerGstVideo({
+  async registerVideoTestSrc({
     keyframeIntervalSec,
+    codec,
+    gst,
   }: {
     keyframeIntervalSec?: number;
-  } = {}) {
+    codec: 'vp8' | 'h264';
+    gst?: any;
+  }) {
     keyframeIntervalSec ??= 2;
+    if (gst) {
+      this.registerNodeGtkGst(gst);
+    }
 
     const keyIntMax = Math.round(keyframeIntervalSec * 30);
 
@@ -69,7 +79,9 @@ export class StreamFactory {
       kind: 'video',
     });
     const launch = this.gst.parseLaunch(
-      `videotestsrc ! video/x-raw,width=640,height=480,format=I420 ! x264enc key-int-max=${keyIntMax} ! rtph264pay ! udpsink host=127.0.0.1 port=${port}`
+      codec === 'h264'
+        ? `videotestsrc ! video/x-raw,width=640,height=480,format=I420 ! x264enc key-int-max=${keyIntMax} ! rtph264pay ! udpsink host=127.0.0.1 port=${port}`
+        : `videotestsrc ! video/x-raw,width=640,height=480,format=I420 ! vp8enc keyframe-max-dist=${keyIntMax} ! rtpvp8pay picture-id-mode=1 ! udpsink host=127.0.0.1 port=${port}`
     );
     launch.setState(this.gst.State.PLAYING);
     SkyWayStreamFactory.registerMediaDevices({ video: track });
