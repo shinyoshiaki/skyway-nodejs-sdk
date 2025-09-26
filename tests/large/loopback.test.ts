@@ -135,7 +135,7 @@ describe('loopback', () => {
     context.dispose();
     launch.setState(gst.State.NULL);
     disposer();
-  }, 15_000);
+  });
 
   it('video_h264', () =>
     new Promise<void>(async (done) => {
