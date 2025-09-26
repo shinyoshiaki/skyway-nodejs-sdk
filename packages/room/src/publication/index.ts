@@ -19,6 +19,7 @@ import {
 import { RTCPeerConnection } from '../imports/mediasoup';
 import { SfuBotMember } from '../imports/sfu';
 import { RoomMember, RoomMemberImpl } from '../member';
+import { Encoding } from '@skyway-sdk/model';
 import { RoomImpl } from '../room/base';
 import { StreamSubscribedEvent, StreamUnsubscribedEvent } from '../room/event';
 import { RoomSubscription } from '../subscription';
@@ -232,7 +233,7 @@ export class RoomPublicationImpl<StreamType extends LocalStream = LocalStream>
     return this._preferredPublication.codecCapabilities;
   }
 
-  get encodings() {
+  get encodings(): Encoding[] {
     return this._preferredPublication.encodings;
   }
 
@@ -270,6 +271,12 @@ export class RoomPublicationImpl<StreamType extends LocalStream = LocalStream>
 
   readonly enable = () =>
     new Promise<void>((r, f) => {
+      // すでに enabled の場合は何もしない
+      if (this.state === 'enabled') {
+        r();
+        return;
+      }
+
       if (this._origin) {
         Promise.all([
           this._origin.enable(),
@@ -284,6 +291,12 @@ export class RoomPublicationImpl<StreamType extends LocalStream = LocalStream>
 
   readonly disable = () =>
     new Promise<void>((r, f) => {
+      // すでに disabled の場合は何もしない
+      if (this.state === 'disabled') {
+        r();
+        return;
+      }
+
       if (this._origin) {
         Promise.all([
           this._origin.disable(),

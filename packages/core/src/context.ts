@@ -1,6 +1,7 @@
 import { Events, Logger, RuntimeInfo, SkyWayError } from '@skyway-sdk/common';
 import model, { MemberType } from '@skyway-sdk/model';
 import { SkyWayAuthToken } from '@skyway-sdk/token';
+import { v4 as uuidV4 } from 'uuid';
 
 import { SkyWayChannelImpl } from './channel';
 import { ContextConfig, SkyWayConfigOptions } from './config';
@@ -13,12 +14,16 @@ import { registerPersonPlugin } from './plugin/internal/person/plugin';
 import { UnknownPlugin } from './plugin/internal/unknown/plugin';
 import { createError, getRuntimeInfo } from './util';
 import { PACKAGE_VERSION } from './version';
+import { AnalyticsSession } from './external/analytics';
 
 const log = new Logger('packages/core/src/context.ts');
 
 export class SkyWayContext {
   /**@internal */
   static version = PACKAGE_VERSION;
+
+  /**@internal */
+  static id = uuidV4();
 
   /**
    * @description [japanese] Contextの作成
@@ -77,7 +82,13 @@ export class SkyWayContext {
         endpoint,
         runtime,
       });
+
       await context._setTokenExpireTimer();
+
+      if (token.getAnalyticsEnabled()) {
+        // context.analyticsSession = await setupAnalyticsSession(context);
+      }
+
       return context;
     } catch (error: any) {
       throw createError({
@@ -95,6 +106,10 @@ export class SkyWayContext {
   /**@internal */
   public plugins: SkyWayPlugin[] = [];
   private _unknownPlugin = new UnknownPlugin();
+
+  /**@internal */
+  public analyticsSession: AnalyticsSession | undefined;
+
   /**@private */
   readonly _api: RtcApiClient;
   private _authTokenString: string;
@@ -234,7 +249,19 @@ export class SkyWayContext {
     this._onTokenUpdated.emit(token);
     await this._setTokenExpireTimer();
 
-    await this._api.updateAuthToken(token);
+    await this._api.updateAuthToken(token).catch((e) => {
+      log.warn('[failed] SkyWayContext.updateAuthToken', { detail: e });
+
+      if (
+        e instanceof SkyWayError &&
+        e.info?.name === 'projectUsageLimitExceeded'
+      ) {
+        this.dispose();
+        clearTimeout(this.tokenExpiredTimer);
+      }
+
+      throw e;
+    });
   }
 
   /**
@@ -291,6 +318,8 @@ export class SkyWayContext {
     this._events.dispose();
 
     this._api.close();
+
+    // Logger._onLogForAnalytics = () => {};
   }
 }
 

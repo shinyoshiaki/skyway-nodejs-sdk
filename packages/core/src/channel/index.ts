@@ -3,7 +3,7 @@ import { Logger } from '@skyway-sdk/common';
 import { Events } from '@skyway-sdk/common';
 import model from '@skyway-sdk/model';
 
-import { MemberInternalConfig, MemberKeepAliveConfig } from '../config';
+import { LocalMemberConfig, MemberInternalConfig, MemberKeepAliveConfig } from '../config';
 import { SkyWayContext } from '../context';
 import { errors } from '../errors';
 import {
@@ -142,7 +142,7 @@ export interface Channel {
     memberInit?: {
       name?: MemberInit['name'];
       metadata?: MemberInit['metadata'];
-    } & Partial<MemberKeepAliveConfig>
+    } & Partial<LocalMemberConfig>
   ) => Promise<LocalPerson>;
 
   /**
@@ -525,6 +525,8 @@ export class SkyWayChannelImpl implements Channel {
     options.keepaliveIntervalSec ??= this.config.member.keepaliveIntervalSec;
     options.keepaliveIntervalGapSec ??=
       this.config.member.keepaliveIntervalGapSec;
+    options.preventAutoLeaveOnBeforeUnload ??=
+      this.config.member.preventAutoLeaveOnBeforeUnload;
 
     const init: MemberInit = {
       ...options,
@@ -852,5 +854,5 @@ export type ChannelState = 'opened' | 'closed';
 export type PersonInit = {
   name?: MemberInit['name'];
   metadata?: MemberInit['metadata'];
-} & Partial<MemberKeepAliveConfig> &
+} & Partial<LocalMemberConfig> &
   MemberInternalConfig;

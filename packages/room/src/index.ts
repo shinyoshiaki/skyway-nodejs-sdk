@@ -1,7 +1,9 @@
 export { errors } from './errors';
 export {
+  AnalyticsSession,
   type AudioMediaTrackConstraints,
   type ChannelState,
+  type ChannelQuery,
   type Codec,
   type CodecParameters,
   type ContentType,
@@ -9,6 +11,9 @@ export {
   createTestVideoTrack,
   type DataStreamMessageType,
   type DataStreamOptions,
+  type DataType,
+  detectDevice,
+  type DisplayMediaTrackConstraints,
   type DisplayStreamOptions,
   type EncodingParameters,
   Event,
@@ -20,6 +25,7 @@ export {
   LocalDataStream,
   LocalMediaStreamBase,
   type LocalMediaStreamOptions,
+  type LocalMemberConfig,
   type LocalStream,
   LocalStreamBase,
   LocalVideoStream,

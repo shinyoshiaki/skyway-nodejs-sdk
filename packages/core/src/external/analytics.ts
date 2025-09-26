@@ -3,30 +3,24 @@ import {
   type ConnectionState,
 } from '@skyway-sdk/analytics-client';
 import { Event, Logger } from '@skyway-sdk/common';
-import { Member } from '@skyway-sdk/model';
 
-import { SkyWayChannelImpl } from '../channel';
 import { SkyWayContext } from '../context';
 import { errors } from '../errors';
 import { createError } from '../util';
 
-const log = new Logger('packages/core/src/external/analytics.ts');
+const LOGGER_PREFIX = 'packages/core/src/external/analytics.ts';
 
-export async function setupAnalyticsSession(
-  context: SkyWayContext,
-  channel: SkyWayChannelImpl,
-  memberDto: Member
-) {
+const log = new Logger(LOGGER_PREFIX);
+
+/**@internal */
+export async function setupAnalyticsSession(context: SkyWayContext): Promise<AnalyticsSession> {
   const { analyticsService } = context.config;
 
   const client = new AnalyticsClient(
     {
       token: context.authTokenString,
-      channelId: channel.id,
-      channelName: channel.name,
-      memberId: memberDto.id,
-      memberName: memberDto.name,
       sdkVersion: SkyWayContext.version, // coreパッケージのバージョンを引き渡す
+      contextId: SkyWayContext.id,
     },
     {
       logger: {
@@ -39,7 +33,6 @@ export async function setupAnalyticsSession(
               info: { ...errors.internal, detail: 'AnalyticsClient error' },
               error,
               path: log.prefix,
-              channel,
             })
           );
         },
@@ -56,6 +49,12 @@ export async function setupAnalyticsSession(
   );
 
   const analyticsSession = new AnalyticsSession(client, context);
+  Logger._onLogForAnalytics = (props) => {
+    if (props.prefix === LOGGER_PREFIX) {
+      return; // Avoid logging from this file to avoid infinite loop
+    }
+    void client.bufferOrSendSdkLog(props);
+  };
 
   analyticsSession.connectWithTimeout().catch((error) => {
     analyticsSession.close();
@@ -67,7 +66,6 @@ export async function setupAnalyticsSession(
         info: { ...errors.internal, detail: 'AnalyticsClient error' },
         error,
         path: log.prefix,
-        channel,
       })
     );
     analyticsSession.onConnectionFailed.emit({});

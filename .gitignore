@@ -15,6 +15,7 @@ env.ts
 Release.md
 examples/playground
 examples/playground-room
+examples/sfu-room-for-hosting
 CNAME
 docs
 e2e
@@ -22,3 +23,4 @@ __tests__
 packages/signaling-client/examples
 packages/analytics-client/examples
 jest
+test-*.json

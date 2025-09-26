@@ -1,37 +1,43 @@
 {
   "name": "skyway-nodejs-sdk",
   "private": true,
-  "workspaces": [
-    "packages/*",
-    "examples/*",
-    "tests"
-  ],
   "scripts": {
-    "build": "npm run build --workspaces --if-present",
-    "compile": "npm run compile --workspaces --if-present",
-    "first": "run-s submodule:init submodule:install && npm i && npm run compile",
-    "format": "npm run format --workspaces --if-present",
-    "lint": "npm run lint --workspaces --if-present",
-    "playground": "cd examples/playground && npm run dev",
-    "playground-room": "cd examples/playground-room && npm run dev",
-    "submodule:init": "git submodule update --init --recursive",
-    "submodule:install": "zx scripts/install_submodules.mjs",
-    "test": "cd tests && npm run test",
-    "type": "npm run type --workspaces --if-present",
+    "build": "lerna run build",
+    "build:example": "pnpm run build && lerna run build:example",
+    "clean": "pnpm run clean:example && lerna clean -y && rm -rf ./packages/*/dist && rm -rf ./packages/*/node_modules && rm -rf ./packages/*/bundler && rm -rf ./.parcel-cache && rm -rf node_modules",
+    "clean:example": "rm -rf ./examples/*/dist && rm -rf ./examples/*/.parcel-cache && rm -rf ./examples/*/node_modules",
+    "type": "lerna run type",
+    "compile": "lerna run compile && lerna run type",
+    "doc": "pnpm run compile && pnpm run doc:update",
+    "doc:update": "lerna run doc && zx ./scripts/update-api-reference.mjs && zx ./scripts/insert-gtm-script.mjs",
+    "format": "lerna run format",
+    "lint": "lerna run lint",
+    "graph": "lerna run graph",
+    "playground": "cd examples/playground && pnpm run dev",
+    "playground-room": "cd examples/playground-room && pnpm run dev",
+    "test": "cd tests && pnpm test",
+    "watch": "lerna run watch",
+    "upgrade-interactive": "pnpm dlx npm-check --update",
+    "first": "pnpm i && pnpm run compile",
     "update-mirror": "zx scripts/update-mirror-repo.mjs",
-    "upgrade-interactive": "npx npm-check --update"
+    "changeset": "changeset",
+    "changeset:version": "changeset version && pnpm i",
+    "changeset:version:ci": "pnpm run changeset:version && pnpm run doc && pnpm run build",
+    "changeset:publish": "pnpm run build && changeset publish"
   },
   "devDependencies": {
     "@types/node": "^20.12.12",
     "@typescript-eslint/eslint-plugin": "^4.32.0",
     "@typescript-eslint/parser": "^4.32.0",
     "@vitest/browser": "^3.0.5",
+    "buffer": "^5.5.0||^6.0.0",
     "esbuild": "^0.25.0",
     "eslint": "^7.32.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-deprecation": "^1.3.3",
     "eslint-plugin-prettier": "^4.0.0",
     "eslint-plugin-simple-import-sort": "^8.0.0",
+    "lerna": "^8.2.2",
     "npm-run-all2": "^6.2.0",
     "organize-imports-cli": "^0.10.0",
     "playwright": "^1.50.1",
@@ -40,10 +46,11 @@
     "typedoc-plugin-markdown": "3.12.1",
     "typescript": "4.7.4",
     "vitest": "^3.0.5",
-    "zx": "^7.0.8"
+    "zx": "^8.4.0"
   },
-  "packageManager": "npm@10.1.0",
   "engines": {
-    "node": ">=20.0.0"
-  }
+    "node": ">=20.0.0",
+    "npm": ">=10.8.1"
+  },
+  "packageManager": "pnpm@10.5.2+sha512.da9dc28cd3ff40d0592188235ab25d3202add8a207afbedc682220e4a0029ffbff4562102b9e6e46b4e3f9e8bd53e6d05de48544b0c57d4b0179e22c76d1199b"
 }
