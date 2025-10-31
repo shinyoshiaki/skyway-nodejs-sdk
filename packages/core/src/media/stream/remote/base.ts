@@ -72,4 +72,9 @@ export abstract class RemoteStreamBase implements Stream {
       side: this.side,
     };
   }
+
+  dispose() {
+    this.onConnectionStateChanged.removeAllListeners();
+    this._onConnectionStateChanged.removeAllListeners();
+  }
 }

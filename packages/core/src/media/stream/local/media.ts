@@ -105,6 +105,13 @@ export abstract class LocalMediaStreamBase extends LocalStreamBase {
     // }
   }
 
+  dispose() {
+    this.onTrackUpdated.removeAllListeners();
+    this.onDestroyed.removeAllListeners();
+    this._disposer.dispose();
+    this.track.stop();
+  }
+
   /**@internal */
   protected _disable(kind: 'video' | 'audio') {
     if (this._options.stopTrackWhenDisabled) {

@@ -1,5 +1,6 @@
 import { Logger } from '@skyway-sdk/common';
 
+import { SkyWayContext } from '../../../context';
 import { errors } from '../../../errors';
 import { RemoteMemberImplInterface } from '../../../member/remoteMember';
 import { PublicationImpl } from '../../../publication';
@@ -10,8 +11,10 @@ import type { LocalPersonImpl } from '../../localPerson';
 const log = new Logger('packages/core/src/dataPlane/agent/publishing.ts');
 
 export class PublishingAgent {
-  readonly context = this._localPerson.context;
-  constructor(private readonly _localPerson: LocalPersonImpl) {}
+  readonly context: SkyWayContext;
+  constructor(private readonly _localPerson: LocalPersonImpl) {
+    this.context = this._localPerson.context;
+  }
 
   /**@throws {SkyWayError} */
   async startPublishing(subscription: SubscriptionImpl): Promise<void> {

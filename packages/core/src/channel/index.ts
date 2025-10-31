@@ -3,7 +3,12 @@ import { Logger } from '@skyway-sdk/common';
 import { Events } from '@skyway-sdk/common';
 import model from '@skyway-sdk/model';
 
-import { LocalMemberConfig, MemberInternalConfig, MemberKeepAliveConfig } from '../config';
+import {
+  ContextConfig,
+  LocalMemberConfig,
+  MemberInternalConfig,
+  MemberKeepAliveConfig,
+} from '../config';
 import { SkyWayContext } from '../context';
 import { errors } from '../errors';
 import {
@@ -176,15 +181,14 @@ export interface Channel {
 
 /**@internal */
 export class SkyWayChannelImpl implements Channel {
-  readonly id: model.Channel['id'] = this._channelImpl.id;
-  readonly name: model.Channel['name'] = this._channelImpl.name;
-  readonly appId = this._context.appId;
+  readonly id: model.Channel['id'];
+  readonly name: model.Channel['name'];
+  readonly appId: string;
   _localPerson?: LocalPersonImpl;
   disposed = false;
-  readonly config = this._context.config;
+  readonly config: ContextConfig;
 
   private _state: ChannelState = 'opened';
-  private readonly _api = this._context._api;
 
   private _members: {
     [memberId: model.Channel['id']]: RemoteMemberImplInterface;
@@ -272,6 +276,11 @@ export class SkyWayChannelImpl implements Channel {
     /**@private */
     private readonly _channelImpl: ChannelImpl
   ) {
+    this.id = this._channelImpl.id;
+    this.name = this._channelImpl.name;
+    this.appId = this._context.appId;
+    this.config = this._context.config;
+
     this._setupPropertiesFromChannel();
     this._setupListenChannelEvent();
 

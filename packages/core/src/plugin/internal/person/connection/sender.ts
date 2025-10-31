@@ -16,10 +16,10 @@ import { AnalyticsSession } from '../../../../external/analytics';
 import { IceManager } from '../../../../external/ice';
 import { SignalingSession } from '../../../../external/signaling';
 import {
+  MediaStream,
   MediaStreamTrack,
   RTCDataChannel,
   RTCRtpTransceiver,
-  MediaStream,
 } from '../../../../imports/mediasoup';
 import { Codec } from '../../../../media';
 import {
@@ -464,7 +464,10 @@ export class Sender extends Peer {
       );
 
       dc.onerror = (err) => {
-        if ('error' in err && (err as any).error.errorDetail.includes('data-channel')) {
+        if (
+          'error' in err &&
+          (err as any).error.errorDetail.includes('data-channel')
+        ) {
           this._log.error(
             'datachannel.send failed',
             createError({
@@ -487,7 +490,7 @@ export class Sender extends Peer {
             })
           );
         }
-      }
+      };
 
       stream._onWriteData
         .add((data) => {

@@ -2,8 +2,8 @@ export { errors } from './errors';
 export {
   AnalyticsSession,
   type AudioMediaTrackConstraints,
-  type ChannelState,
   type ChannelQuery,
+  type ChannelState,
   type Codec,
   type CodecParameters,
   type ContentType,
@@ -73,6 +73,7 @@ export * from './member/local/p2p';
 export * from './member/local/sfu';
 export * from './member/remote/base';
 export * from './publication';
+export { SkyWayRoom } from './room';
 export * from './room';
 export * from './room/base';
 export * from './room/event';

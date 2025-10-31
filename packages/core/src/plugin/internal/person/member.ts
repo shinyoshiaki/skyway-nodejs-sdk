@@ -45,7 +45,7 @@ export class RemotePersonImpl extends MemberImpl implements RemotePerson {
   readonly side = 'remote';
   readonly plugin: PersonPlugin;
   private _connections: { [localPersonSystemId: string]: P2PConnection } = {};
-  private _context = this.args.channel._context;
+  private _context: SkyWayContext;
   private _disposer = new EventDisposer();
 
   readonly onPublicationSubscribed = this._events.make<{
@@ -70,6 +70,7 @@ export class RemotePersonImpl extends MemberImpl implements RemotePerson {
   ) {
     super(args);
 
+    this._context = this.args.channel._context;
     this.plugin = args.plugin;
 
     this.channel.onPublicationUnsubscribed

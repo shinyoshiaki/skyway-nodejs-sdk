@@ -12,14 +12,14 @@ import { SfuRestApiClient } from './imports/sfu';
 const log = new Logger('packages/sfu-bot/src/connection/sender.ts');
 
 export class Forwarding {
-  state: ForwardingState = 'started';
-  configure: ForwardingConfigure = this.props.configure;
-  originPublication: Publication = this.props.originPublication;
-  relayingPublication: Publication = this.props.relayingPublication;
+  state: ForwardingState;
+  configure: ForwardingConfigure;
+  originPublication: Publication;
+  relayingPublication: Publication;
 
-  private _identifierKey: string = this.props.identifierKey;
-  private _api: SfuRestApiClient = this.props.api;
-  private _context: SkyWayContext = this.props.context;
+  private _identifierKey: string;
+  private _api: SfuRestApiClient;
+  private _context: SkyWayContext;
 
   /** @description [japanese] forwardingが終了された時に発火するイベント */
   readonly onStopped = new Event<void>();
@@ -35,6 +35,14 @@ export class Forwarding {
       identifierKey: string;
     }
   ) {
+    this.state = 'started';
+    this.configure = this.props.configure;
+    this.originPublication = this.props.originPublication;
+    this.relayingPublication = this.props.relayingPublication;
+    this._identifierKey = this.props.identifierKey;
+    this._api = this.props.api;
+    this._context = this.props.context;
+    
     this.relayingPublication.onSubscribed.add(async (e) => {
       await this.confirmSubscription(e.subscription).catch((e) => e);
     });

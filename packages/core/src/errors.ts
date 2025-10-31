@@ -121,7 +121,8 @@ export const errors = {
   connectRtcApiFailed: {
     name: 'connectRtcApiFailed',
     detail: 'RtcAPIへの接続に失敗しました',
-    solution: 'インターネットへ接続できているか、もしくはTokenのパラメータが正しいかを確かめてください',
+    solution:
+      'インターネットへ接続できているか、もしくはTokenのパラメータが正しいかを確かめてください',
   },
   rtcApiFatalError: {
     name: 'rtcApiFatalError',
@@ -162,11 +163,12 @@ export const errors = {
   dataChannelSendError: {
     name: 'dataChannelSendError',
     detail: 'データ送信に失敗しました',
-    solution: '接続が閉じられている、バッファに空き容量が無い、データサイズが大きすぎる等の理由で送信に失敗しています。再度publish もしくは 送信するデータを分割してください',
+    solution:
+      '接続が閉じられている、バッファに空き容量が無い、データサイズが大きすぎる等の理由で送信に失敗しています。再度publish もしくは 送信するデータを分割してください',
   },
   dataChannelGeneralError: {
     name: 'dataChannelGeneralError',
     detail: 'DataStreamの内部でエラーが発生しました',
     solution: 'DataStreamを作り直して再度publishしてください',
-  }
+  },
 } as const;

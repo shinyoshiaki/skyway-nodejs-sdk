@@ -43,7 +43,10 @@ export class LocalDataStream extends LocalStreamBase {
       });
     }
 
-    const isObject = !ArrayBuffer.isView(data) && !(data instanceof ArrayBuffer) && !(typeof data === 'string');
+    const isObject =
+      !ArrayBuffer.isView(data) &&
+      !(data instanceof ArrayBuffer) &&
+      !(typeof data === 'string');
     if (isObject) {
       data = objectFlag + JSON.stringify(data);
     }

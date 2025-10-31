@@ -5,9 +5,9 @@ import {
   PromiseQueue,
   SkyWayError,
 } from '@skyway-sdk/common';
-import { Encoding } from '@skyway-sdk/model';
 
 import { PersonInit, SkyWayChannelImpl } from '../../channel';
+import { ContextConfig } from '../../config';
 import { SkyWayContext } from '../../context';
 import { errors } from '../../errors';
 import { AnalyticsSession } from '../../external/analytics';
@@ -104,13 +104,12 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
   readonly subtype = 'person' as const;
   readonly side = 'local' as const;
   ttlSec?: number;
-  readonly keepaliveIntervalSec = this.args.keepaliveIntervalSec;
-  readonly keepaliveIntervalGapSec = this.args.keepaliveIntervalGapSec;
-  readonly preventAutoLeaveOnBeforeUnload =
-    this.args.preventAutoLeaveOnBeforeUnload;
-  readonly disableSignaling = this.args.disableSignaling;
-  readonly disableAnalytics = this.args.disableAnalytics;
-  readonly config = this.context.config;
+  readonly keepaliveIntervalSec: number;
+  readonly keepaliveIntervalGapSec: number;
+  readonly preventAutoLeaveOnBeforeUnload: boolean;
+  readonly disableSignaling: boolean;
+  readonly disableAnalytics: boolean;
+  readonly config: ContextConfig;
 
   readonly onStreamPublished = this._events.make<{
     publication: Publication;
@@ -150,7 +149,7 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
   private _requestQueue = new PromiseQueue();
 
   /**@private */
-  readonly iceManager = this.args.iceManager;
+  readonly iceManager;
   /**@private */
   readonly _signaling?: SignalingSession;
   /**@private */
@@ -183,6 +182,14 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
     } & PersonInit
   ) {
     super(args);
+    this.keepaliveIntervalSec = this.args.keepaliveIntervalSec;
+    this.keepaliveIntervalGapSec = this.args.keepaliveIntervalGapSec;
+    this.preventAutoLeaveOnBeforeUnload =
+      this.args.preventAutoLeaveOnBeforeUnload;
+    this.disableSignaling = this.args.disableSignaling;
+    this.disableAnalytics = this.args.disableAnalytics;
+    this.config = this.context.config;
+    this.iceManager = this.args.iceManager;
 
     this._publishingAgent = new PublishingAgent(this);
     this._subscribingAgent = new SubscribingAgent(this);
@@ -959,6 +966,10 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
     this._getConnections().forEach((c) =>
       c.close({ reason: 'localPerson disposed' })
     );
+
+    for (const s of this.subscriptions) {
+      s.dispose();
+    }
 
     this._onDisposed.emit();
     this._events.dispose();

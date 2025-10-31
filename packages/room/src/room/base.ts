@@ -9,6 +9,7 @@ import {
   PersonInit,
   Publication,
   SkyWayChannelImpl,
+  SkyWayContext,
   SubscriptionImpl,
 } from '../imports/core';
 import { RoomMember, RoomMemberImpl } from '../member';
@@ -184,7 +185,7 @@ export abstract class RoomImpl implements Room {
 
   localRoomMember?: LocalRoomMemberImpl;
 
-  readonly _context = this._channel._context;
+  readonly _context: SkyWayContext;
   private readonly _events = new Events();
   readonly onClosed = this._events.make<event.RoomClosedEvent>();
   readonly onMetadataUpdated =
@@ -237,6 +238,7 @@ export abstract class RoomImpl implements Room {
 
   constructor(type: RoomType, public _channel: SkyWayChannelImpl) {
     this.type = type;
+    this._context = this._channel._context;
 
     this._channel.onClosed.pipe(this.onClosed);
     this._channel.onMetadataUpdated.pipe(this.onMetadataUpdated);

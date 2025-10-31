@@ -7,20 +7,18 @@ const log = new Logger('packages/core/src/external/ice.ts');
 
 /**@internal */
 export class IceManager {
-  readonly domain = this.args.domain;
-  readonly version = this.args.version;
-  readonly secure = this.args.secure;
-  readonly memberId = this.args.memberId;
-  readonly channelId = this.args.channelId;
-  readonly ttl = this.args.ttl;
-  readonly context = this.args.context;
+  readonly domain: string;
+  readonly version: number;
+  readonly secure: boolean;
+  readonly memberId: string;
+  readonly channelId: string;
+  readonly ttl: number;
+  readonly context: SkyWayContext;
 
   private _stunServers: RTCIceServer[] = [];
   private _turnServers: RTCIceServer[] = [];
-  private readonly _endpoint = `http${this.secure ? 's' : ''}://${
-    this.domain
-  }/v${this.version}`;
-  readonly http = new HttpClient(this._endpoint);
+  private readonly _endpoint: string;
+  readonly http: HttpClient;
 
   constructor(
     private args: {
@@ -32,7 +30,19 @@ export class IceManager {
       ttl?: number;
       context: SkyWayContext;
     }
-  ) {}
+  ) {
+    this.domain = this.args.domain;
+    this.version = this.args.version;
+    this.secure = this.args.secure;
+    this.memberId = this.args.memberId;
+    this.channelId = this.args.channelId;
+    this.ttl = this.args.ttl;
+    this.context = this.args.context;
+    this._endpoint = `http${this.secure ? 's' : ''}://${this.domain}/v${
+      this.version
+    }`;
+    this.http = new HttpClient(this._endpoint);
+  }
 
   async updateIceParams() {
     const body = {

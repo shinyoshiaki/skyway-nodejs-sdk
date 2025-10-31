@@ -22,8 +22,6 @@ export class RtcApiImpl implements RtcApi {
   readonly onClose = new Event<void>();
   readonly onFatalError = new Event<SkyWayError>();
 
-  private _token = SkyWayAuthToken.Decode(this._client.token);
-
   constructor(private _client: RtcRpcApiClient) {
     _client.onClose.once(() => {
       this.close();
@@ -39,7 +37,6 @@ export class RtcApiImpl implements RtcApi {
   }
 
   async updateAuthToken(token: string) {
-    this._token = SkyWayAuthToken.Decode(token);
     await this._client.updateToken(token).catch((e) => {
       const { info } = e as { info: typeof rpcErrors.rpcResponseError };
       if (info?.error?.data?.code === 429001) {

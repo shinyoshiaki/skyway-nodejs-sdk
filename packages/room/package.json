@@ -38,7 +38,7 @@
     "graph": "dependency-cruiser --include-only '^src' --output-type dot src | dot -T svg > docs/dependencygraph.svg",
     "jest": "jest",
     "license": "zx ../../scripts/license.mjs @skyway-sdk/room",
-    "lint": "eslint ./src --fix && eslint ./tests --fix",
+    "lint": "eslint ./src --fix",
     "publish:npm": "pnpm run build && pnpm publish --access public",
     "test-extra": "vitest --config vitest.extra.ts run ./tests/extra",
     "test-extra:dev": "vitest --config vitest.extra.ts --browser.headless=false run ./tests/extra",

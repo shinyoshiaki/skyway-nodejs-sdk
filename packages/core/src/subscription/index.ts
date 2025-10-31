@@ -82,6 +82,8 @@ export interface Subscription<
    * @description [japanese] メディア通信の状態を取得
    */
   getConnectionState(): TransportConnectionState;
+  /** @internal */
+  dispose(): void;
 }
 
 /**@internal */
@@ -273,6 +275,14 @@ export class SubscriptionImpl<
       });
     }
     return this.stream._getConnectionState();
+  }
+
+  dispose() {
+    this._disposer.dispose();
+    this.onCanceled.removeAllListeners();
+    this.onStreamAttached.removeAllListeners();
+    this.onConnectionStateChanged.removeAllListeners();
+    this.stream?.dispose?.();
   }
 }
 

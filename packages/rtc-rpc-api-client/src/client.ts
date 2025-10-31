@@ -41,16 +41,14 @@ export type RtcRpcApiClientConfig = RtcRpcApiConfig & {
 export class RtcRpcApiClient {
   closed = false;
 
-  private readonly _domain = this.config.domain ?? defaultDomain;
-  private _secure = this.config.secure ?? true;
-  private _token = this.config.token;
+  private readonly _domain: string;
+  private _secure: boolean;
+  private _token: string;
   /**@private */
   _rpc = new RPC();
   private _subscribingChannelEvents = new Set<string>();
   private _subscribingChannelVersions: { [channelId: string]: number } = {};
-  private readonly _httpClient = new HttpClient(
-    `http${this.config.secure ? 's' : ''}://${this.config.domain}`
-  );
+  private readonly _httpClient: HttpClient;
   private _reconnectCount = 0;
   private readonly _reconnectLimit = MaxRetry;
 
@@ -66,6 +64,12 @@ export class RtcRpcApiClient {
   constructor(readonly config: RtcRpcApiClientConfig) {
     Logger.level = config.log?.level ?? Logger.level;
     Logger.format = config.log?.format ?? Logger.format;
+    this._domain = this.config.domain ?? defaultDomain;
+    this._secure = this.config.secure ?? true;
+    this._token = this.config.token;
+    this._httpClient = new HttpClient(
+      `http${this.config.secure ? 's' : ''}://${this.config.domain}`
+    );
 
     log.debug('RtcRpcApiClient spawned', config);
 

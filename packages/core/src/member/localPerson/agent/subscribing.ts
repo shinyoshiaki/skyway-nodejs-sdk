@@ -1,10 +1,13 @@
+import { SkyWayContext } from '../../../context';
 import { SubscriptionImpl } from '../../../subscription';
 import type { LocalPersonImpl } from '../../localPerson';
 
 export class SubscribingAgent {
   private _disposers: { [subscriptionId: string]: () => void } = {};
-  private _context = this._localPerson.context;
-  constructor(private readonly _localPerson: LocalPersonImpl) {}
+  private _context: SkyWayContext;
+  constructor(private readonly _localPerson: LocalPersonImpl) {
+    this._context = this._localPerson.context;
+  }
 
   async startSubscribing(subscription: SubscriptionImpl): Promise<void> {
     if (this._context.config.internal.disableDPlane) {

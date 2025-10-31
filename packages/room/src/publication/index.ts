@@ -1,5 +1,6 @@
 import { EventDisposer, Logger } from '@skyway-sdk/common';
 import { Event, Events } from '@skyway-sdk/common';
+import { Encoding } from '@skyway-sdk/model';
 
 import { errors } from '../errors';
 import {
@@ -19,7 +20,6 @@ import {
 import { RTCPeerConnection } from '../imports/mediasoup';
 import { SfuBotMember } from '../imports/sfu';
 import { RoomMember, RoomMemberImpl } from '../member';
-import { Encoding } from '@skyway-sdk/model';
 import { RoomImpl } from '../room/base';
 import { StreamSubscribedEvent, StreamUnsubscribedEvent } from '../room/event';
 import { RoomSubscription } from '../subscription';

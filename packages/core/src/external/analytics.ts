@@ -13,7 +13,9 @@ const LOGGER_PREFIX = 'packages/core/src/external/analytics.ts';
 const log = new Logger(LOGGER_PREFIX);
 
 /**@internal */
-export async function setupAnalyticsSession(context: SkyWayContext): Promise<AnalyticsSession> {
+export async function setupAnalyticsSession(
+  context: SkyWayContext
+): Promise<AnalyticsSession> {
   const { analyticsService } = context.config;
 
   const client = new AnalyticsClient(

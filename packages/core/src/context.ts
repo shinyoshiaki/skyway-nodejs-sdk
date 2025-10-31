@@ -6,6 +6,7 @@ import { v4 as uuidV4 } from 'uuid';
 import { SkyWayChannelImpl } from './channel';
 import { ContextConfig, SkyWayConfigOptions } from './config';
 import { errors } from './errors';
+import { AnalyticsSession } from './external/analytics';
 import { RtcApiClient } from './imports/rtcApi';
 import { Codec } from './media';
 import { RemoteMemberImplInterface } from './member/remoteMember';
@@ -14,7 +15,6 @@ import { registerPersonPlugin } from './plugin/internal/person/plugin';
 import { UnknownPlugin } from './plugin/internal/unknown/plugin';
 import { createError, getRuntimeInfo } from './util';
 import { PACKAGE_VERSION } from './version';
-import { AnalyticsSession } from './external/analytics';
 
 const log = new Logger('packages/core/src/context.ts');
 
@@ -114,7 +114,7 @@ export class SkyWayContext {
   readonly _api: RtcApiClient;
   private _authTokenString: string;
   /**seconds */
-  private _reminderSec = this.config.token.updateReminderSec;
+  private _reminderSec: number;
   private tokenUpdateReminderTimer: any;
   private tokenExpiredTimer: any;
 
@@ -150,6 +150,7 @@ export class SkyWayContext {
     readonly info: { endpoint: EndpointInfo; runtime: RuntimeInfo }
   ) {
     this._authTokenString = authToken.tokenString!;
+    this._reminderSec = this.config.token.updateReminderSec;
     this.appId = this.authToken.getAppId();
 
     registerPersonPlugin(this);
