@@ -82,3 +82,4 @@ export * from './subscription';
 export * from './version';
 export * from '@skyway-sdk/common';
 export * from '@skyway-sdk/token';
+export { SkyWayAuthToken, uuidV4 } from '@skyway-sdk/token';
