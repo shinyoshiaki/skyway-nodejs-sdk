@@ -39,8 +39,8 @@
     "vitest": "2.0.3",
     "zx": "^7.0.8"
   },
-  "packageManager": "npm@10.1.0",
+  "packageManager": "npm@11.11.1",
   "engines": {
-    "node": "=20"
+    "node": "=24"
   }
 }
