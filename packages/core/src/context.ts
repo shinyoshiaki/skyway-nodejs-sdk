@@ -10,7 +10,6 @@ import type model from '@skyway-sdk/model';
 import type { MemberType } from '@skyway-sdk/model';
 import { RtcApiClient } from '@skyway-sdk/rtc-api-client';
 import { SkyWayAuthToken } from '@skyway-sdk/token';
-import { v4 as uuidV4 } from 'uuid';
 import { createForDevelopmentAuthTokenString } from './auth/createForDevelopmentAuthTokenString';
 import type { SkyWayChannelImpl } from './channel';
 import {
@@ -79,7 +78,7 @@ export class SkyWayContext implements SkyWayContextInterface {
   static version = PACKAGE_VERSION;
 
   /**@internal */
-  static id = uuidV4();
+  static id = globalThis.crypto.randomUUID();
 
   /**
    * @description [japanese] 開発用途向けContextの作成
@@ -283,19 +282,15 @@ export class SkyWayContext implements SkyWayContextInterface {
     });
     this._api.onFatalError.once((error) => {
       log.error('onFatalError', { appId: this.appId, error });
-      if (error.name === 'membersLeftByDisconnection') {
-        this.onFatalError.emit(error);
-      } else {
-        this.onFatalError.emit(
-          createError({
-            operationName: 'SkyWayContext._api.onFatalError',
-            context: this,
-            info: errors.rtcApiFatalError,
-            error,
-            path: log.prefix,
-          }),
-        );
-      }
+      this.onFatalError.emit(
+        createError({
+          operationName: 'SkyWayContext._api.onFatalError',
+          context: this,
+          info: errors.rtcApiFatalError,
+          error,
+          path: log.prefix,
+        }),
+      );
       this.dispose();
     });
   }

@@ -1,5 +1,3 @@
-import { validate as uuidValidate } from 'uuid';
-
 import { ClientEvent } from './clientEvent';
 import {
   type AcknowledgePayload,
@@ -474,8 +472,5 @@ function validateData(data: Record<string, unknown>): void {
 function validateTarget(target: Member): void {
   if (!isMember(target)) {
     throw new Error('the type of target must be {id: string, name: string}');
-  }
-  if (!uuidValidate(target.id)) {
-    throw new Error('the type of target.id must be uuid format');
   }
 }

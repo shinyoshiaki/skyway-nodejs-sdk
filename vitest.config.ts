@@ -1,3 +1,4 @@
+import { playwright } from '@vitest/browser-playwright';
 import { defineConfig, type ViteUserConfig } from 'vitest/config';
 
 export default defineConfig({
@@ -6,17 +7,17 @@ export default defineConfig({
     browser: {
       enabled: true,
       headless: true,
-      provider: 'playwright',
+      provider: playwright({
+        launchOptions: {
+          args: [
+            '--use-fake-ui-for-media-stream',
+            '--use-fake-device-for-media-stream',
+          ],
+        },
+      }),
       instances: [
         {
           browser: 'chromium',
-          // @ts-expect-error
-          launch: {
-            args: [
-              '--use-fake-ui-for-media-stream',
-              '--use-fake-device-for-media-stream',
-            ],
-          },
         },
       ],
     },

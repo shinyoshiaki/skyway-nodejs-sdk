@@ -7,7 +7,6 @@ import {
   type SkyWayError,
 } from '@skyway-sdk/common';
 import * as sdpTransform from 'sdp-transform';
-import { v4 } from 'uuid';
 
 import type { SkyWayContext } from '../../../../context';
 import { errors } from '../../../../errors';
@@ -27,11 +26,7 @@ import {
   statsToArray,
 } from '../../../../util';
 import type { TransportConnectionState } from '../../../interface';
-import {
-  convertConnectionState,
-  hasReceiverTrack,
-  isInvalidStatsSelectorError,
-} from '../util';
+import { convertConnectionState } from '../util';
 import type { P2PMessage } from '.';
 import { DataChannelNegotiationLabel } from './datachannel';
 import { type IceCandidateMessage, Peer } from './peer';
@@ -46,7 +41,7 @@ const log = new Logger(
 );
 
 export class Receiver extends Peer {
-  readonly id = v4();
+  readonly id = globalThis.crypto.randomUUID();
   readonly onConnectionStateChanged = new Event<TransportConnectionState>();
   readonly onStreamAdded = new Event<{
     publicationId: string;
@@ -270,19 +265,13 @@ export class Receiver extends Peer {
         return arr;
       }
 
-      if (!hasReceiverTrack(this.pc, stream.track)) {
+      const receiverObj = this.pc
+        .getReceivers()
+        .find((r) => r.track === stream.track);
+      if (!receiverObj) {
         return [];
       }
-
-      const stats = await this.pc.getStats(stream.track).catch((error) => {
-        if (isInvalidStatsSelectorError(error)) {
-          return undefined;
-        }
-        throw error;
-      });
-      if (!stats) {
-        return [];
-      }
+      const stats = await receiverObj.getStats();
       const arr = statsToArray(stats);
       return arr;
     };

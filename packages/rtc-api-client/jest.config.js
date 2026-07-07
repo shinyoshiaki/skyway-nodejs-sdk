@@ -3,7 +3,5 @@ module.exports = {
   testEnvironment: 'node',
   testMatch: ['**/*.test.ts'],
   collectCoverageFrom: ['src/**/*.ts'],
-  moduleNameMapper: {
-    uuid: require.resolve('uuid'),
-  },
+  moduleNameMapper: {},
 };

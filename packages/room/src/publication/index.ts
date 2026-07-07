@@ -75,7 +75,7 @@ export interface RoomPublication<T extends LocalStream = LocalStream> {
    * @description [japanese] メディア通信の状態が変化した時に発火するイベント。
    * 状態の現在値を参照する場合はgetConnectionStateメソッドを利用してください。
    * DataStreamを利用している場合、書き込み可能になったことはLocalDataStream.onWritableイベントで別途通知されます。
-   * SFU通信の場合、remoteMemberはundefinedになり、memberがルームを離れたときのみ発火します。
+   * SFU通信の場合、remoteMemberはundefinedになります。
    */
   readonly onConnectionStateChanged: Event<{
     remoteMember?: RoomMember;

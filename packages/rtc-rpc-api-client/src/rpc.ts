@@ -5,7 +5,6 @@ import {
   type SkyWayError,
 } from '@skyway-sdk/common';
 import WebSocket from 'isomorphic-ws';
-import { v4 as uuidV4 } from 'uuid';
 
 import { rpcTimeout } from './const';
 import { errors } from './errors';
@@ -16,7 +15,7 @@ const log = new Logger('packages/rtc-rpc-api-client/src/rpc.ts');
 const WS_CLOSE_CODE_USAGE_LIMIT_EXCEEDED = 4291;
 
 export class RPC {
-  private readonly _id = uuidV4();
+  private readonly _id = globalThis.crypto.randomUUID();
   /**@private */
   _ws!: WebSocket;
   closed = false;
@@ -440,7 +439,7 @@ const buildRequest = (
   if (notify) {
     return { jsonrpc: '2.0', method, params };
   }
-  const id = uuidV4();
+  const id = globalThis.crypto.randomUUID();
   return { jsonrpc: '2.0', method, params, id };
 };
 

@@ -1,6 +1,6 @@
 {
   "name": "@skyway-sdk/token",
-  "version": "2.1.4",
+  "version": "2.1.5",
   "description": "The official Next Generation JavaScript SDK for SkyWay",
   "homepage": "https://skyway.ntt.com/",
   "repository": {
@@ -38,13 +38,11 @@
     "@skyway-sdk/common": "workspace:*",
     "jsrsasign": "^11.1.1",
     "jwt-decode": "3.1.2",
-    "uuid": "^11.1.1",
     "zod": "^3.24.1",
     "zod-validation-error": "^3.4.0"
   },
   "devDependencies": {
-    "@types/jsrsasign": "^10.5.14",
-    "@types/uuid": "^9.0.1"
+    "@types/jsrsasign": "^10.5.14"
   },
   "keywords": [
     "webrtc",

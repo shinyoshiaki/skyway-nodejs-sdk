@@ -3,9 +3,7 @@ module.exports = {
   testEnvironment: 'node',
   testMatch: ['**/*.test.ts'],
   collectCoverageFrom: ['src/**/*.ts'],
-  moduleNameMapper: {
-    uuid: require.resolve('uuid'),
-  },
+  moduleNameMapper: {},
   transform: {
     '^.+\\.ts$': ['ts-jest', { tsconfig: 'tsconfig.test.json' }],
   },

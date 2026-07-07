@@ -9,7 +9,7 @@ import type { SignalingSession } from '../../../../external/signaling';
 import type { LocalPersonImpl } from '../../../../member/localPerson';
 import type { RemoteMember } from '../../../../member/remoteMember';
 import { createError, createWarnPayload } from '../../../../util';
-import { statsToJson } from '../util';
+import { createEmptyStatsReport, statsToJson } from '../util';
 import type { P2PMessage } from '.';
 
 const log = new Logger(
@@ -346,7 +346,20 @@ export abstract class Peer {
         });
       }
 
-      const report = await this.pc.getStats(track);
+      let report: RTCStatsReport;
+      if (this.role === 'sender') {
+        const senderObj = this.pc.getSenders().find((s) => s.track === track);
+        report = senderObj
+          ? await senderObj.getStats()
+          : createEmptyStatsReport();
+      } else {
+        const receiverObj = this.pc
+          .getReceivers()
+          .find((r) => r.track === track);
+        report = receiverObj
+          ? await receiverObj.getStats()
+          : createEmptyStatsReport();
+      }
       const stats = statsToJson(report);
       if (logging) {
         log.debug('Peer.waitForStats', stats);

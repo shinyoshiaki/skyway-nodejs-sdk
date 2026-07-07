@@ -1,6 +1,6 @@
 {
   "name": "@skyway-sdk/room",
-  "version": "2.5.0",
+  "version": "2.5.1",
   "description": "The official Next Generation JavaScript SDK for SkyWay",
   "homepage": "https://skyway.ntt.com/",
   "repository": {
@@ -25,7 +25,7 @@
     "doc:html": "rm -rf docs/html && typedoc --excludePrivate --disableSources --excludeInternal --tsconfig ./tsconfig.build.json --out docs/html ./src/index.ts ",
     "doc:md": "rm -rf docs/md && typedoc --excludePrivate --disableSources --excludeInternal --tsconfig ./tsconfig.build.json --out docs/md --plugin typedoc-plugin-markdown ./src/index.ts ",
     "test": "pnpm run e2e",
-    "e2e": "npm-run-all -p jest test-large test-extra",
+    "e2e": "npm-run-all jest test-large test-extra",
     "e2e:main": "vitest --config vitest.extra.ts run ./tests/extra/benchmark.test.ts",
     "format": "eslint ./src --fix && eslint ./tests --fix",
     "graph": "dependency-cruiser --include-only '^src' --output-type dot src | dot -T svg > docs/dependencygraph.svg",
@@ -48,12 +48,10 @@
     "@skyway-sdk/common": "workspace:*",
     "@skyway-sdk/core": "workspace:*",
     "@skyway-sdk/sfu-bot": "workspace:*",
-    "@skyway-sdk/token": "workspace:*",
-    "uuid": "^11.1.1"
+    "@skyway-sdk/token": "workspace:*"
   },
   "devDependencies": {
-    "@skyway-sdk/model": "workspace:*",
-    "@types/uuid": "^9.0.1"
+    "@skyway-sdk/model": "workspace:*"
   },
   "keywords": [
     "webrtc",

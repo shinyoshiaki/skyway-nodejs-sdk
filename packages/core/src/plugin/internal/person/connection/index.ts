@@ -1,5 +1,4 @@
 import { Event, Logger, PromiseQueue } from '@skyway-sdk/common';
-import { v4 } from 'uuid';
 
 import type { SkyWayContext } from '../../../../context';
 import { errors } from '../../../../errors';
@@ -12,12 +11,7 @@ import type { Publication, PublicationImpl } from '../../../../publication';
 import type { Subscription, SubscriptionImpl } from '../../../../subscription';
 import { createError, createWarnPayload } from '../../../../util';
 import type { SkyWayConnection } from '../../../interface/connection';
-import {
-  createEmptyStatsReport,
-  hasReceiverTrack,
-  hasSenderTrack,
-  isInvalidStatsSelectorError,
-} from '../util';
+import { createEmptyStatsReport } from '../util';
 import type { PeerRole } from './peer';
 import { Receiver } from './receiver';
 import { Sender } from './sender';
@@ -28,7 +22,7 @@ const log = new Logger(
 
 /**@internal */
 export class P2PConnection implements SkyWayConnection {
-  readonly id = v4();
+  readonly id = globalThis.crypto.randomUUID();
   readonly type = 'p2p';
   readonly onDisconnect = new Event<void>();
   readonly onClose = new Event<void>();
@@ -279,16 +273,13 @@ export class P2PConnection implements SkyWayConnection {
         return this.sender.pc.getStats();
       }
 
-      if (!hasSenderTrack(this.sender.pc, stream.track)) {
+      const senderObj = this.sender.pc
+        .getSenders()
+        .find((s) => s.track === stream.track);
+      if (!senderObj) {
         return createEmptyStatsReport();
       }
-
-      return this.sender.pc.getStats(stream.track).catch((error) => {
-        if (isInvalidStatsSelectorError(error)) {
-          return createEmptyStatsReport();
-        }
-        throw error;
-      });
+      return senderObj.getStats();
     } else {
       if (this.receiver.pc.connectionState === 'closed') {
         return createEmptyStatsReport();
@@ -298,16 +289,13 @@ export class P2PConnection implements SkyWayConnection {
         return this.receiver.pc.getStats();
       }
 
-      if (!hasReceiverTrack(this.receiver.pc, stream.track)) {
+      const receiverObj = this.receiver.pc
+        .getReceivers()
+        .find((r) => r.track === stream.track);
+      if (!receiverObj) {
         return createEmptyStatsReport();
       }
-
-      return this.receiver.pc.getStats(stream.track).catch((error) => {
-        if (isInvalidStatsSelectorError(error)) {
-          return createEmptyStatsReport();
-        }
-        throw error;
-      });
+      return receiverObj.getStats();
     }
   }
 

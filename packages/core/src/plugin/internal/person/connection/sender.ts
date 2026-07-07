@@ -8,7 +8,6 @@ import {
 } from '@skyway-sdk/common';
 import isEqual from 'lodash/isEqual';
 import * as sdpTransform from 'sdp-transform';
-import { v4 } from 'uuid';
 
 import type { SkyWayContext } from '../../../../context';
 import { errors } from '../../../../errors';
@@ -33,12 +32,7 @@ import {
   statsToArray,
 } from '../../../../util';
 import type { TransportConnectionState } from '../../../interface';
-import {
-  hasSenderTrack,
-  isInvalidStatsSelectorError,
-  isSafari,
-  setEncodingParams,
-} from '../util';
+import { isSafari, setEncodingParams } from '../util';
 import type { P2PMessage } from '.';
 import { DataChannelNegotiationLabel } from './datachannel';
 import { type IceCandidateMessage, Peer } from './peer';
@@ -49,7 +43,7 @@ const log = new Logger(
 );
 
 export class Sender extends Peer {
-  readonly id = v4();
+  readonly id = globalThis.crypto.randomUUID();
   readonly onConnectionStateChanged = new Event<TransportConnectionState>();
 
   publications: { [publicationId: string]: PublicationImpl } = {};
@@ -702,19 +696,13 @@ export class Sender extends Peer {
         await stream._onReplacingTrackDone.asPromise(200);
       }
 
-      if (!hasSenderTrack(this.pc, stream.track)) {
+      const senderObj = this.pc
+        .getSenders()
+        .find((s) => s.track === stream.track);
+      if (!senderObj) {
         return [];
       }
-
-      const stats = await this.pc.getStats(stream.track).catch((error) => {
-        if (isInvalidStatsSelectorError(error)) {
-          return undefined;
-        }
-        throw error;
-      });
-      if (!stats) {
-        return [];
-      }
+      const stats = await senderObj.getStats();
       const arr = statsToArray(stats);
       return arr;
     };

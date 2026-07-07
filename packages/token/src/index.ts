@@ -1,7 +1,5 @@
-import { v4 } from 'uuid';
-
 /**@internal */
-const uuidV4 = v4;
+const uuidV4 = () => globalThis.crypto.randomUUID();
 
 export * from './encoder';
 export * from './scope/sfu';

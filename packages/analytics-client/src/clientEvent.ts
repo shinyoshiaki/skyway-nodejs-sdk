@@ -1,5 +1,4 @@
 import type { Encoding } from '@skyway-sdk/model';
-import { v4 as uuidv4 } from 'uuid';
 
 export type ClientEventType =
   | 'MediaDeviceReport'
@@ -121,7 +120,7 @@ export class ClientEvent {
   readonly payload: Record<string, unknown>;
 
   constructor(type: ClientEventType, payload: Record<string, unknown>) {
-    this.id = uuidv4();
+    this.id = globalThis.crypto.randomUUID();
     this.type = type;
     this.payload = payload;
   }

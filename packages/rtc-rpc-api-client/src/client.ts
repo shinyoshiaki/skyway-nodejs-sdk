@@ -87,31 +87,12 @@ export class RtcRpcApiClient {
       }
     });
 
-    this._rpc.onDisconnected.add(async ({ code }) => {
+    this._rpc.onDisconnected.add(async () => {
       if (
         this._rpc.negotiated &&
         !this._rpc.closed &&
         !this._rpc.reconnecting
       ) {
-        if (this._leaveWhenDisconnected && code !== 4001) {
-          log.warn(
-            'leaveWhenDisconnected: skip reconnect',
-            createWarnPayload({
-              operationName: 'RtcRpcApiClient.onDisconnected',
-              detail: 'leaveWhenDisconnected is true, skipping reconnect',
-              payload: { code },
-            }),
-          );
-          this.onFatalError.emit(
-            createError({
-              operationName: 'RtcRpcApiClient.onDisconnected',
-              info: errors.membersLeftByDisconnection,
-              path: log.prefix,
-            }),
-          );
-          this.close();
-          return;
-        }
         await this._reconnect();
       }
     });
