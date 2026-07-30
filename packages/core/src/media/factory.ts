@@ -6,10 +6,13 @@ import {
   Navigator,
 } from '../imports/mediasoup';
 import { createError, createWarnPayload } from '../util';
-import { LocalMediaStreamOptions } from './stream';
+import type { LocalMediaStreamOptions } from './stream';
 import { LocalAudioStream } from './stream/local/audio';
-import { ProcessedStream } from './stream/local/customVideo';
-import { DataStreamOptions, LocalDataStream } from './stream/local/data';
+import {
+  LocalCustomVideoStream,
+  type ProcessedStream,
+} from './stream/local/customVideo';
+import { type DataStreamOptions, LocalDataStream } from './stream/local/data';
 import { LocalVideoStream } from './stream/local/video';
 
 const log = new Logger('packages/core/src/media/factory.ts');
@@ -96,7 +99,7 @@ export class StreamFactory {
    * @description [japanese] CameraのVideoStreamを作成する
    */
   async createCameraVideoStream(
-    options: VideoMediaTrackConstraints & Partial<LocalMediaStreamOptions> = {}
+    options: VideoMediaTrackConstraints & Partial<LocalMediaStreamOptions> = {},
   ) {
     options.stopTrackWhenDisabled = options.stopTrackWhenDisabled ?? true;
 
@@ -113,7 +116,7 @@ export class StreamFactory {
    * @description [japanese] マイクのAudioStreamを作成する
    */
   async createMicrophoneAudioStream(
-    options: AudioMediaTrackConstraints & Partial<LocalMediaStreamOptions> = {}
+    options: AudioMediaTrackConstraints & Partial<LocalMediaStreamOptions> = {},
   ) {
     options.stopTrackWhenDisabled = options.stopTrackWhenDisabled ?? true;
 
@@ -131,11 +134,13 @@ export class StreamFactory {
    * PCブラウザでのみ利用可能なAPI。
    * VideoStreamは常に取得される（AudioStreamのみ取得することはできない）
    * audioオプションを有効にするとAudioStreamを取得することができる。
-   * audioオプションはWindowsのChromeにしか対応しておらず、
+   * audioオプションは一部のブラウザにしか対応しておらず、
    * それ以外の環境では有効にしても戻り値のaudioにはundefinedが返される。
+   * 各ブラウザの最新のaudioオプション対応状況はMDNのAudio capture supportの項目をご確認ください。
+   * https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getDisplayMedia#browser_compatibility
    */
   async createDisplayStreams<T extends DisplayStreamOptions>(
-    options: T = {} as T
+    options: T = {} as T,
   ): Promise<{
     video: LocalVideoStream;
     audio: T extends { audio: infer U }
@@ -164,7 +169,7 @@ export class StreamFactory {
         createWarnPayload({
           operationName: 'StreamFactory.createDisplayStreams',
           detail: 'This client does not support device audio capture',
-        })
+        }),
       );
     }
 
@@ -227,6 +232,30 @@ export class StreamFactory {
       audio: audioStream,
       video: videoStream,
     };
+  }
+
+  /**
+   * @description [japanese] CustomVideoStreamを作成する
+   */
+  async createCustomVideoStream(
+    processor: VideoStreamProcessor,
+    options: {
+      stopTrackWhenDisabled?: boolean;
+      constraints?: MediaTrackConstraints;
+    } = {},
+  ): Promise<LocalCustomVideoStream> {
+    options.stopTrackWhenDisabled = options.stopTrackWhenDisabled ?? true;
+    const stream = new LocalCustomVideoStream(options);
+
+    const processedStream = await processor.createProcessedStream({
+      constraints: options.constraints ?? {},
+      stopTrackWhenDisabled: options.stopTrackWhenDisabled,
+      onUpdateTrack: (track) => {
+        return stream.updateTrack(track);
+      },
+    });
+    await stream.setStream(processedStream);
+    return stream;
   }
 }
 
@@ -297,10 +326,9 @@ export type DisplayStreamOptions = {
     | (AudioMediaTrackConstraints &
         Partial<Pick<LocalMediaStreamOptions, 'stopTrackWhenDisabled'>>)
     | boolean;
-  video?:
-    | DisplayMediaTrackConstraints &
-        VideoMediaTrackConstraints &
-        Partial<Pick<LocalMediaStreamOptions, 'stopTrackWhenDisabled'>>;
+  video?: DisplayMediaTrackConstraints &
+    VideoMediaTrackConstraints &
+    Partial<Pick<LocalMediaStreamOptions, 'stopTrackWhenDisabled'>>;
 };
 
 interface VideoStreamProcessor {

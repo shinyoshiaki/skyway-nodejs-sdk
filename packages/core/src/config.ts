@@ -1,10 +1,14 @@
-import { LogFormat, LogLevel } from '@skyway-sdk/common';
+import { type LogFormat, Logger, type LogLevel } from '@skyway-sdk/common';
 import deepmerge from 'deepmerge';
 
-import { RtcApiConfig, RtcRpcApiConfig } from './imports/rtcApi';
-import { Codec } from './media';
+import { errors } from './errors';
+import type { RtcApiConfig, RtcRpcApiConfig } from './imports/rtcApi';
+import type { Codec } from './media';
+import { createError } from './util';
 
-export { RtcApiConfig, RtcRpcApiConfig };
+export type { RtcApiConfig, RtcRpcApiConfig };
+
+const log = new Logger('packages/core/src/config.ts');
 
 export type SkyWayConfigOptions = {
   /**@internal */
@@ -22,6 +26,14 @@ export type SkyWayConfigOptions = {
      * */
     timeout?: number;
     turnPolicy?: TurnPolicy;
+    /**
+     * @internal
+     */
+    stunPolicy?: 'enable' | 'disable';
+    /**
+     * @description [japanese] STUNサーバーへの接続に使用するポート番号。443, 3478のどちらか又は両方を指定できる。デフォルトは443。
+     */
+    stunPorts?: (443 | 3478)[];
     turnProtocol?: TurnProtocol;
     /**
      * @internal
@@ -35,7 +47,15 @@ export type SkyWayConfigOptions = {
   /**@internal */
   internal: { disableDPlane?: boolean };
   codecCapabilities: Codec[];
-  member: Partial<LocalMemberConfig>;
+  member: Partial<
+    LocalMemberConfig & {
+      /**
+       * @internal
+       * @readonly
+       * */
+      leaveWhenDisconnected?: boolean;
+    }
+  >;
 };
 
 /**
@@ -66,6 +86,20 @@ export type TurnPolicy = 'enable' | 'disable' | 'turnOnly';
 
 export type TurnProtocol = 'all' | 'udp' | 'tcp' | 'tls';
 
+// SkyWayConfigOptionsの全てのプロパティをRequiredにしてContextConfigクラスへ代入可能となった型
+// SkyWayContextInterfaceはこちらを利用することで、クラスを直接参照することなく後方互換性を保つ
+export type SkyWayContextConfig = {
+  rtcApi: Required<SkyWayConfigOptions['rtcApi']>;
+  iceParamServer: Required<SkyWayConfigOptions['iceParamServer']>;
+  signalingService: Required<SkyWayConfigOptions['signalingService']>;
+  analyticsService: Required<SkyWayConfigOptions['analyticsService']>;
+  rtcConfig: Required<SkyWayConfigOptions['rtcConfig']>;
+  token: Required<SkyWayConfigOptions['token']>;
+  log: Required<SkyWayConfigOptions['log']>;
+  internal: Required<SkyWayConfigOptions['internal']>;
+  member: Required<SkyWayConfigOptions['member']>;
+};
+
 export class ContextConfig implements SkyWayConfigOptions {
   /**@internal */
   rtcApi: Required<SkyWayConfigOptions['rtcApi']> = {
@@ -90,10 +124,13 @@ export class ContextConfig implements SkyWayConfigOptions {
     domain: 'analytics-logging.skyway.ntt.com',
     secure: true,
   };
+  // stunPortsのデフォルトは443。未指定の場合443に接続する
   rtcConfig: Required<SkyWayConfigOptions['rtcConfig']> = {
     timeout: 30_000,
     turnPolicy: 'enable',
     turnProtocol: 'all',
+    stunPolicy: 'enable',
+    stunPorts: [443],
     iceDisconnectBufferTimeout: 5000,
     iceUseLinkLocalAddress: true,
   };
@@ -112,11 +149,35 @@ export class ContextConfig implements SkyWayConfigOptions {
     keepaliveIntervalGapSec: 30,
     keepaliveIntervalSec: 30,
     preventAutoLeaveOnBeforeUnload: false,
+    leaveWhenDisconnected: false,
   };
   codecCapabilities: Codec[];
 
   /**@internal */
   constructor(options: Partial<SkyWayConfigOptions> = {}) {
     Object.assign(this, deepmerge(this, options));
+    // stunPortsはデフォルト[443]と結合せず、指定があれば上書きする
+    if (options.rtcConfig?.stunPorts) {
+      this.rtcConfig.stunPorts = options.rtcConfig.stunPorts;
+    }
+    this._validateStunPorts();
+  }
+
+  // stunPortsは443または3478を1つまたは2つ指定できる（空配列・3つ以上・重複・それ以外の値はエラー）
+  private _validateStunPorts() {
+    const { stunPorts } = this.rtcConfig;
+    const isValid =
+      Array.isArray(stunPorts) &&
+      stunPorts.length >= 1 &&
+      stunPorts.length <= 2 &&
+      stunPorts.every((port) => [443, 3478].includes(port)) &&
+      new Set(stunPorts).size === stunPorts.length;
+    if (!isValid) {
+      throw createError({
+        operationName: 'ContextConfig._validateStunPorts',
+        info: errors.invalidStunPorts,
+        path: log.prefix,
+      });
+    }
   }
 }

@@ -3,19 +3,32 @@ import { Logger, PromiseQueue } from '@skyway-sdk/common';
 import { errors } from '../../../errors';
 import { MediaStreamTrack } from '../../../imports/mediasoup';
 import { createError } from '../../../util';
-import { AudioMediaTrackConstraints } from '../../factory';
-import { LocalMediaStreamBase, LocalMediaStreamOptions } from './media';
+import type { AudioMediaTrackConstraints } from '../../factory';
+import { AudioLevel } from '../audioLevel';
+import {
+  LocalMediaStreamBase,
+  type LocalMediaStreamInterface,
+  type LocalMediaStreamOptions,
+} from './media';
 
 const log = new Logger('packages/core/src/media/stream/local/audio.ts');
 
-export class LocalAudioStream extends LocalMediaStreamBase {
+export interface LocalAudioStreamInterface extends LocalMediaStreamInterface {
+  readonly contentType: 'audio';
+}
+
+export class LocalAudioStream
+  extends LocalMediaStreamBase
+  implements LocalAudioStreamInterface
+{
   readonly contentType = 'audio';
   private _isEnabled = true;
   private _promiseQueue = new PromiseQueue();
+  private _audioLevel: AudioLevel | undefined;
 
   constructor(
     track: MediaStreamTrack,
-    options: AudioMediaTrackConstraints & Partial<LocalMediaStreamOptions> = {}
+    options: AudioMediaTrackConstraints & Partial<LocalMediaStreamOptions> = {},
   ) {
     super(track, 'audio', options);
 
@@ -53,5 +66,14 @@ export class LocalAudioStream extends LocalMediaStreamBase {
         log.debug('resumed');
       }
     });
+  }
+
+  /**@description [japanese] 直近100msにおける最大音量を取得する（値の範囲：0-1） */
+  getAudioLevel() {
+    // 不要なリソース生成を行わないように初回実行時にAudioLevelインスタンスを生成する
+    if (this._audioLevel === undefined) {
+      this._audioLevel = new AudioLevel(this.track);
+    }
+    return this._isEnabled ? this._audioLevel.calculate() : 0;
   }
 }

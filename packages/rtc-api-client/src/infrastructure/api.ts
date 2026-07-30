@@ -1,8 +1,17 @@
-import { Event, Logger, SkyWayError } from '@skyway-sdk/common';
-import { Channel, Member, Publication, Subscription } from '@skyway-sdk/model';
+import { Event, Logger, type SkyWayError } from '@skyway-sdk/common';
+import type {
+  Channel,
+  Member,
+  Publication,
+  Subscription,
+} from '@skyway-sdk/model';
+import type {
+  RtcRpcApiClient,
+  errors as rpcErrors,
+} from '../imports/rpc';
 import { SkyWayAuthToken } from '@skyway-sdk/token';
 
-import {
+import type {
   ChannelInit,
   ChannelQuery,
   MemberInit,
@@ -20,15 +29,23 @@ export class RtcApiImpl implements RtcApi {
   closed = false;
 
   readonly onClose = new Event<void>();
+  readonly onReconnectStart = new Event<void>();
+  readonly onReconnectSuccess = new Event<void>();
   readonly onFatalError = new Event<SkyWayError>();
 
-  private _token = SkyWayAuthToken.Decode(this._client.token);
-
   constructor(private _client: RtcRpcApiClient) {
+    SkyWayAuthToken.Decode(this._client.token);
+
     _client.onClose.once(() => {
       this.close();
     });
-    _client.onFatalError.add((e: any) => {
+    _client.onReconnectStart.add(() => {
+      this.onReconnectStart.emit();
+    });
+    _client.onReconnectSuccess.add(() => {
+      this.onReconnectSuccess.emit();
+    });
+    _client.onFatalError.add((e) => {
       this.onFatalError.emit(e);
     });
   }
@@ -39,7 +56,7 @@ export class RtcApiImpl implements RtcApi {
   }
 
   async updateAuthToken(token: string) {
-    this._token = SkyWayAuthToken.Decode(token);
+    SkyWayAuthToken.Decode(token);
     await this._client.updateToken(token).catch((e) => {
       const { info } = e as { info: typeof rpcErrors.rpcResponseError };
       if (info?.error?.data?.code === 429001) {
@@ -53,7 +70,7 @@ export class RtcApiImpl implements RtcApi {
       const error = this._commonError(
         'RtcApiImpl.updateAuthToken',
         info?.error?.code ?? -1,
-        e
+        e,
       );
       if (error) {
         throw error;
@@ -109,12 +126,16 @@ export class RtcApiImpl implements RtcApi {
         });
       case 403:
       case 4030:
-        return createError({
-          operationName: method,
-          info: errors.insufficientPermissions,
-          path: log.prefix,
-          error: detail,
-        });
+        // ここではinsufficientPermissionsのみを捕捉する．他のものはそれぞれの操作内で判定する．
+        if (detail?.info?.error?.data?.code === 403000) {
+          return createError({
+            operationName: method,
+            info: errors.insufficientPermissions,
+            path: log.prefix,
+            error: detail,
+          });
+        }
+        break;
       case 429:
         return createError({
           operationName: method,
@@ -128,7 +149,7 @@ export class RtcApiImpl implements RtcApi {
   /**@throws {@link SkyWayError} */
   async createChannel(
     appId: string,
-    channelInit: ChannelInit
+    channelInit: ChannelInit,
   ): Promise<Channel> {
     const { id } = await this._client
       .createChannel({
@@ -141,7 +162,7 @@ export class RtcApiImpl implements RtcApi {
         const error = this._commonError(
           'RtcApiImpl.createChannel',
           info?.error?.code ?? -1,
-          e
+          e,
         );
         if (error) {
           throw error;
@@ -176,7 +197,7 @@ export class RtcApiImpl implements RtcApi {
 
   async getChannel(
     appId: string,
-    { name, id }: ChannelQuery
+    { name, id }: ChannelQuery,
   ): Promise<Channel> {
     if (id) {
       return await this._client.getChannel({ appId, id }).catch((e) => {
@@ -184,7 +205,7 @@ export class RtcApiImpl implements RtcApi {
         const error = this._commonError(
           'RtcApiImpl.getChannel',
           info?.error?.code ?? -1,
-          e
+          e,
         );
         if (error) {
           throw error;
@@ -213,7 +234,7 @@ export class RtcApiImpl implements RtcApi {
         const error = this._commonError(
           'RtcApiImpl.getChannel',
           info?.error?.code ?? -1,
-          e
+          e,
         );
         if (error) {
           throw error;
@@ -238,7 +259,7 @@ export class RtcApiImpl implements RtcApi {
     }
 
     throw createError({
-      operationName: 'RtcApiImpl.createChannel',
+      operationName: 'RtcApiImpl.getChannel',
       path: log.prefix,
       info: errors.invalidRequestParameter,
     });
@@ -246,14 +267,14 @@ export class RtcApiImpl implements RtcApi {
 
   async findOrCreateChannel(
     appId: string,
-    query: ChannelInit
+    query: ChannelInit,
   ): Promise<Channel> {
     return this._client.findOrCreateChannel({ ...query, appId }).catch((e) => {
       const { info } = e as { info: typeof rpcErrors.rpcResponseError };
       const error = this._commonError(
         'RtcApiImpl.findOrCreateChannel',
         info?.error?.code ?? -1,
-        e
+        e,
       );
       if (error) {
         throw error;
@@ -295,7 +316,7 @@ export class RtcApiImpl implements RtcApi {
       const error = this._commonError(
         'RtcApiImpl.deleteChannel',
         info?.error?.code ?? -1,
-        e
+        e,
       );
       if (error) {
         throw error;
@@ -322,7 +343,7 @@ export class RtcApiImpl implements RtcApi {
   async updateChannelMetadata(
     appId: string,
     id: Channel['id'],
-    metadata: string
+    metadata: string,
   ): Promise<void> {
     await this._client
       .updateChannelMetadata({ appId, id, metadata })
@@ -331,7 +352,7 @@ export class RtcApiImpl implements RtcApi {
         const error = this._commonError(
           'RtcApiImpl.updateChannelMetadata',
           info?.error?.code ?? -1,
-          e
+          e,
         );
         if (error) {
           throw error;
@@ -371,12 +392,20 @@ export class RtcApiImpl implements RtcApi {
         const error = this._commonError(
           'RtcApiImpl.addMember',
           info?.error?.code ?? -1,
-          e
+          e,
         );
         if (error) {
           throw error;
         }
         switch (info?.error?.code) {
+          case 403:
+          case 4030:
+            throw createError({
+              operationName: 'RtcApiImpl.addMember',
+              path: log.prefix,
+              info: errors.membersPerRoomLimitExceeded,
+              error: e,
+            });
           case 404:
             throw createError({
               operationName: 'RtcApiImpl.addMember',
@@ -415,7 +444,7 @@ export class RtcApiImpl implements RtcApi {
     appId: string,
     channelId: Channel['id'],
     memberId: Member['id'],
-    ttlSec: number
+    ttlSec: number,
   ): Promise<void> {
     await this._client
       .updateMemberTtl({
@@ -429,7 +458,7 @@ export class RtcApiImpl implements RtcApi {
         const error = this._commonError(
           'RtcApiImpl.updateMemberTtl',
           info?.error?.code ?? -1,
-          e
+          e,
         );
         if (error) {
           throw error;
@@ -466,7 +495,7 @@ export class RtcApiImpl implements RtcApi {
         const error = this._commonError(
           'RtcApiImpl.getServerUnixtime',
           info?.error?.code ?? -1,
-          e
+          e,
         );
         if (error) {
           throw error;
@@ -484,7 +513,7 @@ export class RtcApiImpl implements RtcApi {
     appId: string,
     channelId: Channel['id'],
     memberId: Member['id'],
-    metadata: string
+    metadata: string,
   ): Promise<void> {
     await this._client
       .updateMemberMetadata({
@@ -498,7 +527,7 @@ export class RtcApiImpl implements RtcApi {
         const error = this._commonError(
           'RtcApiImpl.updateMemberMetadata',
           info?.error?.code ?? -1,
-          e
+          e,
         );
         if (error) {
           throw error;
@@ -525,7 +554,7 @@ export class RtcApiImpl implements RtcApi {
   async leave(
     appId: string,
     channelId: Channel['id'],
-    memberId: Member['id']
+    memberId: Member['id'],
   ): Promise<void> {
     await this._client
       .leaveChannel({
@@ -538,7 +567,7 @@ export class RtcApiImpl implements RtcApi {
         const error = this._commonError(
           'RtcApiImpl.leaveChannel',
           info?.error?.code ?? -1,
-          e
+          e,
         );
         if (error) {
           throw error;
@@ -582,12 +611,37 @@ export class RtcApiImpl implements RtcApi {
         const error = this._commonError(
           'RtcApiImpl.publish',
           info?.error?.code ?? -1,
-          e
+          e,
         );
         if (error) {
           throw error;
         }
         switch (info?.error?.code) {
+          case 403:
+          case 4030:
+            switch (info?.error?.data?.code) {
+              case 403002:
+                throw createError({
+                  operationName: 'RtcApiImpl.publish',
+                  path: log.prefix,
+                  info: errors.publicationsPerRoomLimitExceeded,
+                  error: e,
+                });
+              case 403004:
+                throw createError({
+                  operationName: 'RtcApiImpl.publish',
+                  path: log.prefix,
+                  info: errors.publicationsPerMemberLimitExceeded,
+                  error: e,
+                });
+              default:
+                throw createError({
+                  operationName: 'RtcApiImpl.publish',
+                  path: log.prefix,
+                  info: errors.internalError,
+                  error: e,
+                });
+            }
           default:
             throw createError({
               operationName: 'RtcApiImpl.publish',
@@ -604,7 +658,7 @@ export class RtcApiImpl implements RtcApi {
     appId: string,
     channelId: Channel['id'],
     publicationId: Publication['id'],
-    metadata: string
+    metadata: string,
   ): Promise<void> {
     await this._client
       .updatePublicationMetadata({
@@ -618,7 +672,7 @@ export class RtcApiImpl implements RtcApi {
         const error = this._commonError(
           'RtcApiImpl.updatePublicationMetadata',
           info?.error?.code ?? -1,
-          e
+          e,
         );
         if (error) {
           throw error;
@@ -645,7 +699,7 @@ export class RtcApiImpl implements RtcApi {
   async disablePublication(
     appId: string,
     channelId: Channel['id'],
-    publicationId: Publication['id']
+    publicationId: Publication['id'],
   ): Promise<void> {
     await this._client
       .disablePublication({
@@ -658,7 +712,7 @@ export class RtcApiImpl implements RtcApi {
         const error = this._commonError(
           'RtcApiImpl.disablePublication',
           info?.error?.code ?? -1,
-          e
+          e,
         );
         if (error) {
           throw error;
@@ -685,7 +739,7 @@ export class RtcApiImpl implements RtcApi {
   async enablePublication(
     appId: string,
     channelId: Channel['id'],
-    publicationId: Publication['id']
+    publicationId: Publication['id'],
   ): Promise<void> {
     await this._client
       .enablePublication({
@@ -698,7 +752,7 @@ export class RtcApiImpl implements RtcApi {
         const error = this._commonError(
           'RtcApiImpl.enablePublication',
           info?.error?.code ?? -1,
-          e
+          e,
         );
         if (error) {
           throw error;
@@ -725,7 +779,7 @@ export class RtcApiImpl implements RtcApi {
   async unpublish(
     appId: string,
     channelId: Channel['id'],
-    publicationId: Publication['id']
+    publicationId: Publication['id'],
   ): Promise<void> {
     await this._client
       .unpublishStream({ channelId, publicationId, appId })
@@ -734,7 +788,7 @@ export class RtcApiImpl implements RtcApi {
         const error = this._commonError(
           'RtcApiImpl.unpublishStream',
           info?.error?.code ?? -1,
-          e
+          e,
         );
         if (error) {
           throw error;
@@ -772,12 +826,37 @@ export class RtcApiImpl implements RtcApi {
         const error = this._commonError(
           'RtcApiImpl.subscribeStream',
           info?.error?.code ?? -1,
-          e
+          e,
         );
         if (error) {
           throw error;
         }
         switch (info?.error?.code) {
+          case 403:
+          case 4030:
+            switch (info?.error?.data?.code) {
+              case 403003:
+                throw createError({
+                  operationName: 'RtcApiImpl.subscribeStream',
+                  path: log.prefix,
+                  info: errors.subscriptionsPerRoomLimitExceeded,
+                  error: e,
+                });
+              case 403006:
+                throw createError({
+                  operationName: 'RtcApiImpl.subscribeStream',
+                  path: log.prefix,
+                  info: errors.subscriptionsPerMemberLimitExceeded,
+                  error: e,
+                });
+              default:
+                throw createError({
+                  operationName: 'RtcApiImpl.subscribeStream',
+                  path: log.prefix,
+                  info: errors.internalError,
+                  error: e,
+                });
+            }
           case 404:
             throw createError({
               operationName: 'RtcApiImpl.subscribeStream',
@@ -807,7 +886,7 @@ export class RtcApiImpl implements RtcApi {
   async unsubscribe(
     appId: string,
     channelId: Channel['id'],
-    subscriptionId: Subscription['id']
+    subscriptionId: Subscription['id'],
   ): Promise<void> {
     await this._client
       .unsubscribeStream({
@@ -820,7 +899,7 @@ export class RtcApiImpl implements RtcApi {
         const error = this._commonError(
           'RtcApiImpl.unsubscribeStream',
           info?.error?.code ?? -1,
-          e
+          e,
         );
         if (error) {
           throw error;

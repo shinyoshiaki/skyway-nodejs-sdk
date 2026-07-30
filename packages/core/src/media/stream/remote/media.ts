@@ -1,5 +1,5 @@
 import { MediaStreamTrack } from '../../../imports/mediasoup';
-import { attachElement, ContentType, detachElement } from '../base';
+import { attachElement, type ContentType, detachElement } from '../base';
 import { RemoteStreamBase } from './base';
 
 export abstract class RemoteMediaStreamBase extends RemoteStreamBase {
@@ -7,7 +7,7 @@ export abstract class RemoteMediaStreamBase extends RemoteStreamBase {
   constructor(
     readonly id: string,
     readonly contentType: ContentType,
-    readonly track: MediaStreamTrack
+    readonly track: MediaStreamTrack,
   ) {
     super(id, contentType);
   }

@@ -37,12 +37,20 @@ JS-SDK と API はほとんど同じですが、一部機能に対応してい�
 
 ## NPM を利用する場合
 
-npm がインストールされている環境下で以下のコマンドを実行します
-
-**Room ライブラリ**
+npm がインストールされている環境下で以下のコマンドを実行します。
 
 ```sh
 npm install @shinyoshiaki/skyway-nodejs-sdk
+```
+
+また SkyWay Auth Token 用モジュールは次の HTML 記述および グローバル変数 `skyway_token` より取得することができます。
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/@skyway-sdk/token/dist/skyway_token-latest.js"></script>
+```
+
+```js
+const { SkyWayAuthToken, nowInSec, uuidV4 } = skyway_token;
 ```
 
 # ドキュメント
@@ -59,9 +67,23 @@ npm install @shinyoshiaki/skyway-nodejs-sdk
 
 - [Room ライブラリ](https://javascript-sdk.api-reference.skyway.ntt.com/room)
 
-# このリポジトリのセットアップ方法(環境構築)
+# サンプルアプリの起動方法
 
-このリポジトリのサンプルアプリを起動したり、SDK を利用者自身でビルドするために必要な手順。
+examples 配下にサンプルアプリケーションを同梱しております。
+
+- examples ディレクトリ以下の任意のサンプルアプリのディレクトリに移動する
+- そのディレクトリで以下のコマンドを実行する
+
+```sh
+npm i
+npm run dev
+```
+
+- コマンドを実行するとローカルサーバが起動するので Web ブラウザでアクセスする
+
+# リポジトリのセットアップ方法(ビルドのための環境構築)
+
+以下はこのリポジトリを用いて利用者自身で SDK をビルドするために必要な手順です。なおこのリポジトリはモノリポジトリ構成であり、依存関係は pnpm の workspace によって管理されています。
 
 ## 初期設定時
 
@@ -77,13 +99,17 @@ sudo apt-get -y install build-essential git gobject-introspection libgirepositor
 - ルートディレクトリで次のコマンドを実行する
   - `git submodule update --init --recursive`
 - ルートディレクトリで次のコマンドを実行する
-  - `pnpm run first`
+
+```sh
+pnpm run first
+```
+
 - `env.ts.template`を`env.ts`にリネームし、ファイル中の appId と secret にダッシュボードで発行した appId と secret を入力する
   - appId と secret の発行方法は[こちら](https://skyway.ntt.com/ja/docs/user-guide/javascript-sdk/quickstart/#199)
 
 ## 更新時
 
-git で更新を同期した時や packages ディレクトリ以下のソースコードを編集した際にはルートディレクトリで以下のコマンドを実行する必要がある。
+git で更新を同期した時や packages ディレクトリ以下のソースコードを編集した際にはルートディレクトリで以下のコマンドを実行する必要があります。
 
 ```sh
 pnpm run compile
@@ -101,7 +127,10 @@ pnpm run compile
 
 - 環境構築のセクションの作業を実施する
 - ルートディレクトリで次のコマンドを実行する
-  - `pnpm run build`
+
+```sh
+pnpm run build
+```
 
 # License
 

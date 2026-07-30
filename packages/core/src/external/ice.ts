@@ -1,7 +1,7 @@
 import { BackOff, HttpClient, Logger } from '@skyway-sdk/common';
 
-import { SkyWayContext } from '../context';
-import { RTCIceServer } from '../imports/mediasoup';
+import type { SkyWayContext } from '../context';
+import type { RTCIceServer } from '../imports/mediasoup';
 
 const log = new Logger('packages/core/src/external/ice.ts');
 
@@ -31,7 +31,7 @@ export class IceManager {
       channelId: string;
       ttl?: number;
       context: SkyWayContext;
-    }
+    },
   ) {}
 
   async updateIceParams() {
@@ -75,16 +75,30 @@ export class IceManager {
         },
       ];
     }
-    this._stunServers = [{ urls: `stun:${stun.domain}:${stun.port}` }];
+    // stunPortsの妥当性はContextConfigの構築時に検証済み。デフォルトは443
+    const { stunPorts } = this.context.config.rtcConfig;
+    this._stunServers = stunPorts.map((port) => ({
+      urls: `stun:${stun.domain}:${port}`,
+    }));
 
     log.debug('[end] fetch iceParams', { turn, stun });
   }
 
   get iceServers(): RTCIceServer[] {
-    let iceServers: RTCIceServer[] = [...this._stunServers];
+    const { rtcConfig } = this.context.config;
+
+    let iceServers: RTCIceServer[] = [];
+
+    if (
+      rtcConfig.turnPolicy !== 'turnOnly' &&
+      rtcConfig.stunPolicy !== 'disable'
+    ) {
+      iceServers = [...this._stunServers];
+    }
+
     const turnServers = this._turnServers.filter((t) => {
       const url = t.urls as string;
-      switch (this.context.config.rtcConfig.turnProtocol) {
+      switch (rtcConfig.turnProtocol) {
         case 'all':
           return true;
         case 'udp':
@@ -93,10 +107,12 @@ export class IceManager {
           return !url.startsWith('turns') && url.endsWith('tcp');
         case 'tls':
           return url.startsWith('turns');
+        default:
+          return false;
       }
     });
 
-    if (this.context.config.rtcConfig.turnPolicy !== 'disable') {
+    if (rtcConfig.turnPolicy !== 'disable') {
       iceServers = [...iceServers, ...turnServers];
     }
 

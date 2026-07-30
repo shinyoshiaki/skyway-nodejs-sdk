@@ -1,20 +1,19 @@
-import { EventDisposer, Logger } from '@skyway-sdk/common';
-import { Event } from '@skyway-sdk/common';
+import { Event, EventDisposer, Logger } from '@skyway-sdk/common';
 
-import { SkyWayChannelImpl } from '../channel';
-import { SkyWayContext } from '../context';
+import type { SkyWayChannelImpl } from '../channel';
+import type { SkyWayContext } from '../context';
 import { errors } from '../errors';
-import { RTCPeerConnection } from '../imports/mediasoup';
-import { Codec } from '../media';
-import { ContentType, WebRTCStats } from '../media/stream';
-import { RemoteStream } from '../media/stream/remote';
-import { RemoteAudioStream } from '../media/stream/remote/audio';
-import { RemoteDataStream } from '../media/stream/remote/data';
-import { RemoteVideoStream } from '../media/stream/remote/video';
-import { Member } from '../member';
-import { RemoteMemberImplInterface } from '../member/remoteMember';
-import { TransportConnectionState } from '../plugin/interface';
-import { Publication, PublicationImpl } from '../publication';
+import type { RTCPeerConnection } from '../imports/mediasoup';
+import type { Codec } from '../media';
+import type { ContentType, WebRTCStats } from '../media/stream';
+import type { RemoteStream } from '../media/stream/remote';
+import type { RemoteAudioStream } from '../media/stream/remote/audio';
+import type { RemoteDataStream } from '../media/stream/remote/data';
+import type { RemoteVideoStream } from '../media/stream/remote/video';
+import type { Member } from '../member';
+import type { RemoteMemberImplInterface } from '../member/remoteMember';
+import type { TransportConnectionState } from '../plugin/interface';
+import type { Publication, PublicationImpl } from '../publication';
 import { createError } from '../util';
 
 export * from './factory';
@@ -25,7 +24,7 @@ export interface Subscription<
   T extends
     | RemoteVideoStream
     | RemoteAudioStream
-    | RemoteDataStream = RemoteStream
+    | RemoteDataStream = RemoteStream,
 > {
   id: string;
   contentType: ContentType;
@@ -35,7 +34,8 @@ export interface Subscription<
   /** @description [japanese] SubscriptionにStreamが紐つけられた時に発火するイベント */
   onStreamAttached: Event<void>;
   /**
-   * @description [japanese] メディア通信の状態が変化した時に発火するイベント
+   * @description [japanese] メディア通信の状態が変化した時に発火するイベント。
+   * 状態の現在値を参照する場合はgetConnectionStateメソッドを利用してください。
    */
   onConnectionStateChanged: Event<TransportConnectionState>;
   /**
@@ -65,7 +65,8 @@ export interface Subscription<
    */
   getRTCPeerConnection(): RTCPeerConnection | undefined;
   /**
-   * @description [japanese] メディア通信の状態を取得する
+   * @description [japanese] メディア通信の状態を取得する。
+   * 状態が変化したことはonConnectionStateChangedイベントで通知されます。
    */
   getConnectionState(): TransportConnectionState;
 }
@@ -75,7 +76,7 @@ export class SubscriptionImpl<
   T extends
     | RemoteVideoStream
     | RemoteAudioStream
-    | RemoteDataStream = RemoteStream
+    | RemoteDataStream = RemoteStream,
 > implements Subscription<T>
 {
   readonly id: string;
@@ -143,11 +144,15 @@ export class SubscriptionImpl<
   /**@internal */
   _setStream(stream: T) {
     this._stream = stream;
-    this.onStreamAttached.emit();
     stream._onConnectionStateChanged.add((e) => {
       log.debug('onConnectionStateChanged', this.id, e);
       this.onConnectionStateChanged.emit(e);
     });
+    const state = stream._getTransport()?.connectionState;
+    if (state) {
+      stream._setConnectionState(state);
+    }
+    this.onStreamAttached.emit();
   }
 
   get stream() {

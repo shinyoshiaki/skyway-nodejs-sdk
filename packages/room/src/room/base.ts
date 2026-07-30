@@ -1,5 +1,5 @@
 import { Events, Logger } from '@skyway-sdk/common';
-import {
+import type {
   ChannelState,
   LocalPersonAdapter,
   LocalStream,
@@ -13,22 +13,24 @@ import {
   SkyWayContext,
   SubscriptionImpl,
 } from '../imports/core';
-import { PublicationType } from '@skyway-sdk/model';
-import { SFUBotMember, SFUBotPlugin } from '../imports/sfu';
-import { v4 } from 'uuid';
+import type { PublicationType } from '@skyway-sdk/model';
+import { SFUBotMember, type SFUBotPlugin } from '../imports/sfu';
 
 import { errors } from '../errors';
-import { RoomMember, RoomMemberImpl } from '../member';
-import { LocalRoomMember, LocalRoomMemberImpl } from '../member/local/default';
-import { LocalP2PRoomMemberImpl } from '../member/local/p2p';
-import { LocalSFURoomMemberImpl } from '../member/local/sfu';
+import type { RoomMember, RoomMemberImpl } from '../member';
+import type {
+  LocalRoomMember,
+  LocalRoomMemberImpl,
+} from '../member/local/default';
+import type { LocalP2PRoomMemberImpl } from '../member/local/p2p';
+import type { LocalSFURoomMemberImpl } from '../member/local/sfu';
 import { RemoteRoomMemberImpl } from '../member/remote/base';
-import { RoomPublication, RoomPublicationImpl } from '../publication';
-import { RoomSubscription, RoomSubscriptionImpl } from '../subscription';
+import { type RoomPublication, RoomPublicationImpl } from '../publication';
+import { type RoomSubscription, RoomSubscriptionImpl } from '../subscription';
 import { createError } from '../util';
-import { RoomType } from '.';
-import { Room } from './default';
-import * as event from './event';
+import type { RoomType } from '.';
+import type { Room } from './default';
+import type * as event from './event';
 
 const log = new Logger('packages/room/src/room/base.ts');
 
@@ -37,12 +39,13 @@ export type RoomState = ChannelState;
 /**@internal */
 export abstract class RoomBase implements Room {
   readonly type: RoomType;
+  protected abstract _disableSignaling: boolean;
   protected _members: { [memberId: string]: RoomMemberImpl } = {};
 
   /**@private */
   static async _createBot(context: SkyWayContext, channel: SkyWayChannelImpl) {
     const plugin = context.plugins.find(
-      (p) => p.subtype === 'sfu'
+      (p) => p.subtype === 'sfu',
     ) as SFUBotPlugin;
 
     const bot = channel.members.find((m) => m.subtype === SFUBotMember.subtype);
@@ -64,7 +67,7 @@ export abstract class RoomBase implements Room {
   /**@private */
   _getOriginPublication(publicationId: string) {
     const origin = (this.publications as RoomPublicationImpl[]).find(
-      (p) => p._publication.origin?.id === publicationId
+      (p) => p._publication.origin?.id === publicationId,
     );
     return origin;
   }
@@ -150,14 +153,17 @@ export abstract class RoomBase implements Room {
     return this._channel.disposed;
   }
 
-  constructor(type: RoomType, public _channel: SkyWayChannelImpl) {
+  constructor(
+    type: RoomType,
+    public _channel: SkyWayChannelImpl,
+  ) {
     this.type = type;
 
     this._channel.onClosed.pipe(this.onClosed);
     this._channel.onMetadataUpdated.pipe(this.onMetadataUpdated);
-    this._channel.onMemberMetadataUpdated.add((e) => {
-      this._handleOnMemberMetadataUpdate(e);
-    });
+    this._channel.onMemberMetadataUpdated.add((e) =>
+      this._handleOnMemberMetadataUpdate(e),
+    );
 
     this._setChannelState();
     this._setChannelListener();
@@ -168,35 +174,62 @@ export abstract class RoomBase implements Room {
     this.onMemberMetadataUpdated.emit({ member, metadata: e.metadata });
   }
 
-  protected abstract _setChannelState(): void;
+  private _setChannelState() {
+    this._channel.members.forEach((m) => {
+      if (m.type === 'bot') {
+        return;
+      }
+      const member = new RemoteRoomMemberImpl(m, this);
+      this._members[m.id] = member;
+    });
+
+    this._channel.publications.forEach((p) => {
+      if (!this._isAcceptablePublication(p as PublicationImpl)) {
+        return;
+      }
+
+      this._addPublication(p);
+    });
+
+    this._channel.subscriptions.forEach((s) => {
+      if (s.subscriber.type === 'bot') {
+        return;
+      }
+      this._addSubscription(s as SubscriptionImpl);
+    });
+  }
 
   private _setChannelListener() {
     this._channel.onMemberJoined.add((e) => this._handleOnMemberJoin(e.member));
     this._channel.onMemberLeft.add((e) => this._handleOnMemberLeft(e.member));
-    this._channel.onStreamPublished.add((e) => {
-      this._handleOnStreamPublish(e.publication as PublicationImpl);
-    });
-    this._channel.onStreamUnpublished.add((e) =>
-      this._handleOnStreamUnpublish(e.publication as PublicationImpl)
+    this._channel.onStreamPublished.add((e) =>
+      this._handleOnStreamPublish(e.publication as PublicationImpl),
     );
-    this._channel.onPublicationMetadataUpdated.add((e) => {
-      this._handleOnPublicationMetadataUpdate(e.publication as PublicationImpl);
-    });
-    this._channel.onPublicationEnabled.add((e) => {
-      this._handleOnPublicationEnabled(e.publication as PublicationImpl);
-    });
-    this._channel.onPublicationDisabled.add((e) => {
-      this._handleOnPublicationDisabled(e.publication as PublicationImpl);
-    });
-    this._channel.onPublicationSubscribed.add((e) => {
-      this._handleOnStreamSubscribe(e.subscription as SubscriptionImpl);
-    });
+    this._channel.onStreamUnpublished.add((e) =>
+      this._handleOnStreamUnpublish(e.publication as PublicationImpl),
+    );
+    this._channel.onPublicationMetadataUpdated.add((e) =>
+      this._handleOnPublicationMetadataUpdate(e.publication as PublicationImpl),
+    );
+    this._channel.onPublicationEnabled.add((e) =>
+      this._handleOnPublicationEnabled(e.publication as PublicationImpl),
+    );
+    this._channel.onPublicationDisabled.add((e) =>
+      this._handleOnPublicationDisabled(e.publication as PublicationImpl),
+    );
+    this._channel.onPublicationSubscribed.add((e) =>
+      this._handleOnStreamSubscribe(e.subscription as SubscriptionImpl),
+    );
     this._channel.onPublicationUnsubscribed.add((e) =>
-      this._handleOnStreamUnsubscribe(e.subscription as SubscriptionImpl)
+      this._handleOnStreamUnsubscribe(e.subscription as SubscriptionImpl),
     );
   }
 
-  protected _handleOnMemberJoin(m: Member) {
+  private _handleOnMemberJoin(m: Member) {
+    if (m.type === 'bot') {
+      return;
+    }
+
     if (this._getMember(m.id)) {
       return;
     }
@@ -208,8 +241,12 @@ export abstract class RoomBase implements Room {
     this.onMemberListChanged.emit({});
   }
 
-  protected _handleOnMemberLeft(m: Member) {
+  private _handleOnMemberLeft(m: Member) {
     const member = this._getMember(m.id);
+    if (!member) {
+      // should be bot
+      return;
+    }
 
     delete this._members[m.id];
 
@@ -221,7 +258,11 @@ export abstract class RoomBase implements Room {
     this.onMemberListChanged.emit({});
   }
 
-  protected _handleOnStreamPublish(p: PublicationImpl) {
+  private _handleOnStreamPublish(p: PublicationImpl) {
+    if (!this._isAcceptablePublication(p)) {
+      return;
+    }
+
     if (this._getPublication(p.id)) {
       return;
     }
@@ -231,7 +272,11 @@ export abstract class RoomBase implements Room {
     this.onPublicationListChanged.emit({});
   }
 
-  protected _handleOnStreamUnpublish(p: PublicationImpl) {
+  private _handleOnStreamUnpublish(p: PublicationImpl) {
+    if (!this._isAcceptablePublication(p)) {
+      return;
+    }
+
     const publication = this._getPublication(p.id);
     delete this._publications[p.id];
 
@@ -239,12 +284,7 @@ export abstract class RoomBase implements Room {
     this.onPublicationListChanged.emit({});
   }
 
-  protected abstract _getTargetPublication(
-    publicationId: string,
-    publicationType?: PublicationType
-  ): RoomPublication | undefined;
-
-  protected _handleOnPublicationMetadataUpdate(p: PublicationImpl) {
+  private _handleOnPublicationMetadataUpdate(p: PublicationImpl) {
     const publication = this._getTargetPublication(p.id, p.type);
     if (!publication) return;
 
@@ -254,21 +294,25 @@ export abstract class RoomBase implements Room {
     });
   }
 
-  protected _handleOnPublicationEnabled(p: PublicationImpl) {
+  private _handleOnPublicationEnabled(p: PublicationImpl) {
     const publication = this._getTargetPublication(p.id, p.type);
     if (!publication) return;
 
     this.onPublicationEnabled.emit({ publication });
   }
 
-  protected _handleOnPublicationDisabled(p: PublicationImpl) {
+  private _handleOnPublicationDisabled(p: PublicationImpl) {
     const publication = this._getTargetPublication(p.id, p.type);
     if (!publication) return;
 
     this.onPublicationDisabled.emit({ publication });
   }
 
-  protected _handleOnStreamSubscribe(s: SubscriptionImpl) {
+  private _handleOnStreamSubscribe(s: SubscriptionImpl) {
+    if (s.subscriber.type === 'bot') {
+      return;
+    }
+
     if (this._getSubscription(s.id)) {
       return;
     }
@@ -279,7 +323,11 @@ export abstract class RoomBase implements Room {
     this.onSubscriptionListChanged.emit({});
   }
 
-  protected _handleOnStreamUnsubscribe(s: SubscriptionImpl) {
+  private _handleOnStreamUnsubscribe(s: SubscriptionImpl) {
+    if (s.subscriber.type === 'bot') {
+      return;
+    }
+
     const subscription = this._getSubscription(s.id);
     delete this._subscriptions[s.id];
 
@@ -310,7 +358,6 @@ export abstract class RoomBase implements Room {
       });
     }
 
-    roomMemberInit.name = roomMemberInit.name ?? v4();
     const local = await this._channel.join(roomMemberInit);
 
     if (!this._getMember(local.id)) {
@@ -332,24 +379,34 @@ export abstract class RoomBase implements Room {
     return local;
   }
 
+  protected abstract _getTargetPublication(
+    publicationId: string,
+    publicationType?: PublicationType,
+  ): RoomPublication | undefined;
+
   protected abstract _createLocalRoomMember<
     T extends
       | LocalRoomMemberImpl
       | LocalP2PRoomMemberImpl
-      | LocalSFURoomMemberImpl
+      | LocalSFURoomMemberImpl,
   >(local: LocalPersonAdapter, room: this): T;
+
+  protected abstract _isAcceptablePublication(p: PublicationImpl): boolean;
 
   async join<
     T extends
       | LocalRoomMemberImpl
       | LocalP2PRoomMemberImpl
-      | LocalSFURoomMemberImpl
+      | LocalSFURoomMemberImpl,
   >(memberInit: RoomMemberInit = {}): Promise<T> {
-    const local = await this._joinChannel(memberInit);
+    const local = await this._joinChannel({
+      ...memberInit,
+      disableSignaling: this._disableSignaling,
+    });
 
     const localRoomMember = this._createLocalRoomMember<T>(
       local as LocalPersonAdapter,
-      this
+      this,
     );
 
     log.debug('member joined', memberInit);

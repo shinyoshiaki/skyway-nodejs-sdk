@@ -1,25 +1,25 @@
 import { Event, Logger } from '@skyway-sdk/common';
 import { uuidV4 } from '@skyway-sdk/token';
 
-import { SkyWayContext } from '../../../../context';
+import type { SkyWayContext } from '../../../../context';
 import { errors } from '../../../../errors';
-import { AnalyticsSession } from '../../../../external/analytics';
-import { IceManager } from '../../../../external/ice';
-import { SignalingSession } from '../../../../external/signaling';
+import type { AnalyticsSession } from '../../../../external/analytics';
+import type { IceManager } from '../../../../external/ice';
+import type { SignalingSession } from '../../../../external/signaling';
 import {
   RTCIceCandidate,
   RTCPeerConnection,
   RTCPeerConnectionIceEvent,
   useAudioLevelIndication,
 } from '../../../../imports/mediasoup';
-import { LocalPersonImpl } from '../../../../member/localPerson';
-import { RemoteMember } from '../../../../member/remoteMember';
+import type { LocalPersonImpl } from '../../../../member/localPerson';
+import type { RemoteMember } from '../../../../member/remoteMember';
 import { createError, createWarnPayload } from '../../../../util';
-import { statsToJson } from '../util';
-import { P2PMessage } from '.';
+import { createEmptyStatsReport, statsToJson } from '../util';
+import type { P2PMessage } from '.';
 
 const log = new Logger(
-  'packages/core/src/plugin/internal/person/connection/peer.ts'
+  'packages/core/src/plugin/internal/person/connection/peer.ts',
 );
 
 export abstract class Peer {
@@ -47,7 +47,7 @@ export abstract class Peer {
     protected readonly analytics: AnalyticsSession | undefined,
     protected readonly localPerson: LocalPersonImpl,
     protected readonly endpoint: RemoteMember,
-    readonly role: PeerRole
+    readonly role: PeerRole,
   ) {
     // log.debug('peerConfig', this.pc.getConfiguration());
 
@@ -87,7 +87,7 @@ export abstract class Peer {
     if (
       ev.candidate == null ||
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      //@ts-ignore firefox
+      //@ts-expect-error firefox
       ev.candidate === '' ||
       this.pc.connectionState === 'closed'
     ) {
@@ -137,7 +137,7 @@ export abstract class Peer {
           detail: '[failed] send candidate',
           payload: { message },
         }),
-        error
+        error,
       );
     }
   };
@@ -159,7 +159,7 @@ export abstract class Peer {
     }
   };
 
-  private _onIceGatheringStateChange = async (ev: globalThis.Event) => {
+  private _onIceGatheringStateChange = async () => {
     if (
       this.localPerson._analytics &&
       !this.localPerson._analytics.isClosed()
@@ -254,9 +254,9 @@ export abstract class Peer {
 
     await Promise.all(
       candidates.map((candidate) => {
-        if (this.pc.signalingState === 'closed') return;
+        if (this.pc.signalingState === 'closed') return Promise.resolve();
 
-        this.pc.addIceCandidate(candidate).catch((err) => {
+        return this.pc.addIceCandidate(candidate).catch((err) => {
           log.warn(
             '[failed] add ice candidate',
             createWarnPayload({
@@ -265,10 +265,10 @@ export abstract class Peer {
               detail: '[failed] send candidate',
               payload: { endpointId: this.endpoint.id },
             }),
-            err
+            err,
           );
         });
-      })
+      }),
     );
   }
 
@@ -276,7 +276,7 @@ export abstract class Peer {
   protected waitForSignalingState = async (
     state: RTCSignalingState,
     /**ms */
-    timeout = 10_000
+    timeout = 10_000,
   ) => {
     if (this.pc.signalingState === state) return;
     await this.onSignalingStateChanged
@@ -300,7 +300,7 @@ export abstract class Peer {
   protected waitForConnectionState = async (
     state: RTCPeerConnectionState,
     /**ms */
-    timeout = 10_000
+    timeout = 10_000,
   ) => {
     if (state === this.pc.connectionState) return;
     await this.onPeerConnectionStateChanged
@@ -321,49 +321,62 @@ export abstract class Peer {
   };
 
   /**@throws {@link SkyWayError} */
-  // protected waitForStats = async ({
-  //   track,
-  //   cb,
-  //   interval,
-  //   timeout,
-  //   logging,
-  // }: {
-  //   track: MediaStreamTrack;
-  //   cb: (stats: { id: string; type: string; [key: string]: any }[]) => boolean;
-  //   /**ms */
-  //   interval?: number;
-  //   /**ms */
-  //   timeout?: number;
-  //   logging?: boolean;
-  // }) => {
-  //   interval ??= 100;
-  //   timeout ??= 10_000;
+  protected waitForStats = async ({
+    track,
+    cb,
+    interval,
+    timeout,
+    logging,
+  }: {
+    track: MediaStreamTrack;
+    cb: (stats: { id: string; type: string; [key: string]: any }[]) => boolean;
+    /**ms */
+    interval?: number;
+    /**ms */
+    timeout?: number;
+    logging?: boolean;
+  }) => {
+    interval ??= 100;
+    timeout ??= 10_000;
 
-  //   for (let elapsed = 0; ; elapsed += interval) {
-  //     if (elapsed >= timeout) {
-  //       throw createError({
-  //         operationName: 'Peer.waitForStats',
-  //         info: {
-  //           ...errors.timeout,
-  //           detail: 'waitForStats timeout',
-  //         },
-  //         path: log.prefix,
-  //         context: this._context,
-  //         channel: this.localPerson.channel,
-  //       });
-  //     }
+    for (let elapsed = 0; ; elapsed += interval) {
+      if (elapsed >= timeout) {
+        throw createError({
+          operationName: 'Peer.waitForStats',
+          info: {
+            ...errors.timeout,
+            detail: 'waitForStats timeout',
+          },
+          path: log.prefix,
+          context: this._context,
+          channel: this.localPerson.channel,
+        });
+      }
 
-  //     const report = await this.pc.getStats(track);
-  //     const stats = statsToJson(report);
-  //     if (logging) {
-  //       log.debug('Peer.waitForStats', stats);
-  //     }
-  //     if (cb(stats)) {
-  //       break;
-  //     }
-  //     await new Promise((r) => setTimeout(r, interval));
-  //   }
-  // };
+      let report: RTCStatsReport;
+      if (this.role === 'sender') {
+        const senderObj = this.pc.getSenders().find((s) => s.track === track);
+        report = senderObj
+          ? await senderObj.getStats()
+          : createEmptyStatsReport();
+      } else {
+        const receiverObj = this.pc
+          .getReceivers()
+          .find((r) => r.track === track);
+        report = receiverObj
+          ? await receiverObj.getStats()
+          : createEmptyStatsReport();
+      }
+      const stats = statsToJson(report);
+      if (logging) {
+        log.debug('Peer.waitForStats', stats);
+      }
+      if (cb(stats)) {
+        break;
+      }
+      await new Promise((r) => setTimeout(r, interval));
+    }
+  };
 }
 
 export type PeerRole = 'sender' | 'receiver';

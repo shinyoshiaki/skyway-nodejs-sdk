@@ -1,29 +1,138 @@
-import { Events, Logger, RuntimeInfo, SkyWayError } from '@skyway-sdk/common';
-import model, { MemberType } from '@skyway-sdk/model';
+import {
+  type EventInterface,
+  Events,
+  Logger,
+  type RuntimeInfo,
+  SkyWayError,
+  type SkyWayErrorInterface,
+} from '@skyway-sdk/common';
+import type model from '@skyway-sdk/model';
+import type { MemberType } from '@skyway-sdk/model';
 import { SkyWayAuthToken } from '@skyway-sdk/token';
-import { v4 as uuidV4 } from 'uuid';
-
-import { SkyWayChannelImpl } from './channel';
-import { ContextConfig, SkyWayConfigOptions } from './config';
+import { createForDevelopmentAuthTokenString } from './auth/createForDevelopmentAuthTokenString';
+import type { SkyWayChannelImpl } from './channel';
+import {
+  ContextConfig,
+  type SkyWayConfigOptions,
+  type SkyWayContextConfig,
+} from './config';
 import { errors } from './errors';
+import {
+  type AnalyticsSession,
+  setupAnalyticsSession,
+} from './external/analytics';
 import { RtcApiClient } from './imports/rtcApi';
-import { Codec } from './media';
-import { RemoteMemberImplInterface } from './member/remoteMember';
-import { SkyWayPlugin } from './plugin/interface/plugin';
+import type { Codec } from './media';
+import type { RemoteMemberImplInterface } from './member/remoteMember';
+import type {
+  SkyWayPlugin,
+  SkyWayPluginInterface,
+} from './plugin/interface/plugin';
 import { registerPersonPlugin } from './plugin/internal/person/plugin';
 import { UnknownPlugin } from './plugin/internal/unknown/plugin';
-import { createError, getRuntimeInfo } from './util';
+import { createError, createWarnPayload, getRuntimeInfo } from './util';
 import { PACKAGE_VERSION } from './version';
-import { AnalyticsSession } from './external/analytics';
 
 const log = new Logger('packages/core/src/context.ts');
 
-export class SkyWayContext {
+export interface SkyWayContextInterface {
+  /**@description [japanese] コンテキストの設定 */
+  config: SkyWayContextConfig;
+  /**@description [japanese] SkyWayのアプリケーションID */
+  readonly appId: string;
+  /**@description [japanese] コンテキストが破棄済みかどうかを示すフラグ */
+  readonly disposed: boolean;
+  /**@description [japanese] トークンのエンコード済み文字列 */
+  readonly authTokenString: string;
+
+  /**@description [japanese] トークンの期限がまもなく切れることを通知するイベント */
+  readonly onTokenUpdateReminder: EventInterface<void>;
+  /**@description [japanese] トークンの期限切れを通知するイベント。このイベントが発火された場合、トークンを更新するまでサービスを利用できない */
+  readonly onTokenExpired: EventInterface<void>;
+  /**@description [japanese] 回復不能なエラーが発生したことを通知するイベント。インターネット接続状況を確認した上で別のインスタンスを作り直す必要がある */
+  readonly onFatalError: EventInterface<SkyWayErrorInterface>;
+  /**@description [japanese] トークンが更新されたことを通知するイベント */
+  readonly onTokenUpdated: EventInterface<string>;
+  /**@description [japanese] コンテキストが破棄されたことを通知するイベント */
+  readonly onDisposed: EventInterface<void>;
+
+  /**@private @deprecated */
+  readonly _onTokenUpdated: EventInterface<string>;
+  /**@private @deprecated */
+  readonly _onDisposed: EventInterface<void>;
+
+  /**@description [japanese] トークンの更新 */
+  updateAuthToken(token: string): Promise<void>;
+  /**@description [japanese] プラグインの登録 */
+  registerPlugin(plugin: SkyWayPluginInterface): void;
+  /**
+   * @description [japanese] コンテキストの利用を終了し次のリソースを解放する
+   * - イベントリスナー
+   * - バックエンドサーバとの通信
+   * - コンテキストを参照する全Channelインスタンス
+   */
+  dispose(): void;
+}
+
+export class SkyWayContext implements SkyWayContextInterface {
   /**@internal */
   static version = PACKAGE_VERSION;
 
   /**@internal */
-  static id = uuidV4();
+  static id = globalThis.crypto.randomUUID();
+
+  /**
+   * @description [japanese] 開発用途向けContextの作成
+   */
+  static async CreateForDevelopment(
+    appId: string,
+    secretKey: string,
+    configOptions: Partial<SkyWayConfigOptions> = {},
+  ) {
+    const warningPayload = createWarnPayload({
+      operationName: 'SkyWayContext.CreateForDevelopment',
+      detail:
+        'To prevent leakage of authentication information, please refrain from using this method in release versions of your app.',
+      payload: { appId },
+    });
+
+    console.warn('SkyWayContext.CreateForDevelopment', warningPayload);
+
+    const tokenString = createForDevelopmentAuthTokenString({
+      appId,
+      secretKey,
+    });
+
+    const context = await SkyWayContext.Create(tokenString, configOptions);
+
+    const autoUpdateAuthToken = async (): Promise<void> => {
+      const newTokenString = createForDevelopmentAuthTokenString({
+        appId,
+        secretKey,
+      });
+
+      try {
+        await context.updateAuthToken(newTokenString);
+      } catch (error) {
+        log.warn(
+          '[failed] SkyWayContext.CreateForDevelopment.autoUpdateAuthToken',
+          {
+            detail: error,
+            appId,
+          },
+        );
+      }
+    };
+
+    const { removeListener } = context.onTokenUpdateReminder.add(async () => {
+      await autoUpdateAuthToken();
+    });
+    context.onDisposed.once(() => {
+      removeListener();
+    });
+
+    return context;
+  }
 
   /**
    * @description [japanese] Contextの作成
@@ -32,7 +141,7 @@ export class SkyWayContext {
     authTokenString: string,
     configOptions: Partial<SkyWayConfigOptions> & {
       codecCapabilities: Codec[];
-    }
+    },
   ) {
     const config = new ContextConfig(configOptions);
     Logger.level = config.log.level;
@@ -50,7 +159,7 @@ export class SkyWayContext {
     });
     const runtime = {
       sdkName: 'core',
-      sdkVersion: this.version,
+      sdkVersion: SkyWayContext.version,
       osName,
       osVersion,
       browserName,
@@ -77,6 +186,8 @@ export class SkyWayContext {
         token: authTokenString,
         log: config.log,
         rtcApi: config.rtcApi,
+        contextId: SkyWayContext.id,
+        leaveWhenDisconnected: config.member.leaveWhenDisconnected,
       });
       const context = new SkyWayContext(api, config, token, {
         endpoint,
@@ -120,7 +231,7 @@ export class SkyWayContext {
 
   private _events = new Events();
   /**
-   * @description [japanese] トークンの期限がまもなく切れる
+   * @description [japanese] トークンの期限がまもなく切れることを通知するイベント
    * @example
    * context.onTokenUpdateReminder.add(() => {
       context.updateAuthToken(tokenString);
@@ -128,18 +239,34 @@ export class SkyWayContext {
    */
   readonly onTokenUpdateReminder = this._events.make<void>();
   /**
-   * @description [japanese] トークンの期限切れ。トークンを更新するまでサービスを利用できない
+   * @description [japanese] トークンの期限切れを通知するイベント。このイベントが発火された場合、トークンを更新するまでサービスを利用できない
    */
   readonly onTokenExpired = this._events.make<void>();
-  /**
-   * @description [japanese] 回復不能なエラー。インターネット接続状況を確認した上で別のインスタンスを作り直す必要がある
-   */
-  readonly onFatalError = this._events.make<SkyWayError>();
 
-  /**@private */
+  /**
+   * @description [japanese] SkyWayの利用中にネットワークの瞬断などが原因で再接続が開始されたときに発火するイベント
+   */
+  readonly onReconnectStart = this._events.make<void>();
+
+  /**
+   * @description [japanese] SkyWayの再接続が成功したときに発火するイベント
+   */
+  readonly onReconnectSuccess = this._events.make<void>();
+
+  /**
+   * @description [japanese] 回復不能なエラーが発生したことを通知するイベント。インターネット接続状況を確認した上で別のインスタンスを作り直す必要がある
+   */
+  readonly onFatalError = this._events.make<SkyWayErrorInterface>();
+
+  /**@private @deprecated */
   readonly _onTokenUpdated = this._events.make<string>();
-  /**@private */
+  /**@private @deprecated */
   readonly _onDisposed = this._events.make<void>();
+
+  /**@description [japanese] トークンが更新されたことを通知するイベント */
+  readonly onTokenUpdated = this._events.make<string>();
+  /**@description [japanese] コンテキストが破棄されたことを通知するイベント */
+  readonly onDisposed = this._events.make<void>();
 
   /**@private */
   constructor(
@@ -147,7 +274,7 @@ export class SkyWayContext {
     public config: ContextConfig,
     public authToken: SkyWayAuthToken,
     /**@internal */
-    readonly info: { endpoint: EndpointInfo; runtime: RuntimeInfo }
+    readonly info: { endpoint: EndpointInfo; runtime: RuntimeInfo },
   ) {
     this._authTokenString = authToken.tokenString!;
     this.appId = this.authToken.getAppId();
@@ -155,6 +282,14 @@ export class SkyWayContext {
     registerPersonPlugin(this);
 
     this._api = api;
+    this._api.onReconnectStart.add(() => {
+      log.info('onReconnectStart', { appId: this.appId });
+      this.onReconnectStart.emit();
+    });
+    this._api.onReconnectSuccess.add(() => {
+      log.info('onReconnectSuccess', { appId: this.appId });
+      this.onReconnectSuccess.emit();
+    });
     this._api.onFatalError.once((error) => {
       log.error('onFatalError', { appId: this.appId, error });
       this.onFatalError.emit(
@@ -164,12 +299,13 @@ export class SkyWayContext {
           info: errors.rtcApiFatalError,
           error,
           path: log.prefix,
-        })
+        }),
       );
       this.dispose();
     });
   }
 
+  /**@description [japanese] トークンのエンコード済み文字列 */
   get authTokenString() {
     return this._authTokenString;
   }
@@ -230,7 +366,7 @@ export class SkyWayContext {
     const newAppId = newToken.getAppId();
     log.info(
       { operationName: 'SkyWayContext.updateAuthToken' },
-      { oldToken: this.authToken, newToken }
+      { oldToken: this.authToken, newToken },
     );
 
     if (newAppId !== this.appId) {
@@ -247,6 +383,7 @@ export class SkyWayContext {
     this.authToken = newToken;
 
     this._onTokenUpdated.emit(token);
+    this.onTokenUpdated.emit(token);
     await this._setTokenExpireTimer();
 
     await this._api.updateAuthToken(token).catch((e) => {
@@ -278,7 +415,7 @@ export class SkyWayContext {
   /**@private */
   _createRemoteMember(
     channel: SkyWayChannelImpl,
-    memberDto: model.Member
+    memberDto: model.Member,
   ): RemoteMemberImplInterface {
     log.debug('createRemoteMember', { memberDto });
 
@@ -297,7 +434,7 @@ export class SkyWayContext {
    * @description [japanese] Contextの利用を終了し次のリソースを解放する
    * - イベントリスナー
    * - バックエンドサーバとの通信
-   * - Contextを参照する全Channelインスタンス
+   * - コンテキストを参照する全Channelインスタンス
    */
   dispose() {
     if (this.disposed) {
@@ -310,7 +447,11 @@ export class SkyWayContext {
     clearTimeout(this._tokenUpdateRemindTimer);
 
     this._onDisposed.emit();
+    this.onDisposed.emit();
     this._events.dispose();
+    if (this.analyticsSession) {
+      this.analyticsSession.close();
+    }
 
     this._api.close();
 

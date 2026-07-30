@@ -1,13 +1,17 @@
 import { Event } from '@skyway-sdk/common';
-import model from '@skyway-sdk/model';
+import type model from '@skyway-sdk/model';
 
-import { SkyWayChannel } from '../../channel';
-import { SkyWayContext } from '../../context';
-import { LocalPersonImpl } from '../../member/localPerson';
-import { RemoteMemberImplInterface } from '../../member/remoteMember';
+import type { SkyWayChannel } from '../../channel';
+import type { SkyWayContext } from '../../context';
+import type { LocalPersonImpl } from '../../member/localPerson';
+import type { RemoteMemberImplInterface } from '../../member/remoteMember';
+
+export interface SkyWayPluginInterface {
+  subtype: string;
+}
 
 /**@internal */
-export abstract class SkyWayPlugin {
+export abstract class SkyWayPlugin implements SkyWayPluginInterface {
   subtype!: string;
   /**@internal */
   _context?: SkyWayContext;
@@ -29,6 +33,6 @@ export abstract class SkyWayPlugin {
   /**@internal */
   abstract _createRemoteMember(
     channel: SkyWayChannel,
-    memberDto: model.Member
+    memberDto: model.Member,
   ): RemoteMemberImplInterface;
 }

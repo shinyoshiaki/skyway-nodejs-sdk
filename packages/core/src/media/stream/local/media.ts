@@ -2,14 +2,55 @@ import { Event, EventDisposer, Logger } from '@skyway-sdk/common';
 
 import { MediaStreamTrack } from '../../../imports/mediasoup';
 import {
+  Event,
+  EventDisposer,
+  type EventInterface,
+  Logger,
+} from '@skyway-sdk/common';
+
+import type {
   AudioMediaTrackConstraints,
   DisplayMediaTrackConstraints,
   VideoMediaTrackConstraints,
 } from '../../factory';
-import { attachElement, ContentType, detachElement } from '../base';
-import { LocalStreamBase } from './base';
+import { attachElement, type ContentType, detachElement } from '../base';
+import { LocalStreamBase, type LocalStreamInterface } from './base';
 
 const logger = new Logger('packages/core/src/media/stream/local/media.ts');
+
+export interface LocalMediaStreamInterface extends LocalStreamInterface {
+  /**@description [japanese] PublicationのDisable/EnableなどでStreamのtrackが更新された時に発火するイベント */
+  onTrackUpdated: EventInterface<MediaStreamTrack>;
+  /**
+   * @description [japanese] streamが破棄された時に発火するイベント (例. 画面共有が終了したときなど)
+   * @example [japanese] ハンドリング例
+   *  const publication = await member.publish(audio);
+      audio.onDestroyed.once(async () => {
+        await member.unpublish(publication);
+      });
+   * */
+  onDestroyed: EventInterface<void>;
+
+  readonly track: MediaStreamTrack;
+
+  /**
+   * @description [english] Attach the stream to the element.
+   * @description [japanese] streamをelementに適用する.
+   */
+  attach(element: HTMLVideoElement | HTMLAudioElement): void;
+
+  /**
+   * @description [english] Detach the stream from the element.
+   * @description [japanese] elementからstreamを取り除く.
+   */
+  detach(): void;
+
+  /**
+   * @description [japanese] Streamを解放します。
+   * カメラやマイクなどのデバイスを解放するためにはそのデバイスに関連するすべてのStreamを解放する必要があります
+   */
+  release(): void;
+}
 
 export abstract class LocalMediaStreamBase extends LocalStreamBase {
   /**@description [japanese] PublicationのDisable/EnableなどでStreamのtrackが更新された時に発火するイベント */
@@ -60,7 +101,7 @@ export abstract class LocalMediaStreamBase extends LocalStreamBase {
       | DisplayMediaTrackConstraints
       | AudioMediaTrackConstraints
     ) &
-      Partial<LocalMediaStreamOptions> = {}
+      Partial<LocalMediaStreamOptions> = {},
   ) {
     super(contentType);
 
@@ -134,7 +175,7 @@ export abstract class LocalMediaStreamBase extends LocalStreamBase {
     };
     this._track.addEventListener('ended', onended);
     this._disposer.push(() =>
-      this._track.removeEventListener('ended', onended)
+      this._track.removeEventListener('ended', onended),
     );
   }
 

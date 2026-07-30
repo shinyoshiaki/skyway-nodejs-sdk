@@ -1,8 +1,7 @@
-import { Event } from '@skyway-sdk/common';
-import {
+import type { Event } from '@skyway-sdk/common';
+import type {
   LocalPersonAdapter,
   LocalStream,
-  Member,
   Publication,
   PublicationImpl,
   RemoteStream,
@@ -10,17 +9,19 @@ import {
   SkyWayContext,
   SubscriptionImpl,
 } from '../imports/core';
-import { PublicationType } from '@skyway-sdk/model';
-import { SFUBotPlugin } from '../imports/sfu';
+import type { PublicationType } from '@skyway-sdk/model';
+import type { SFUBotPlugin } from '../imports/sfu';
 
-import { RoomMember, RoomMemberImpl } from '../member';
-import { LocalRoomMember, LocalRoomMemberImpl } from '../member/local/default';
-import { RemoteRoomMemberImpl } from '../member/remote/base';
-import { RoomPublication, RoomPublicationImpl } from '../publication';
-import { RoomSubscription, RoomSubscriptionImpl } from '../subscription';
-import { RoomType } from '.';
-import { RoomBase, RoomMemberInit, RoomState } from './base';
-import * as event from './event';
+import type { RoomMember, RoomMemberImpl } from '../member';
+import {
+  type LocalRoomMember,
+  LocalRoomMemberImpl,
+} from '../member/local/default';
+import type { RoomPublication, RoomPublicationImpl } from '../publication';
+import type { RoomSubscription, RoomSubscriptionImpl } from '../subscription';
+import type { RoomType } from '.';
+import { RoomBase, type RoomMemberInit, type RoomState } from './base';
+import type * as event from './event';
 
 export interface Room {
   readonly type: RoomType;
@@ -156,10 +157,23 @@ export interface Room {
 
 /**@internal */
 export class RoomImpl extends RoomBase implements Room {
+  protected _disableSignaling = false;
   static async Create(context: SkyWayContext, channel: SkyWayChannelImpl) {
-    const plugin = await this._createBot(context, channel);
+    let room: RoomImpl;
 
-    const room = new RoomImpl(channel, plugin);
+    const authToken = context.authToken;
+    if (
+      authToken.isSfuCreateBotEnabled({
+        id: channel.id,
+        name: channel.name,
+      })
+    ) {
+      const plugin = await RoomImpl._createBot(context, channel);
+      room = new RoomImpl(channel, plugin);
+    } else {
+      room = new RoomImpl(channel);
+    }
+
     return room;
   }
 
@@ -167,81 +181,14 @@ export class RoomImpl extends RoomBase implements Room {
 
   private constructor(
     channel: SkyWayChannelImpl,
-    readonly _plugin: SFUBotPlugin
+    readonly _plugin?: SFUBotPlugin,
   ) {
     super('default', channel);
   }
 
-  protected _setChannelState() {
-    this._channel.members.forEach((m) => {
-      if (m.type === 'bot') {
-        return;
-      }
-      const member = new RemoteRoomMemberImpl(m, this);
-      this._members[m.id] = member;
-    });
-    this._channel.publications.forEach((p) => {
-      if (p.type === 'sfu' && !p.origin) {
-        return;
-      }
-
-      this._addPublication(p);
-    });
-    this._channel.subscriptions.forEach((s) => {
-      if (s.subscriber.type === 'bot') {
-        return;
-      }
-      this._addSubscription(s as SubscriptionImpl);
-    });
-  }
-
-  protected _handleOnMemberJoin(m: Member) {
-    if (m.type === 'bot') {
-      return;
-    }
-    super._handleOnMemberJoin(m);
-  }
-
-  protected _handleOnMemberLeft(m: Member) {
-    const member = this._getMember(m.id);
-    if (!member) {
-      // should be sfu
-      return;
-    }
-    super._handleOnMemberLeft(m);
-  }
-
-  protected _handleOnStreamPublish(p: PublicationImpl) {
-    if (p.type === 'sfu' && !p.origin?.id) {
-      return;
-    }
-    super._handleOnStreamPublish(p);
-  }
-
-  protected _handleOnStreamUnpublish(p: PublicationImpl) {
-    if (p.type === 'sfu' && !p.origin?.id) {
-      return;
-    }
-    super._handleOnStreamUnpublish(p);
-  }
-
-  protected _handleOnStreamSubscribe(s: SubscriptionImpl) {
-    if (s.subscriber.type === 'bot') {
-      return;
-    }
-    super._handleOnStreamSubscribe(s);
-  }
-
-  protected _handleOnStreamUnsubscribe(s: SubscriptionImpl) {
-    if (s.subscriber.type === 'bot') {
-      return;
-    }
-    super._handleOnStreamUnsubscribe(s);
-  }
-
   protected _getTargetPublication(
     publicationId: string,
-    publicationType: PublicationType
+    publicationType: PublicationType,
   ): RoomPublication<LocalStream> | undefined {
     return publicationType === 'sfu'
       ? this._getOriginPublication(publicationId)
@@ -250,8 +197,17 @@ export class RoomImpl extends RoomBase implements Room {
 
   protected _createLocalRoomMember<T extends LocalRoomMemberImpl>(
     local: LocalPersonAdapter,
-    room: this
+    room: this,
   ): T {
     return new LocalRoomMemberImpl(local, room) as T;
+  }
+
+  protected _isAcceptablePublication(p: PublicationImpl): boolean {
+    // sfuのoriginのみ除外する
+    if (p.type === 'sfu' && !p.origin) {
+      return false;
+    }
+
+    return true;
   }
 }

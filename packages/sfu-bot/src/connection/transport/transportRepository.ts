@@ -2,11 +2,11 @@ import { Event, Logger } from '@skyway-sdk/common';
 
 import { errors } from '../../errors';
 import {
-  AnalyticsSession,
+  type AnalyticsSession,
   createError,
   getRuntimeInfo,
-  IceManager,
-  SkyWayContext,
+  type IceManager,
+  type SkyWayContext,
 } from '../../imports/core';
 import {
   Device,
@@ -24,7 +24,7 @@ import { SFUBotMember } from '../../member';
 import { SFUTransport } from './transport';
 
 const log = new Logger(
-  'packages/sfu-bot/src/connection/transport/transportRepository.ts'
+  'packages/sfu-bot/src/connection/transport/transportRepository.ts',
 );
 
 export class TransportRepository {
@@ -43,7 +43,7 @@ export class TransportRepository {
 
   constructor(
     private _context: SkyWayContext,
-    private readonly _api: SFURestApiClient
+    private readonly _api: SFURestApiClient,
   ) {
     const { browserName, browserVersion } = getRuntimeInfo({
       isNotBrowser: {
@@ -143,7 +143,7 @@ export class TransportRepository {
     transportOptions: types.TransportOptions,
     direction: 'send' | 'recv',
     iceManager: IceManager,
-    analyticsSession?: AnalyticsSession
+    analyticsSession?: AnalyticsSession,
   ) {
     const createTransport =
       direction === 'send'
@@ -165,7 +165,7 @@ export class TransportRepository {
       iceManager,
       this._api,
       this._context,
-      analyticsSession
+      analyticsSession,
     );
     this._transports[personId + msTransport.id] = transport;
 

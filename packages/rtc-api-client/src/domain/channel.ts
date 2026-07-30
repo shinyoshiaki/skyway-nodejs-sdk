@@ -1,12 +1,23 @@
 import { Events, Logger } from '@skyway-sdk/common';
 import model, {
-  Channel,
-  Member,
-  Publication,
-  Subscription,
+  type Channel,
+  type Member,
+  type Publication,
+  type Subscription,
 } from '@skyway-sdk/model';
+import type {
+  PublicationDisabledEvent,
+  PublicationEnabledEvent,
+  PublicationMetadataUpdatedEvent,
+  PublicationSummary,
+  StreamPublishedEvent,
+  StreamSubscribedEvent,
+  StreamUnpublishedEvent,
+  StreamUnsubscribedEvent,
+  SubscriptionSummary,
+} from '../imports/rpc';
 
-import { Config } from '../config';
+import type { Config } from '../config';
 import { errors } from '../errors';
 import {
   PublicationDisabledEvent,
@@ -21,8 +32,13 @@ import {
 } from '../imports/rpc';
 import * as event from '../model/event';
 import { createError } from '../util';
-import { MemberInit, PublicationInit, RtcApi, SubscriptionInit } from './api';
-import { EventObserver } from './eventObserver';
+import type {
+  MemberInit,
+  PublicationInit,
+  RtcApi,
+  SubscriptionInit,
+} from './api';
+import type { EventObserver } from './eventObserver';
 
 const log = new Logger('packages/rtc-api-client/src/domain/channel.ts');
 
@@ -89,7 +105,7 @@ export class ChannelImpl implements model.Channel {
   }
   deleteSubscription(subscriptionId: string) {
     this.subscriptions = this.subscriptions.filter(
-      (s) => s.id !== subscriptionId
+      (s) => s.id !== subscriptionId,
     );
   }
   version: number;
@@ -134,7 +150,7 @@ export class ChannelImpl implements model.Channel {
     }: model.Channel,
     private eventObserver: EventObserver,
     private apiClient: RtcApi,
-    private config: Config
+    private config: Config,
   ) {
     this.id = id;
     this.name = name;
@@ -305,7 +321,7 @@ export class ChannelImpl implements model.Channel {
   }
 
   private _publicationMetadataUpdated(
-    event: PublicationMetadataUpdatedEvent['data']
+    event: PublicationMetadataUpdatedEvent['data'],
   ) {
     const publication = this.getPublication(event.publication.id);
     if (!publication) {
@@ -426,7 +442,7 @@ export class ChannelImpl implements model.Channel {
                 error,
                 appId: this.appId,
                 channelId: this.id,
-              })
+              }),
             );
         });
     });
@@ -486,7 +502,7 @@ export class ChannelImpl implements model.Channel {
                 error,
                 appId: this.appId,
                 channelId: this.id,
-              })
+              }),
             );
         });
     });
@@ -496,7 +512,7 @@ export class ChannelImpl implements model.Channel {
       this.appId,
       this.id,
       memberId,
-      ttlSec
+      ttlSec,
     );
   }
 
@@ -511,7 +527,7 @@ export class ChannelImpl implements model.Channel {
         });
       this.onMemberMetadataUpdated
         .watch(
-          (e) => e.member.id === memberId && e.member.metadata === metadata
+          (e) => e.member.id === memberId && e.member.metadata === metadata,
         )
         .then(() => r())
         .catch((error) => {
@@ -524,7 +540,7 @@ export class ChannelImpl implements model.Channel {
                 error,
                 appId: this.appId,
                 channelId: this.id,
-              })
+              }),
             );
         });
     });
@@ -576,7 +592,7 @@ export class ChannelImpl implements model.Channel {
     const { publication } = await this.onStreamPublished
       .watch(
         (e) => e.publication.id === publicationId,
-        this.config.rtcApi.timeout
+        this.config.rtcApi.timeout,
       )
       .catch((error) => {
         throw createError({
@@ -617,14 +633,14 @@ export class ChannelImpl implements model.Channel {
                 payload: { publicationId },
                 appId: this.appId,
                 channelId: this.id,
-              })
+              }),
             );
         });
     });
 
   updatePublicationMetadata = (
     publicationId: Publication['id'],
-    metadata: string
+    metadata: string,
   ) =>
     new Promise<void>((r, f) => {
       let failed = false;
@@ -638,7 +654,7 @@ export class ChannelImpl implements model.Channel {
         .watch(
           (e) =>
             e.publication.id === publicationId &&
-            e.publication.metadata === metadata
+            e.publication.metadata === metadata,
         )
         .then(() => r())
         .catch((error) => {
@@ -655,7 +671,7 @@ export class ChannelImpl implements model.Channel {
                 payload: { publicationId },
                 appId: this.appId,
                 channelId: this.id,
-              })
+              }),
             );
         });
     });
@@ -683,7 +699,7 @@ export class ChannelImpl implements model.Channel {
                 payload: { publicationId },
                 appId: this.appId,
                 channelId: this.id,
-              })
+              }),
             );
         });
     });
@@ -711,14 +727,14 @@ export class ChannelImpl implements model.Channel {
                 payload: { publicationId },
                 appId: this.appId,
                 channelId: this.id,
-              })
+              }),
             );
         });
     });
 
   /**@throws {@link SkyWayError} */
   async subscribe(
-    init: Omit<SubscriptionInit, 'channel'>
+    init: Omit<SubscriptionInit, 'channel'>,
   ): Promise<model.Subscription> {
     const ts = log.debug('[start] apiClient.subscribe', { init });
     const subscriptionId = await this.apiClient.subscribe(this.appId, {
@@ -745,7 +761,7 @@ export class ChannelImpl implements model.Channel {
     const { subscription } = await this.onPublicationSubscribed
       .watch(
         (e) => e.subscription.id === subscriptionId,
-        this.config.rtcApi.timeout
+        this.config.rtcApi.timeout,
       )
       .catch((error) => {
         log.elapsed(ts, '[fail] apiClient.subscribe', error);
@@ -788,7 +804,7 @@ export class ChannelImpl implements model.Channel {
                 payload: { subscriptionId },
                 appId: this.appId,
                 channelId: this.id,
-              })
+              }),
             );
         });
     });
@@ -820,14 +836,14 @@ export function channelFactory(
   eventObserver: EventObserver,
   api: RtcApi,
   channelDto: Channel,
-  config: Config
+  config: Config,
 ) {
   const channel = new ChannelImpl(
     appId,
     channelDto,
     eventObserver,
     api,
-    config
+    config,
   );
   return channel;
 }

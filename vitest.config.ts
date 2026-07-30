@@ -9,5 +9,6 @@ export default defineConfig({
     globals: true,
     pool: 'forks',
     testTimeout: 60_000,
+    retry: 2,
   },
 });

@@ -1,8 +1,5 @@
-import { EventDisposer, Logger } from '@skyway-sdk/common';
-import { Event, Events } from '@skyway-sdk/common';
-
-import { errors } from '../errors';
-import {
+import { Event, EventDisposer, Events, Logger } from '@skyway-sdk/common';
+import type {
   Codec,
   ContentType,
   EncodingParameters,
@@ -16,13 +13,18 @@ import {
   TransportConnectionState,
   WebRTCStats,
 } from '../imports/core';
-import { RTCPeerConnection } from '../imports/mediasoup';
+import type { RTCPeerConnection } from '../imports/mediasoup';
+import type { Encoding, PublicationType } from '@skyway-sdk/model';
 import { SFUBotMember } from '../imports/sfu';
-import { Encoding, PublicationType } from '@skyway-sdk/model';
-import { RoomMember, RoomMemberImpl } from '../member';
-import { Room } from '../room/default';
-import { StreamSubscribedEvent, StreamUnsubscribedEvent } from '../room/event';
-import { RoomSubscription } from '../subscription';
+
+import { errors } from '../errors';
+import type { RoomMember, RoomMemberImpl } from '../member';
+import type { Room } from '../room/default';
+import type {
+  StreamSubscribedEvent,
+  StreamUnsubscribedEvent,
+} from '../room/event';
+import type { RoomSubscription } from '../subscription';
 import { createError } from '../util';
 
 const path = 'packages/room/src/publication/index.ts';
@@ -71,9 +73,10 @@ export interface RoomPublication<T extends LocalStream = LocalStream> {
   /**@description [japanese] このPublicationの有効化状態が変化したときに発火するイベント */
   readonly onStateChanged: Event<void>;
   /**
-   * @description [japanese] メディア通信の状態が変化した時に発火するイベント
-   * SFURoomの場合、remoteMemberはundefinedになる
-   * SFURoomの場合、memberがルームを離れたときのみ発火する
+   * @description [japanese] メディア通信の状態が変化した時に発火するイベント。
+   * 状態の現在値を参照する場合はgetConnectionStateメソッドを利用してください。
+   * DataStreamを利用している場合、書き込み可能になったことはLocalDataStream.onWritableイベントで別途通知されます。
+   * SFU通信の場合、remoteMemberはundefinedになります。
    */
   readonly onConnectionStateChanged: Event<{
     remoteMember?: RoomMember;
@@ -99,7 +102,7 @@ export interface RoomPublication<T extends LocalStream = LocalStream> {
    */
   replaceStream: (
     stream: LocalAudioStream | LocalVideoStream | LocalCustomVideoStream,
-    options?: ReplaceStreamOptions
+    options?: ReplaceStreamOptions,
   ) => void;
   /**
    * @experimental
@@ -113,10 +116,11 @@ export interface RoomPublication<T extends LocalStream = LocalStream> {
    * @description [japanese] 対象のMemberとのRTCPeerConnectionを取得する。RTCPeerConnectionを直接操作すると SDK は正しく動作しなくなる可能性があります。
    */
   getRTCPeerConnection(
-    selector: RoomMember | string
+    selector: RoomMember | string,
   ): RTCPeerConnection | undefined;
   /**
-   * @description [japanese] メディア通信の状態を取得する
+   * @description [japanese] メディア通信の状態を取得する。
+   * 状態が変化したことはonConnectionStateChangedイベントで通知されます。
    * @param selector [japanese] 接続相手
    */
   getConnectionState(selector: RoomMember | string): TransportConnectionState;
@@ -146,7 +150,10 @@ export class RoomPublicationImpl<StreamType extends LocalStream = LocalStream>
     state: TransportConnectionState;
   }>();
 
-  constructor(public _publication: Publication, private _room: Room) {
+  constructor(
+    public _publication: Publication,
+    private _room: Room,
+  ) {
     this.id = _publication.id;
     this.contentType = _publication.contentType;
     this._origin = _publication.origin;
@@ -211,7 +218,7 @@ export class RoomPublicationImpl<StreamType extends LocalStream = LocalStream>
 
   get subscriptions() {
     return this._publication.subscriptions.map((s) =>
-      this._room._getSubscription(s.id)
+      this._room._getSubscription(s.id),
     );
   }
 
@@ -289,7 +296,7 @@ export class RoomPublicationImpl<StreamType extends LocalStream = LocalStream>
 
   readonly replaceStream = (
     stream: LocalAudioStream | LocalVideoStream | LocalCustomVideoStream,
-    options: ReplaceStreamOptions = {}
+    options: ReplaceStreamOptions = {},
   ) => {
     this._preferredPublication.replaceStream(stream, options);
   };
@@ -302,7 +309,7 @@ export class RoomPublicationImpl<StreamType extends LocalStream = LocalStream>
   getStats(selector: string | RoomMember): Promise<WebRTCStats> {
     if (this._origin) {
       const bot = this._origin.subscriptions.find(
-        (s) => s.subscriber.subtype === SFUBotMember.subtype
+        (s) => s.subscriber.subtype === SFUBotMember.subtype,
       )?.subscriber;
       if (!bot) {
         throw createError({
@@ -320,11 +327,11 @@ export class RoomPublicationImpl<StreamType extends LocalStream = LocalStream>
   }
 
   getRTCPeerConnection(
-    selector: string | RoomMember
+    selector: string | RoomMember,
   ): RTCPeerConnection | undefined {
     if (this._origin) {
       const bot = this._origin.subscriptions.find(
-        (s) => s.subscriber.subtype === SFUBotMember.subtype
+        (s) => s.subscriber.subtype === SFUBotMember.subtype,
       )?.subscriber;
       if (!bot) {
         throw createError({
@@ -344,7 +351,7 @@ export class RoomPublicationImpl<StreamType extends LocalStream = LocalStream>
   getConnectionState(selector: string | RoomMember): TransportConnectionState {
     if (this._origin) {
       const bot = this._origin.subscriptions.find(
-        (s) => s.subscriber.subtype === SFUBotMember.subtype
+        (s) => s.subscriber.subtype === SFUBotMember.subtype,
       )?.subscriber;
       if (!bot) {
         throw createError({

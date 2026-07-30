@@ -15,6 +15,17 @@ export class LocalDataStream extends LocalStreamBase {
   readonly _onWriteData = new Event<DataStreamMessageType>();
   private _isEnabled = true;
 
+  /**
+   * @description [japanese] データストリームが書き込み可能な状態になったことを通知するイベント
+   * イベントデータとして、書き込み可能になったデータストリームのSubscriberの情報が通知される。
+   */
+  readonly onWritable = new Event<DataStreamSubscriber>();
+  /**
+   * @description [japanese] データストリームが書き込み不可能な状態になったことを通知するイベント。
+   * イベントデータとして、書き込み不可能になったデータストリームのSubscriberの情報が通知される。
+   */
+  readonly onUnwritable = new Event<DataStreamSubscriber>();
+
   constructor(public readonly options: DataStreamOptions = {}) {
     super('data');
     this._setLabel('LocalDataStream');
@@ -35,7 +46,10 @@ export class LocalDataStream extends LocalStreamBase {
       });
     }
 
-    const isObject = !ArrayBuffer.isView(data) && !(data instanceof ArrayBuffer) && !(typeof data === 'string');
+    const isObject =
+      !ArrayBuffer.isView(data) &&
+      !(data instanceof ArrayBuffer) &&
+      !(typeof data === 'string');
     if (isObject) {
       data = objectFlag + JSON.stringify(data);
     }
@@ -59,4 +73,10 @@ export type DataStreamOptions = {
    * @description [japanese] 順序制御
    */
   ordered?: boolean;
+};
+
+/**@description [japanese] データストリームをSubscribeしているMemberの情報 */
+export type DataStreamSubscriber = {
+  id: string;
+  name?: string;
 };

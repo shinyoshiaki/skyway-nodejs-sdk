@@ -4,18 +4,22 @@ import model from '@skyway-sdk/model';
 import { TransportRepository } from './connection/transport/transportRepository';
 import { errors } from './errors';
 import {
-  Channel,
+  type Channel,
   createError,
   createLogPayload,
-  SkyWayChannelImpl,
+  type SkyWayChannelImpl,
   SkyWayPlugin,
 } from './imports/core';
-import { SFUApiOptions, SFURestApiClient } from './imports/sfu';
-import { SFUBotMember } from './member';
+import type model from '@skyway-sdk/model';
 import {
-  defaultSFUBotPluginOptions,
-  SFUBotPluginOptions,
-} from './option';
+  type SFUApiOptions,
+  SFURestApiClient,
+} from './imports/sfu';
+
+import { TransportRepository } from './connection/transport/transportRepository';
+import { errors } from './errors';
+import { SFUBotMember } from './member';
+import { defaultSFUBotPluginOptions, type SFUBotPluginOptions } from './option';
 import { PACKAGE_VERSION } from './version';
 
 export type { SFUApiOptions };
@@ -55,7 +59,7 @@ export class SFUBotPlugin extends SkyWayPlugin {
         log: context.config.log,
       });
       this._transportRepository = new TransportRepository(context, this._api);
-      context._onTokenUpdated.add((token) => {
+      context.onTokenUpdated.add((token) => {
         this._api.updateToken(token);
       });
     });
@@ -68,7 +72,7 @@ export class SFUBotPlugin extends SkyWayPlugin {
   /**@private */
   _createRemoteMember = (channel: SkyWayChannelImpl, sfuBot: model.Member) => {
     const member = new SFUBotMember({
-      ...this._context!,
+      ...this._context,
       channel,
       id: sfuBot.id,
       name: sfuBot.name,
@@ -91,7 +95,7 @@ export class SFUBotPlugin extends SkyWayPlugin {
       await createLogPayload({
         operationName: 'SFUBotPlugin.createBot',
         channel: channel as SkyWayChannelImpl,
-      })
+      }),
     );
     const appId = this._context!.authToken.getAppId();
     const botId = await this._api.createBot({
@@ -104,7 +108,7 @@ export class SFUBotPlugin extends SkyWayPlugin {
         await channel.onMemberJoined
           .watch(
             (e) => e.member.id === botId,
-            this._context!.config.rtcApi.timeout
+            this._context!.config.rtcApi.timeout,
           )
           .catch((error) => {
             throw createError({
@@ -123,7 +127,7 @@ export class SFUBotPlugin extends SkyWayPlugin {
       await createLogPayload({
         operationName: 'SFUBotPlugin.createBot',
         channel,
-      })
+      }),
     );
 
     return member as SFUBotMember;
@@ -134,49 +138,53 @@ export class SFUBotPlugin extends SkyWayPlugin {
    * @remarks SkyWayAuthToken v3 を利用した場合はこのメソッドを使うことができません。代替手段として Channel.leave メソッドまたは Member.leave メソッドを使用して SFU Bot を Channel から退出させてください。
    */
   deleteBot = async (channel: Channel, botId: string) =>
-    new Promise<void>(async (r, f) => {
-      const timestamp = log.info(
-        '[start] deleteBot',
-        await createLogPayload({
-          operationName: 'SFUBotPlugin.deleteBot',
-          channel,
-        })
-      );
+    new Promise<void>((r, f) => {
+      const executeDelete = async () => {
+        const timestamp = log.info(
+          '[start] deleteBot',
+          await createLogPayload({
+            operationName: 'SFUBotPlugin.deleteBot',
+            channel,
+          }),
+        );
 
-      let failed = false;
-      this._api.deleteBot({ botId }).catch((e) => {
-        failed = true;
-        f(e);
-      });
-
-      channel.onMemberLeft
-        .watch(
-          (e) => e.member.id === botId,
-          this._context!.config.rtcApi.timeout
-        )
-        .then(async () => {
-          log.elapsed(
-            timestamp,
-            '[end] deleteBot',
-            await createLogPayload({
-              operationName: 'SFUBotPlugin.deleteBot',
-              channel,
-            })
-          );
-          r();
-        })
-        .catch((error) => {
-          if (!failed)
-            f(
-              createError({
-                operationName: 'SFUBotPlugin.deleteBot',
-                info: { ...errors.timeout, detail: 'onMemberLeft' },
-                path: log.prefix,
-                channel,
-                error,
-                context: this._context,
-              })
-            );
+        let failed = false;
+        this._api.deleteBot({ botId }).catch((e) => {
+          failed = true;
+          f(e);
         });
+
+        channel.onMemberLeft
+          .watch(
+            (e) => e.member.id === botId,
+            this._context?.config.rtcApi.timeout,
+          )
+          .then(async () => {
+            log.elapsed(
+              timestamp,
+              '[end] deleteBot',
+              await createLogPayload({
+                operationName: 'SFUBotPlugin.deleteBot',
+                channel,
+              }),
+            );
+            r();
+          })
+          .catch((error) => {
+            if (!failed)
+              f(
+                createError({
+                  operationName: 'SFUBotPlugin.deleteBot',
+                  info: { ...errors.timeout, detail: 'onMemberLeft' },
+                  path: log.prefix,
+                  channel,
+                  error,
+                  context: this._context,
+                }),
+              );
+          });
+      };
+
+      executeDelete().catch(f);
     });
 }

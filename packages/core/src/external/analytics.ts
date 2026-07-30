@@ -2,6 +2,7 @@ import {
   AnalyticsClient,
   type ConnectionState,
 } from '@skyway-sdk/analytics-client';
+import type { OnLogForAnalyticsProps } from '@skyway-sdk/common';
 import { Event, Logger } from '@skyway-sdk/common';
 
 import { SkyWayContext } from '../context';
@@ -13,7 +14,9 @@ const LOGGER_PREFIX = 'packages/core/src/external/analytics.ts';
 const log = new Logger(LOGGER_PREFIX);
 
 /**@internal */
-export async function setupAnalyticsSession(context: SkyWayContext): Promise<AnalyticsSession> {
+export async function setupAnalyticsSession(
+  context: SkyWayContext,
+): Promise<AnalyticsSession> {
   const { analyticsService } = context.config;
 
   const client = new AnalyticsClient(
@@ -33,7 +36,7 @@ export async function setupAnalyticsSession(context: SkyWayContext): Promise<Ana
               info: { ...errors.internal, detail: 'AnalyticsClient error' },
               error,
               path: log.prefix,
-            })
+            }),
           );
         },
         debug: (message, ...optionalParams) => {
@@ -45,16 +48,27 @@ export async function setupAnalyticsSession(context: SkyWayContext): Promise<Ana
       },
       analyticsLoggingServerDomain: analyticsService.domain,
       secure: analyticsService.secure,
-    }
+    },
   );
 
   const analyticsSession = new AnalyticsSession(client, context);
-  Logger._onLogForAnalytics = (props) => {
+  const onLogForAnalytics = (props: OnLogForAnalyticsProps) => {
     if (props.prefix === LOGGER_PREFIX) {
       return; // Avoid logging from this file to avoid infinite loop
     }
+    if (analyticsSession.isClosed() || client.isClosed()) {
+      return;
+    }
     void client.bufferOrSendSdkLog(props);
   };
+  // Logger._onLogForAnalytics はglobal hookなので、close時に解除する前提で登録する。
+  Logger._onLogForAnalytics = onLogForAnalytics;
+  analyticsSession.setOnClose(() => {
+    // 他セッションが後からhookを差し替えている可能性があるため、自分のhookの場合のみ解除する。
+    if (Logger._onLogForAnalytics === onLogForAnalytics) {
+      Logger._onLogForAnalytics = () => {};
+    }
+  });
 
   analyticsSession.connectWithTimeout().catch((error) => {
     analyticsSession.close();
@@ -66,7 +80,7 @@ export async function setupAnalyticsSession(context: SkyWayContext): Promise<Ana
         info: { ...errors.internal, detail: 'AnalyticsClient error' },
         error,
         path: log.prefix,
-      })
+      }),
     );
     analyticsSession.onConnectionFailed.emit({});
   });
@@ -78,10 +92,14 @@ export class AnalyticsSession {
   readonly onConnectionStateChanged = new Event<ConnectionState>();
   readonly onMessage = new Event<MessageEvent>();
   private _isClosed = false;
+  private _onClose = () => {};
 
-  constructor(public client: AnalyticsClient, private context: SkyWayContext) {
+  constructor(
+    public client: AnalyticsClient,
+    context: SkyWayContext,
+  ) {
     this._listen();
-    context._onTokenUpdated.add((token) => {
+    context.onTokenUpdated.add((token) => {
       this.client.setNewSkyWayAuthToken(token);
     });
   }
@@ -112,7 +130,7 @@ export class AnalyticsSession {
       .catch((error) => {
         this.close();
         log.debug(
-          '[end] failed connect analyticsService: also unreachable to server'
+          '[end] failed connect analyticsService: also unreachable to server',
         );
         log.error(
           `AnalyticsClient error: ${error.message}`,
@@ -121,7 +139,7 @@ export class AnalyticsSession {
             info: { ...errors.internal, detail: 'AnalyticsClient error' },
             error,
             path: log.prefix,
-          })
+          }),
         );
         this.onConnectionFailed.emit({});
       });
@@ -133,7 +151,7 @@ export class AnalyticsSession {
     const timeoutPromise = new Promise((_, reject) => {
       connectTimeout = setTimeout(() => {
         log.debug(
-          '[end] failed connect analyticsService: no initial response from the server'
+          '[end] failed connect analyticsService: no initial response from the server',
         );
         reject(new Error('failed connect analyticsService'));
       }, 30 * 1000);
@@ -155,15 +173,25 @@ export class AnalyticsSession {
   }
 
   close() {
+    if (this._isClosed) {
+      return;
+    }
     this._isClosed = true;
     this.onConnectionFailed.removeAllListeners();
     this.onConnectionStateChanged.removeAllListeners();
     this.onMessage.removeAllListeners();
+    this._onClose();
+    this._onClose = () => {};
   }
 
   isClosed() {
     return this._isClosed;
   }
+
+  /**@internal */
+  setOnClose(onClose: () => void) {
+    this._onClose = onClose;
+  }
 }
 
-export { ConnectionState };
+export type { ConnectionState };

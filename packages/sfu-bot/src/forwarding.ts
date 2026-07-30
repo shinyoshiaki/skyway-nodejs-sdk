@@ -3,11 +3,13 @@ import { Event, Logger } from '@skyway-sdk/common';
 import { errors } from './errors';
 import {
   createError,
-  Publication,
-  SkyWayContext,
-  Subscription,
+  type Publication,
+  type SkyWayContext,
+  type Subscription,
 } from './imports/core';
-import { SFURestApiClient } from './imports/sfu';
+import type { SFURestApiClient } from './imports/sfu';
+
+import { errors } from './errors';
 
 const log = new Logger('packages/sfu-bot/src/connection/sender.ts');
 
@@ -33,7 +35,7 @@ export class Forwarding {
       api: SFURestApiClient;
       context: SkyWayContext;
       identifierKey: string;
-    }
+    },
   ) {
     this.relayingPublication.onSubscribed.add(async (e) => {
       await this.confirmSubscription(e.subscription).catch((e) => e);
