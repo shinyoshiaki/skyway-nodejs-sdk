@@ -12,7 +12,7 @@
     "@girs/node-gst-1.0": "^1.23.0-3.3.0",
     "@shinyoshiaki/skyway-nodejs-sdk": "file:../../packages/room",
     "node-gtk": "1.0.0",
-    "werift": "^0.19.1"
+    "werift": "^0.24.2"
   },
   "devDependencies": {
     "@types/node": "^20.8.8",

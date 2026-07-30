@@ -17,6 +17,6 @@
     "npm-run-all2": "^6.2.0",
     "playwright": "^1.52.0",
     "vitest": "^3.0.5",
-    "werift": "^0.19.1"
+    "werift": "^0.24.2"
   }
 }

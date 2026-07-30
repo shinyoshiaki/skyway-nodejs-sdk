@@ -90,8 +90,8 @@ importers:
         specifier: 1.0.0
         version: 1.0.0(encoding@0.1.13)
       werift:
-        specifier: ^0.19.1
-        version: 0.19.9
+        specifier: ^0.24.2
+        version: 0.24.2
     devDependencies:
       '@types/node':
         specifier: ^20.8.8
@@ -237,8 +237,8 @@ importers:
         specifier: ^9.0.0
         version: 9.0.1
       werift:
-        specifier: ^0.19.1
-        version: 0.19.9
+        specifier: ^0.24.2
+        version: 0.24.2
     devDependencies:
       '@types/node':
         specifier: ^20.8.8
@@ -250,20 +250,20 @@ importers:
         specifier: ^3.0.5
         version: 3.2.4(@types/debug@4.1.12)(@types/node@20.19.17)(@vitest/browser@3.2.4)(jsdom@20.0.3)(lightningcss@1.30.1)
       werift-common:
-        specifier: ^0.0.2
-        version: 0.0.2
+        specifier: ^0.0.3
+        version: 0.0.3
       werift-dtls:
-        specifier: ^0.5.4
-        version: 0.5.7
+        specifier: ^0.5.8
+        version: 0.5.8
       werift-ice:
-        specifier: ^0.0.16
-        version: 0.0.16
+        specifier: ^0.2.2
+        version: 0.2.2
       werift-rtp:
-        specifier: ^0.8.1
-        version: 0.8.4
+        specifier: ^0.8.9
+        version: 0.8.9
       werift-sctp:
-        specifier: ^0.0.5
-        version: 0.0.5
+        specifier: ^0.0.11
+        version: 0.0.11
 
   packages/rtc-api-client:
     dependencies:
@@ -373,8 +373,8 @@ importers:
         specifier: ^3.0.5
         version: 3.2.4(@types/debug@4.1.12)(@types/node@20.19.17)(@vitest/browser@3.2.4)(jsdom@20.0.3)(lightningcss@1.30.1)
       werift:
-        specifier: ^0.19.1
-        version: 0.19.9
+        specifier: ^0.24.2
+        version: 0.24.2
 
 packages:
 
@@ -1702,6 +1702,12 @@ packages:
   '@types/deep-eql@4.0.2':
     resolution: {integrity: sha512-c9h9dVVMigMPc4bwTvC5dxqtqJZwQPePsWjPlpSOnojbor6pGqdk541lfA7AqFQr5pB1BRdq0juY9db81BwyFw==}
 
+  '@types/dom-mediacapture-transform@0.1.12':
+    resolution: {integrity: sha512-d7/QsLRwF864A5mgIM/YrfiglHoYn7zgCcAoJgW404r+2DwnNr7EBbLnCWpmOMgH8y0te73L1AV6H1bmauaWFw==}
+
+  '@types/dom-webcodecs@0.1.13':
+    resolution: {integrity: sha512-O5hkiFIcjjszPIYyUSyvScyvrBoV3NOEEZx/pMlsu44TKzWNkLVBBxnxJz42in5n3QIolYOcBYFCPZZ0h8SkwQ==}
+
   '@types/estree@1.0.8':
     resolution: {integrity: sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w==}
 
@@ -2459,6 +2465,15 @@ packages:
 
   dateformat@3.0.3:
     resolution: {integrity: sha512-jyCETtSl3VMZMWeRo7iY1FL19ges1t55hMo5yaam4Jrsm5EPL89UQkoQRyiI+Yf4k8r2ZpdngkV8hr1lIdjb3Q==}
+
+  debug@4.4.0:
+    resolution: {integrity: sha512-6WTZ/IxCY/T6BALoZHaE4ctp9xm+Z5kY/pzYaCHRFeyVhojxlrm+46y68HA6hr0TcwEssoxNiDEUJQjfPZ/RYA==}
+    engines: {node: '>=6.0'}
+    peerDependencies:
+      supports-color: '*'
+    peerDependenciesMeta:
+      supports-color:
+        optional: true
 
   debug@4.4.1:
     resolution: {integrity: sha512-KcKCqiftBJcZr++7ykoDIEwSa3XWowTfNPo92BYxjXiyYEVrUQh2aLyhxBCwww+heortUFxEJYcRzosstTEBYQ==}
@@ -3866,6 +3881,9 @@ packages:
   math-intrinsics@1.1.0:
     resolution: {integrity: sha512-/IXtbwEk5HTPyEwyKX6hGkYXxM9nbj64B+ilVJnC/R6B0pH5G4V3b0pVbL7DBj4tkhBAppbQUlf6F6Xl9LHu1g==}
     engines: {node: '>= 0.4'}
+
+  mediabunny@1.51.0:
+    resolution: {integrity: sha512-u327374xU8Ho0gCaMII7fUK8t0PnqkabCox1k8uUwvgvGb9o6YQGZEG2Qr4DTe7nTMpzfL7ukgnHDvDROySZ+Q==}
 
   mediasoup-client@3.8.1:
     resolution: {integrity: sha512-v5y56/fIinIx0Uq5/iT4AvVr+zboJ101boY92mx3+YSZD4BvWFiZI4yVbS5Lt09dWoSLqicY/T60WFZXovQhZA==}
@@ -5357,31 +5375,31 @@ packages:
     resolution: {integrity: sha512-VwddBukDzu71offAQR975unBIGqfKZpM+8ZX6ySk8nYhVoo5CYaZyzt3YBvYtRtO+aoGlqxPg/B87NGVZ/fu6g==}
     engines: {node: '>=12'}
 
-  werift-common@0.0.2:
-    resolution: {integrity: sha512-Zuf9yPXnOVMiIYl1XzWKGxZuStL61c1Oi3NoWx5O7UjsmQ7i7TECFJomfpeKhngwUV56dbM06wCRlB6diJlufg==}
+  werift-common@0.0.3:
+    resolution: {integrity: sha512-ma3E4BqKTyZVLhrdfTVs2T1tg9seeUtKMRn5e64LwgrogWa62+3LAUoLBUSl1yPWhgSkXId7GmcHuWDen9IJeQ==}
     engines: {node: '>=16'}
 
-  werift-dtls@0.5.7:
-    resolution: {integrity: sha512-z2fjbP7fFUFmu/Ky4bCKXzdgPTtmSY1DYi0TUf3GG2zJT4jMQ3TQmGY8y7BSSNGetvL4h3pRZ5un0EcSOWpPog==}
+  werift-dtls@0.5.8:
+    resolution: {integrity: sha512-oH39cdCpVLqKcPZRMGQLcN+tIBixvMGqjCB9qCrH39Tu9Mmu8u2+zTzyl0Fod87EK6PNPgoNqMJt64xlSMfLnw==}
     engines: {node: '>=16'}
 
-  werift-ice@0.0.16:
-    resolution: {integrity: sha512-eGtKqwkWGhxOk4BqDn1hLHkM9kJ4lkLExYsE90MDeeGbIgcmVefCulGb9yq+Z2zrCO52sT4Xueb9kQ1IoqqqUg==}
+  werift-ice@0.2.2:
+    resolution: {integrity: sha512-td52pHp+JmFnUn5jfDr/SSNO0dMCbknhuPdN1tFp9cfRj5jaktN63qnAdUuZC20QCC3ETWdsOthcm+RalHpFCQ==}
 
-  werift-rtp@0.8.4:
-    resolution: {integrity: sha512-n2FqQoSZnrS6ztMFkMMUee0ORh4JqdkEaaXwJ3NlemCoshcX3bfdKo4HukLwH2oBomfHFRIAvrqGRpo5JdYTzw==}
+  werift-rtp@0.8.9:
+    resolution: {integrity: sha512-uLFOawIXw8FblIp1akfIVYFuRNtNo7csRxYypLz0t++sUNCN7sPeghVqET/c3Mq7Tg2QA3oAb15fXIIuJEp2AA==}
     engines: {node: '>=10'}
 
-  werift-sctp@0.0.5:
-    resolution: {integrity: sha512-0xsiiyiEv0htMGIil+20jIEuktTxPQ7931IwaYwvx6ceN1bNaxT7WSxshYr36TUC+1PCEe3bhKeEJjmY0NZy1Q==}
+  werift-sctp@0.0.11:
+    resolution: {integrity: sha512-7109yuI5U7NTEHjqjn0A8VeynytkgVaxM6lRr1Ziv0D8bPcaB8A7U/P88M7WaCpWDoELHoXiRUjQycMWStIgjQ==}
     engines: {node: '>=10'}
 
   werift@0.18.17:
     resolution: {integrity: sha512-zkQ0zI0YSqyhpkBlEEtBi93hCXDq0PqYrQW5Q+mKKWsg1uV9j+CwzvqPFiih4zg8gn/WaREYx77mw5Af9sdD4g==}
     engines: {node: '>=16'}
 
-  werift@0.19.9:
-    resolution: {integrity: sha512-AN9KC5+hG2E8PzunpYjbgJaDjg47+Ju+CsHx4Btm1m16Lod/y4brUv6ag7LOGR+f6ZZHcotDhmfdEZLhcxwhkQ==}
+  werift@0.24.2:
+    resolution: {integrity: sha512-7zjdi1SAv3CglLe9Yyi15Gl73HxoKFZCbsbqcrfSDOlV6ojiwUjJqACBZGfbX8AyJXDsBZZpU8NwXxWwOQHoEQ==}
     engines: {node: '>=16'}
 
   whatwg-encoding@1.0.5:
@@ -7153,6 +7171,12 @@ snapshots:
 
   '@types/deep-eql@4.0.2': {}
 
+  '@types/dom-mediacapture-transform@0.1.12':
+    dependencies:
+      '@types/dom-webcodecs': 0.1.13
+
+  '@types/dom-webcodecs@0.1.13': {}
+
   '@types/estree@1.0.8': {}
 
   '@types/events@3.0.3': {}
@@ -7992,6 +8016,10 @@ snapshots:
       '@babel/runtime': 7.27.6
 
   dateformat@3.0.3: {}
+
+  debug@4.4.0:
+    dependencies:
+      ms: 2.1.3
 
   debug@4.4.1(supports-color@10.2.0):
     dependencies:
@@ -9843,6 +9871,11 @@ snapshots:
 
   math-intrinsics@1.1.0: {}
 
+  mediabunny@1.51.0:
+    dependencies:
+      '@types/dom-mediacapture-transform': 0.1.12
+      '@types/dom-webcodecs': 0.1.13
+
   mediasoup-client@3.8.1:
     dependencies:
       '@types/debug': 4.1.12
@@ -11440,54 +11473,49 @@ snapshots:
   webidl-conversions@7.0.0:
     optional: true
 
-  werift-common@0.0.2:
+  werift-common@0.0.3:
     dependencies:
-      jspack: 0.0.4
+      '@shinyoshiaki/jspack': 0.0.6
+      debug: 4.4.1(supports-color@9.4.0)
+    transitivePeerDependencies:
+      - supports-color
 
-  werift-dtls@0.5.7:
+  werift-dtls@0.5.8:
     dependencies:
       '@fidm/x509': 1.2.1
       '@noble/curves': 1.9.7
       '@peculiar/x509': 1.14.0
       '@shinyoshiaki/binary-data': 0.6.1
-      date-fns: 2.30.0
-      lodash: 4.17.21
-      rx.mini: 1.4.0
+      debug: 4.4.0
       tweetnacl: 1.0.3
+    transitivePeerDependencies:
+      - supports-color
 
-  werift-ice@0.0.16:
+  werift-ice@0.2.2:
     dependencies:
-      buffer-crc32: 0.2.13
+      '@shinyoshiaki/jspack': 0.0.6
+      buffer-crc32: 1.0.0
       debug: 4.4.1(supports-color@9.4.0)
       int64-buffer: 1.1.0
-      ip: 1.1.9
-      jspack: 0.0.4
+      ip: 2.0.1
       lodash: 4.17.21
+      multicast-dns: 7.2.5
       p-cancelable: 2.1.1
       rx.mini: 1.4.0
     transitivePeerDependencies:
       - supports-color
 
-  werift-rtp@0.8.4:
+  werift-rtp@0.8.9:
     dependencies:
-      '@minhducsun2002/leb128': 1.0.0
-      '@shinyoshiaki/binary-data': 0.6.1
-      '@shinyoshiaki/jspack': 0.0.6
-      aes-js: 3.1.2
       buffer: 6.0.3
-      debug: 4.4.1(supports-color@9.4.0)
-      mp4box: 0.5.4
-      rx.mini: 1.4.0
+      debug: 4.4.0
+      mediabunny: 1.51.0
     transitivePeerDependencies:
       - supports-color
 
-  werift-sctp@0.0.5:
+  werift-sctp@0.0.11:
     dependencies:
-      binary-data: 0.6.0
-      jspack: 0.0.4
-      lodash: 4.17.21
-      rx.mini: 1.4.0
-      turbo-crc32: 1.0.1
+      '@shinyoshiaki/jspack': 0.0.6
 
   werift@0.18.17(supports-color@9.4.0):
     dependencies:
@@ -11516,34 +11544,22 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  werift@0.19.9:
+  werift@0.24.2:
     dependencies:
       '@fidm/x509': 1.2.1
-      '@minhducsun2002/leb128': 1.0.0
       '@noble/curves': 1.9.7
       '@peculiar/x509': 1.14.0
       '@shinyoshiaki/binary-data': 0.6.1
-      '@shinyoshiaki/ebml-builder': 0.0.1
-      '@shinyoshiaki/jspack': 0.0.6
-      aes-js: 3.1.2
-      buffer-crc32: 1.0.0
-      date-fns: 2.30.0
-      debug: 4.4.1(supports-color@9.4.0)
-      int64-buffer: 1.1.0
-      ip: 2.0.1
-      lodash: 4.17.21
-      mp4box: 0.5.4
-      nano-time: 1.0.0
-      p-cancelable: 2.1.1
-      rx.mini: 1.4.0
-      turbo-crc32: 1.0.1
+      buffer: 6.0.3
+      debug: 4.4.0
+      mediabunny: 1.51.0
+      multicast-dns: 7.2.5
       tweetnacl: 1.0.3
-      uuid: 9.0.1
-      werift-common: 0.0.2
-      werift-dtls: 0.5.7
-      werift-ice: 0.0.16
-      werift-rtp: 0.8.4
-      werift-sctp: 0.0.5
+      werift-common: 0.0.3
+      werift-dtls: 0.5.8
+      werift-ice: 0.2.2
+      werift-rtp: 0.8.9
+      werift-sctp: 0.0.11
     transitivePeerDependencies:
       - supports-color
 

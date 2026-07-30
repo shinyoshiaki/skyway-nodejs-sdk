@@ -61,7 +61,7 @@
     "@skyway-sdk/model": "^1.0.1",
     "@skyway-sdk/token": "^1.7.0",
     "msc-node": "^0.0.26",
-    "werift": "^0.19.1",
+    "werift": "^0.24.2",
     "multicast-dns": "^7.2.5",
     "@skyway-sdk/core": "^1.12.0",
     "@skyway-sdk/sfu-bot": "^1.12.0",
@@ -70,11 +70,11 @@
   "devDependencies": {
     "@types/node": "^20.8.8",
     "@types/uuid": "^9.0.1",
-    "werift-common": "^0.0.2",
-    "werift-dtls": "^0.5.4",
-    "werift-ice": "^0.0.16",
-    "werift-rtp": "^0.8.1",
-    "werift-sctp": "^0.0.5",
+    "werift-common": "^0.0.3",
+    "werift-dtls": "^0.5.8",
+    "werift-ice": "^0.2.2",
+    "werift-rtp": "^0.8.9",
+    "werift-sctp": "^0.0.11",
     "vitest": "^3.0.5"
   }
 }
