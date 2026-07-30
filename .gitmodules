@@ -1,7 +1,3 @@
 [submodule "submodules/mediasoup"]
 	path = submodules/mediasoup
 	url = git@github.com:shinyoshiaki/mediasoup-client-node.git
-	# fork 独自の修正は patches/submodules/ を working tree に適用して反映するため、
-	# submodule の work tree は常に dirty になる。gitlink（= remote から取得できる SHA）
-	# の変更のみを親リポジトリの差分として扱う。
-	ignore = dirty

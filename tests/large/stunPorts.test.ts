@@ -10,8 +10,11 @@ import { gst, testTokenString } from './fixture';
 
 /**
  * js-sdk v2.5.0 で追加された rtcConfig.stunPorts の実接続確認。
- * 443 / 3478 の単一指定と両方指定のいずれでも P2P 接続が成立することを確認する。
- * (werift の ice パッケージは stunServers で複数の STUN サーバーを扱えるようにしてある)
+ *
+ * werift の ice パッケージは STUN サーバーを 1 台しか使わないため、複数ポートを
+ * 指定した場合は先頭のポートだけが候補収集に使われる（README に明記）。
+ * ここでは 443 / 3478 の単一指定と両方指定のいずれでも接続が成立すること、
+ * および実際に使われる STUN サーバーが先頭ポートであることを確認する。
  */
 describe('stunPorts', () => {
   const connectWithStunPorts = async (stunPorts: (443 | 3478)[]) => {
@@ -40,12 +43,10 @@ describe('stunPorts', () => {
       const [rtp] = await remoteStream.track.onReceiveRtp.asPromise();
       expect(rtp.payload).toBeDefined();
 
-      // 指定したポートのSTUNサーバーがICEの候補収集に使われていること
+      // werift は STUN サーバーを 1 台だけ使うため、先頭ポートが採用される
       const pc = subscription.getRTCPeerConnection()!;
       const [ice] = pc.iceTransports;
-      expect(ice.connection.stunServers.map(([, port]) => port).sort()).toEqual(
-        [...stunPorts].sort()
-      );
+      expect(ice.connection.stunServer?.[1]).toBe(stunPorts[0]);
 
       await room.close();
     } finally {
@@ -58,5 +59,6 @@ describe('stunPorts', () => {
 
   it('single port 3478', () => connectWithStunPorts([3478]), 60_000);
 
-  it('both ports', () => connectWithStunPorts([443, 3478]), 60_000);
+  it('both ports (uses the first one)', () =>
+    connectWithStunPorts([443, 3478]), 60_000);
 });

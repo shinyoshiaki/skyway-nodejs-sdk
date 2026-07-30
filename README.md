@@ -43,7 +43,13 @@ v2 は破壊的変更を含むメジャーアップデートであり、本 SDK 
 - 対応機能（ブラウザ版と同様に利用できるもの）
   - `Publication.getStats` / `Subscription.getStats` / `getRTCPeerConnection`
   - `restartIce`
-  - `rtcConfig.stunPorts`（`[443]` / `[3478]` / `[443, 3478]` のいずれも利用可能）
+  - `rtcConfig.stunPorts`（`[443]` / `[3478]` / `[443, 3478]` のいずれも指定可能。
+    ただし後述の制限あり）
+- 制限付きで動作する機能
+  - `rtcConfig.stunPorts` に **複数ポートを指定した場合は先頭のポートのみ使用** します。
+    werift の ice 実装が STUN サーバーを 1 台しか参照しないためです
+    （`[443, 3478]` を指定した場合は 443 のみに問い合わせます）。
+    単一ポート指定（`[443]` / `[3478]`）は指定どおりに動作します。
 - 非対応機能
   - simulcast
   - `LocalAudioStream.getAudioLevel` / `RemoteAudioStream.getAudioLevel`
@@ -137,41 +143,17 @@ sudo apt-get -y install build-essential git gobject-introspection libgirepositor
 pnpm run first
 ```
 
-`pnpm run first` は次を順に実行します。
-
-1. `submodule:init` — submodule を取得する（werift の `third_party/wpt` は除外）
-2. `submodule:patch` — `patches/submodules/` 配下の patch を submodule に適用する
-3. `pnpm i` → `submodule:install` → `compile`
+`pnpm run first` は `submodule:init`（werift の `third_party/wpt` は除外）→ `pnpm i`
+→ `submodule:install` → `compile` を順に実行します。
 
 - `env.ts.template`を`env.ts`にリネームし、ファイル中の appId と secret にダッシュボードで発行した appId と secret を入力する
   - appId と secret の発行方法は[こちら](https://skyway.ntt.com/ja/docs/user-guide/javascript-sdk/quickstart/#199)
-
-## submodule への独自修正（patches/）
-
-`submodules/mediasoup`（mediasoup-client-node）とその中の werift に対する fork 独自の修正は、
-submodule リポジトリへ push せず **本リポジトリの `patches/submodules/` で管理** しています。
-gitlink は upstream の remote から取得できる SHA を指したままなので、clone 直後でも
-`pnpm run submodule:patch` を実行すれば同じ状態を再現できます。
-
-| patch | 内容 |
-| --- | --- |
-| `werift-multiple-stun-servers.patch` | `rtcConfig.stunPorts` に複数ポートを指定できるよう ice パッケージを複数 STUN サーバー対応にする。DataChannel に DOM 互換の `onbufferedamountlow` を追加 |
-| `mediasoup-client-node-werift-getstats.patch` | werift handler の `getTransportStats` / `getSenderStats` / `getReceiverStats` を実装する（v2 の内部統計収集が依存） |
-
-patch を更新する場合は submodule 内で修正したあと、対象 submodule で
-`git diff <gitlink の SHA> > ../../patches/submodules/<name>.patch` のように取り直してください。
-
-なお patch 適用後は submodule の working tree が dirty になります（`git status` で
-`m submodules/mediasoup` と表示される）。これは意図した状態なので、submodule 側で
-コミットして解消しないでください（コミットすると gitlink が remote から取得できない
-SHA を指すことになり、fresh checkout / CI で再現できなくなります）。
 
 ## 更新時
 
 git で更新を同期した時や packages ディレクトリ以下のソースコードを編集した際にはルートディレクトリで以下のコマンドを実行する必要があります。
 
 ```sh
-pnpm run submodule:patch
 pnpm run compile
 ```
 

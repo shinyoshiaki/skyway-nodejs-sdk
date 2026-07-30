@@ -23,8 +23,8 @@ gst.init([]);
     codecCapabilities: [{ mimeType: 'audio/opus' }],
     rtcConfig: {
       // v2.5.0 で追加された設定。STUNサーバーへの接続に使うポートを選択できる。
-      // 443 と 3478 の両方を指定した場合は両方のポートに問い合わせる。
-      stunPorts: [443, 3478],
+      // Node.js 版では複数指定しても先頭のポートのみ使われる（README 参照）。
+      stunPorts: [443],
     },
   });
 

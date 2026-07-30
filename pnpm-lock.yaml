@@ -266,9 +266,6 @@ importers:
       '@skyway-sdk/model':
         specifier: ^2.0.0
         version: 2.0.0
-      '@skyway-sdk/rtc-rpc-api-client':
-        specifier: ^1.8.0
-        version: 1.8.3(ws@8.21.1)
       '@skyway-sdk/token':
         specifier: ^2.1.5
         version: 2.1.5
@@ -1494,17 +1491,11 @@ packages:
   '@skyway-sdk/analytics-client@2.0.5':
     resolution: {integrity: sha512-ZapeTBdptQZLtFgBNC/dNpHK0Sli7c9MgnMQ5Trh0J+CmXdr5Vj3XRvfuJDhYQORPwknhvBdWS1yXG0xVa+Xzg==}
 
-  '@skyway-sdk/common@1.5.0':
-    resolution: {integrity: sha512-oYHtWcBLVh098UkldKU87wZf6sdPqO+3ge+glpJMyVs2ZIuQF4b5uz50F/Lugv3G1Sc8UHNo5h5Vs9w6J4uQaQ==}
-
   '@skyway-sdk/common@2.0.6':
     resolution: {integrity: sha512-jl0K6+D/c2N7P2f/v/CrhV20Vv+wYhZNLRxhbZ2jM0P02FebaE03ZuVdb2c/qcJdfnCHV2ff1/5/qSjKYhLs+A==}
 
   '@skyway-sdk/core@2.5.1':
     resolution: {integrity: sha512-pYhn31FeuJqp5CjW5HMWYDs0R36sVZAwxsS4MY9AezNSakKZAlwZ1HSvDE6+hpbw+67AFZbotj6WFvLf62xXXw==}
-
-  '@skyway-sdk/model@1.0.3':
-    resolution: {integrity: sha512-1sFnOY9phuO+v6f9HVeMCSRxHSkPRi2JdQVwUhqW0ArGwmBqUK+jIfU7qXGbRiuE0vxosBu+gDlMK0pw40ehSQ==}
 
   '@skyway-sdk/model@2.0.0':
     resolution: {integrity: sha512-Ddhffe4Gq5+CL4UlnmI5+0YVcfQuGMh8v5wk8G/ai88WJfCUw5Uw2IgnSnf8YBaLLMoqKGe1nRntX3Gj20b39g==}
@@ -1514,9 +1505,6 @@ packages:
 
   '@skyway-sdk/rtc-api-client@2.2.5':
     resolution: {integrity: sha512-O1gIhY2F16PL3a+X4JAxNMkndJuE411JFYVVrj/TZySzAgaVrblIsl44CYwWHRN2TKFy0PtVDfV6gXvrr/T+UQ==}
-
-  '@skyway-sdk/rtc-rpc-api-client@1.8.3':
-    resolution: {integrity: sha512-LdZGk1G8YK8BzEicl+nPUdGStULXxTRQF2s3VUPYrxRKJuWePLOAbnpO5bwvkEwQLpu5o8PNVyOA7N05/0O2gQ==}
 
   '@skyway-sdk/rtc-rpc-api-client@2.1.5':
     resolution: {integrity: sha512-iXYf2gprY9+WhxPBOrgfTeH3fyp4NlyhW/BzvuSzTUTtltNss6dgFRoko63Yl74IwWsGFVj3eLv3mC0D+T3ilw==}
@@ -6649,12 +6637,6 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@skyway-sdk/common@1.5.0':
-    dependencies:
-      axios: 1.16.0
-    transitivePeerDependencies:
-      - debug
-
   '@skyway-sdk/common@2.0.6':
     dependencies:
       axios: 1.16.0
@@ -6680,8 +6662,6 @@ snapshots:
       - utf-8-validate
       - ws
 
-  '@skyway-sdk/model@1.0.3': {}
-
   '@skyway-sdk/model@2.0.0': {}
 
   '@skyway-sdk/room@2.5.1(encoding@0.1.13)(ws@8.21.1)':
@@ -6703,16 +6683,6 @@ snapshots:
       '@skyway-sdk/rtc-rpc-api-client': 2.1.5(ws@8.21.1)
       '@skyway-sdk/token': 2.1.5
       deepmerge: 4.3.1
-    transitivePeerDependencies:
-      - debug
-      - ws
-
-  '@skyway-sdk/rtc-rpc-api-client@1.8.3(ws@8.21.1)':
-    dependencies:
-      '@skyway-sdk/common': 1.5.0
-      '@skyway-sdk/model': 1.0.3
-      isomorphic-ws: 4.0.1(ws@8.21.1)
-      uuid: 9.0.1
     transitivePeerDependencies:
       - debug
       - ws

@@ -544,9 +544,11 @@ export class Sender extends Peer {
       let waitForBufferedAmountLow = new Promise<void>((resolve) => {
         waitForBufferedAmountLowResolve = resolve;
       });
-      dc.onbufferedamountlow = () => {
+      // werift の RTCDataChannel は DOM の onbufferedamountlow ではなく
+      // bufferedAmountLow イベントで通知する
+      dc.bufferedAmountLow.subscribe(() => {
         waitForBufferedAmountLowResolve();
-      };
+      });
 
       stream._onWriteData
         .add(async (data) => {

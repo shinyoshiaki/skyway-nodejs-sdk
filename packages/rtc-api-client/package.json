@@ -37,7 +37,6 @@
   "dependencies": {
     "@skyway-sdk/common": "^2.0.6",
     "@skyway-sdk/model": "^2.0.0",
-    "@skyway-sdk/rtc-rpc-api-client": "^1.8.0",
     "@skyway-sdk/token": "^2.1.5",
     "deepmerge": "^4.3.1",
     "uuid": "^9.0.0"
