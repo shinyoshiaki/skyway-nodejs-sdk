@@ -9,8 +9,8 @@ importers:
   .:
     devDependencies:
       '@skyway-sdk/room':
-        specifier: ^1.12.0
-        version: 1.15.2(encoding@0.1.13)
+        specifier: ^2.5.1
+        version: 2.5.1(encoding@0.1.13)(ws@8.21.1)
       '@types/node':
         specifier: ^20.12.12
         version: 20.19.17
@@ -73,7 +73,7 @@ importers:
         version: 4.9.5
       vitest:
         specifier: ^3.0.5
-        version: 3.2.4(@types/debug@4.1.12)(@types/node@20.19.17)(@vitest/browser@3.2.4)(jsdom@20.0.3)(lightningcss@1.30.1)
+        version: 3.2.4(@types/debug@4.1.13)(@types/node@20.19.17)(@vitest/browser@3.2.4)(jsdom@20.0.3)(lightningcss@1.30.1)
       zx:
         specifier: ^8.4.0
         version: 8.5.5
@@ -85,7 +85,7 @@ importers:
         version: 1.23.0-3.3.0(node-gtk@1.0.0(encoding@0.1.13))
       '@shinyoshiaki/skyway-nodejs-sdk':
         specifier: file:../../packages/room
-        version: link:../../packages/room
+        version: file:packages/room(encoding@0.1.13)(ws@8.21.1)
       node-gtk:
         specifier: 1.0.0
         version: 1.0.0(encoding@0.1.13)
@@ -103,8 +103,8 @@ importers:
   packages/analytics-client:
     dependencies:
       '@skyway-sdk/common':
-        specifier: ^1.5.0
-        version: 1.5.0
+        specifier: ^2.0.6
+        version: 2.0.6
       isomorphic-ws:
         specifier: ^4.0.1
         version: 4.0.1(ws@8.18.2)
@@ -116,8 +116,8 @@ importers:
         version: 8.18.2
     devDependencies:
       '@skyway-sdk/model':
-        specifier: ^1.0.0
-        version: 1.0.3
+        specifier: ^2.0.0
+        version: 2.0.0
       '@types/jest':
         specifier: ^27.0.0
         version: 27.5.2
@@ -140,23 +140,20 @@ importers:
   packages/core:
     dependencies:
       '@skyway-sdk/analytics-client':
-        specifier: ^1.0.1
-        version: 1.1.1
+        specifier: ^2.0.5
+        version: 2.0.5
       '@skyway-sdk/common':
-        specifier: ^1.5.0
-        version: 1.5.0
+        specifier: ^2.0.6
+        version: 2.0.6
       '@skyway-sdk/model':
-        specifier: ^1.0.1
-        version: 1.0.3
-      '@skyway-sdk/rtc-api-client':
-        specifier: ^1.8.0
-        version: 1.8.4(ws@8.18.2)
+        specifier: ^2.0.0
+        version: 2.0.0
       '@skyway-sdk/signaling-client':
-        specifier: ^1.0.7
-        version: 1.0.9(encoding@0.1.13)
+        specifier: ^2.0.4
+        version: 2.0.4(encoding@0.1.13)
       '@skyway-sdk/token':
-        specifier: ^1.7.0
-        version: 1.7.4
+        specifier: ^2.1.5
+        version: 2.1.5
       bowser:
         specifier: ^2.11.0
         version: 2.11.0
@@ -208,25 +205,19 @@ importers:
         version: 0.0.6
       '@shinyoshiaki/skyway-nodejs-sdk-core':
         specifier: ^1.6.3
-        version: 1.6.3(encoding@0.1.13)
+        version: 1.6.3(encoding@0.1.13)(ws@8.18.2)
       '@shinyoshiaki/skyway-nodejs-sdk-sfu-bot':
         specifier: ^1.6.3
-        version: 1.6.3(encoding@0.1.13)
+        version: 1.6.3(encoding@0.1.13)(ws@8.18.2)
       '@skyway-sdk/common':
-        specifier: ^1.5.0
-        version: 1.5.0
-      '@skyway-sdk/core':
-        specifier: ^1.12.0
-        version: 1.15.2(encoding@0.1.13)
+        specifier: ^2.0.6
+        version: 2.0.6
       '@skyway-sdk/model':
-        specifier: ^1.0.1
-        version: 1.0.3
-      '@skyway-sdk/sfu-bot':
-        specifier: ^1.12.0
-        version: 1.14.3(encoding@0.1.13)
+        specifier: ^2.0.0
+        version: 2.0.0
       '@skyway-sdk/token':
-        specifier: ^1.7.0
-        version: 1.7.4
+        specifier: ^2.1.5
+        version: 2.1.5
       msc-node:
         specifier: ^0.0.26
         version: 0.0.26
@@ -248,7 +239,7 @@ importers:
         version: 9.0.8
       vitest:
         specifier: ^3.0.5
-        version: 3.2.4(@types/debug@4.1.12)(@types/node@20.19.17)(@vitest/browser@3.2.4)(jsdom@20.0.3)(lightningcss@1.30.1)
+        version: 3.2.4(@types/debug@4.1.13)(@types/node@20.19.17)(@vitest/browser@3.2.4)(jsdom@20.0.3)(lightningcss@1.30.1)
       werift-common:
         specifier: ^0.0.3
         version: 0.0.3
@@ -268,17 +259,17 @@ importers:
   packages/rtc-api-client:
     dependencies:
       '@skyway-sdk/common':
-        specifier: ^1.5.0
-        version: 1.5.0
+        specifier: ^2.0.6
+        version: 2.0.6
       '@skyway-sdk/model':
-        specifier: ^1.0.1
-        version: 1.0.3
+        specifier: ^2.0.0
+        version: 2.0.0
       '@skyway-sdk/rtc-rpc-api-client':
         specifier: ^1.8.0
-        version: 1.8.3(ws@8.18.2)
+        version: 1.8.3(ws@8.21.1)
       '@skyway-sdk/token':
-        specifier: ^1.7.0
-        version: 1.7.4
+        specifier: ^2.1.5
+        version: 2.1.5
       deepmerge:
         specifier: ^4.3.1
         version: 4.3.1
@@ -293,21 +284,21 @@ importers:
   packages/rtc-rpc-api-client:
     dependencies:
       '@skyway-sdk/common':
-        specifier: ^1.4.8
-        version: 1.5.0
+        specifier: ^2.0.6
+        version: 2.0.6
       '@skyway-sdk/model':
-        specifier: ^1.0.1
-        version: 1.0.3
+        specifier: ^2.0.0
+        version: 2.0.0
       isomorphic-ws:
         specifier: ^4.0.1
-        version: 4.0.1(ws@8.18.2)
+        version: 4.0.1(ws@8.21.1)
       uuid:
         specifier: ^9.0.0
         version: 9.0.1
     devDependencies:
       '@skyway-sdk/token':
-        specifier: ^1.7.0
-        version: 1.7.4
+        specifier: ^2.1.5
+        version: 2.1.5
       '@types/uuid':
         specifier: ^9.0.1
         version: 9.0.8
@@ -315,26 +306,23 @@ importers:
   packages/sfu-api-client:
     dependencies:
       '@skyway-sdk/common':
-        specifier: ^1.4.8
-        version: 1.5.0
-      '@skyway-sdk/mediasoup-client':
-        specifier: ^3.15.2
-        version: 3.15.2
+        specifier: ^2.0.6
+        version: 2.0.6
 
   packages/sfu-bot:
     dependencies:
       '@shinyoshiaki/skyway-nodejs-sdk-core':
         specifier: file:../core
-        version: file:packages/core(encoding@0.1.13)
+        version: link:../core
       '@skyway-sdk/common':
-        specifier: ^1.5.0
-        version: 1.5.0
+        specifier: ^2.0.6
+        version: 2.0.6
       '@skyway-sdk/model':
-        specifier: ^1.0.1
-        version: 1.0.3
+        specifier: ^2.0.0
+        version: 2.0.0
       '@skyway-sdk/sfu-api-client':
-        specifier: ^1.4.5
-        version: 1.5.4
+        specifier: ^2.0.6
+        version: 2.0.6
       '@types/node':
         specifier: ^20.8.8
         version: 20.19.17
@@ -345,15 +333,9 @@ importers:
         specifier: ^0.0.24
         version: 0.0.24
     devDependencies:
-      '@skyway-sdk/core':
-        specifier: ^1.12.0
-        version: 1.15.2(encoding@0.1.13)
       '@types/lodash':
         specifier: ^4.14.200
         version: 4.17.16
-      mediasoup-client:
-        specifier: 3.8.1
-        version: 3.8.1
 
   tests:
     devDependencies:
@@ -371,7 +353,7 @@ importers:
         version: 1.53.1
       vitest:
         specifier: ^3.0.5
-        version: 3.2.4(@types/debug@4.1.12)(@types/node@20.19.17)(@vitest/browser@3.2.4)(jsdom@20.0.3)(lightningcss@1.30.1)
+        version: 3.2.4(@types/debug@4.1.13)(@types/node@20.19.17)(@vitest/browser@3.2.4)(jsdom@20.0.3)(lightningcss@1.30.1)
       werift:
         specifier: ^0.24.2
         version: 0.24.2
@@ -1181,6 +1163,14 @@ packages:
     resolution: {integrity: sha512-A8AlzetnS2WIuhijdAzKUyFpR5YbLLfV3luQ4lzBgIBgRfuoBDZeF+RSZPhra+7A6/zTUlrbhKZIOi/MNhqgvQ==}
     engines: {node: '>=18.0.0'}
 
+  '@lukeed/csprng@1.1.0':
+    resolution: {integrity: sha512-Z7C/xXCiGWsg0KuKsHTKJxbWhpI3Vs5GwLfOean7MGyVFGqdRgBbAjOCh6u4bbjPc/8MJ2pZmK/0DLdCbivLDA==}
+    engines: {node: '>=8'}
+
+  '@lukeed/uuid@2.0.1':
+    resolution: {integrity: sha512-qC72D4+CDdjGqJvkFMMEAtancHUQ7/d/tAiHf64z8MopFDmcrtbcJuerDtFceuAfQJ2pDSfCKCtbqoGBNnwg0w==}
+    engines: {node: '>=8'}
+
   '@mapbox/node-pre-gyp@1.0.11':
     resolution: {integrity: sha512-Yhlar6v9WQgUp/He7BdgzOz8lqMQ8sU+jkCq7Wx8Myc5YFJLbEe7lgui/V7G1qB1DJykHSGwreceSaD60Y0PUQ==}
     hasBin: true
@@ -1558,11 +1548,12 @@ packages:
   '@shinyoshiaki/skyway-nodejs-sdk-core@1.6.3':
     resolution: {integrity: sha512-STxp644Fa3H2DGg6gnfp9rIFhQBsDdINbTj5Ms3qaRakibgN+mvKBbgUwUMWgFjLAMh4bBCxeojZVFNi5l5ttg==}
 
-  '@shinyoshiaki/skyway-nodejs-sdk-core@file:packages/core':
-    resolution: {directory: packages/core, type: directory}
-
   '@shinyoshiaki/skyway-nodejs-sdk-sfu-bot@1.6.3':
     resolution: {integrity: sha512-NULZdHjpGRgEgaehfLS4VVotbML1vSLjFJfambzuJUmJA6yY0zPohtO5xph7C9qw3bkvyiGHFr0AQGeP/0sdeg==}
+
+  '@shinyoshiaki/skyway-nodejs-sdk@file:packages/room':
+    resolution: {directory: packages/room, type: directory}
+    engines: {node: '>=22'}
 
   '@sigstore/bundle@2.3.2':
     resolution: {integrity: sha512-wueKWDk70QixNLB363yHc2D2ItTgYiMTdPwK8D9dKQMR3ZQ0c35IxP5xnwQ8cNLoCgCRcHf14kE+CLIvNX1zmA==}
@@ -1597,14 +1588,17 @@ packages:
   '@sinonjs/fake-timers@8.1.0':
     resolution: {integrity: sha512-OAPJUAtgeINhh/TAlUID4QTs53Njm7xzddaVlEs/SXwgtiD1tW22zAB/W1wdqfrpmikgaWQ9Fw6Ws+hsiRm5Vg==}
 
-  '@skyway-sdk/analytics-client@1.1.1':
-    resolution: {integrity: sha512-kwoI1BebCM5b+09pLODjqO2jyBc2QKu8fcuLdzhQkla7ySBnDJGEVNxVMua0gzza4aH2Wn0bnGZU26zO0AQG2w==}
+  '@skyway-sdk/analytics-client@2.0.5':
+    resolution: {integrity: sha512-ZapeTBdptQZLtFgBNC/dNpHK0Sli7c9MgnMQ5Trh0J+CmXdr5Vj3XRvfuJDhYQORPwknhvBdWS1yXG0xVa+Xzg==}
 
   '@skyway-sdk/common@1.5.0':
     resolution: {integrity: sha512-oYHtWcBLVh098UkldKU87wZf6sdPqO+3ge+glpJMyVs2ZIuQF4b5uz50F/Lugv3G1Sc8UHNo5h5Vs9w6J4uQaQ==}
 
-  '@skyway-sdk/core@1.15.2':
-    resolution: {integrity: sha512-outcQBvbt8rJJF8xPSTao5Cz/qdioA0ncWeZXMsp4AyOKsu68b9TvFIZ7wR5oencPwRVJdL1uj46fTO0jU4h0w==}
+  '@skyway-sdk/common@2.0.6':
+    resolution: {integrity: sha512-jl0K6+D/c2N7P2f/v/CrhV20Vv+wYhZNLRxhbZ2jM0P02FebaE03ZuVdb2c/qcJdfnCHV2ff1/5/qSjKYhLs+A==}
+
+  '@skyway-sdk/core@2.5.1':
+    resolution: {integrity: sha512-pYhn31FeuJqp5CjW5HMWYDs0R36sVZAwxsS4MY9AezNSakKZAlwZ1HSvDE6+hpbw+67AFZbotj6WFvLf62xXXw==}
 
   '@skyway-sdk/mediasoup-client@3.15.2':
     resolution: {integrity: sha512-0nNB6OPSU3aTKaoElJ0jI76gLYzkO96n8oExs94hd+b2bCBIpKznvzRxlmdZQH8T4fzLfeIU7AK3WROGr+iMQA==}
@@ -1613,26 +1607,44 @@ packages:
   '@skyway-sdk/model@1.0.3':
     resolution: {integrity: sha512-1sFnOY9phuO+v6f9HVeMCSRxHSkPRi2JdQVwUhqW0ArGwmBqUK+jIfU7qXGbRiuE0vxosBu+gDlMK0pw40ehSQ==}
 
-  '@skyway-sdk/room@1.15.2':
-    resolution: {integrity: sha512-u1RKzQr46NLkS4FxWauw+W8XO2nXxBPTQ7jdtxGqN5vHVh3uNcC0y3TJiHFVW44H7LVC+rr8cl4lzgvdez17EQ==}
+  '@skyway-sdk/model@2.0.0':
+    resolution: {integrity: sha512-Ddhffe4Gq5+CL4UlnmI5+0YVcfQuGMh8v5wk8G/ai88WJfCUw5Uw2IgnSnf8YBaLLMoqKGe1nRntX3Gj20b39g==}
+
+  '@skyway-sdk/room@2.5.1':
+    resolution: {integrity: sha512-cgbS2fI/gpqIn/vUi8SrJSAulr+WRbUuVOwCa3/F0BENzKSFP7nz1uLX0cn1KuRksQVu+6fRU24RLiFMpKDhpA==}
 
   '@skyway-sdk/rtc-api-client@1.8.4':
     resolution: {integrity: sha512-TMdpUvE7L9AAAVQV1mzl3Jp+NDF/rSnqGIghnk0G0G7R0YTXN3xRXywOecdUHVYmZiM17djtn9LhpDe1wWAyrA==}
 
+  '@skyway-sdk/rtc-api-client@2.2.5':
+    resolution: {integrity: sha512-O1gIhY2F16PL3a+X4JAxNMkndJuE411JFYVVrj/TZySzAgaVrblIsl44CYwWHRN2TKFy0PtVDfV6gXvrr/T+UQ==}
+
   '@skyway-sdk/rtc-rpc-api-client@1.8.3':
     resolution: {integrity: sha512-LdZGk1G8YK8BzEicl+nPUdGStULXxTRQF2s3VUPYrxRKJuWePLOAbnpO5bwvkEwQLpu5o8PNVyOA7N05/0O2gQ==}
+
+  '@skyway-sdk/rtc-rpc-api-client@2.1.5':
+    resolution: {integrity: sha512-iXYf2gprY9+WhxPBOrgfTeH3fyp4NlyhW/BzvuSzTUTtltNss6dgFRoko63Yl74IwWsGFVj3eLv3mC0D+T3ilw==}
 
   '@skyway-sdk/sfu-api-client@1.5.4':
     resolution: {integrity: sha512-o1wRIBu+GvSXKA7HOT2GVGPW6G6AALy0wvNEqG/Atb/cyibFwp7pAzmh7aYC6LZMKiJtobm/6nVx/Pt6JfZ0/A==}
 
-  '@skyway-sdk/sfu-bot@1.14.3':
-    resolution: {integrity: sha512-YJby+s7jNig7RAR+reCV2RGWnZVoHfKyGXLgjvZyqTzX8jya5j/nRMo8n1bT9BkzbACwMgpx1NSDvt5xqDkb+w==}
+  '@skyway-sdk/sfu-api-client@2.0.6':
+    resolution: {integrity: sha512-g29WvFGFDE0dnbevgvlcucuKvhbKM1wazcqbTuTOKkbXwCTaE8388vQoariGaPL/dMh+wyLREB+DvNftyUbqvg==}
+
+  '@skyway-sdk/sfu-bot@2.2.8':
+    resolution: {integrity: sha512-brXtYE2VhQp+5T0zliZpzg49aHrhtxL6iGW1cG9HA3f3K3caPZGslWY4N7PXo7WLXKclO4UQ9WH8s+SWWwufnQ==}
 
   '@skyway-sdk/signaling-client@1.0.9':
     resolution: {integrity: sha512-8MZRgXOtsP9qDLthgPf6ugL2cAQLf3eWi3DIKy6dVFmWt+RtHQmRMtf2RdFK+t8XhSnOPeL+zqlnoISFG+FWTw==}
 
+  '@skyway-sdk/signaling-client@2.0.4':
+    resolution: {integrity: sha512-fplL2Jy175XOd23siq8qB9svCnaCpOeUL+JRGHSe37h8EDAoEmofVOJkeAhmY9xaX3C2Xm3quzLmZf4AewOOXQ==}
+
   '@skyway-sdk/token@1.7.4':
     resolution: {integrity: sha512-hFExP7hmtPsitKUg8Lm+PRlEeNKO6/XiM1jtFQIZkjH+UWBHr98mwIG1CanvMdI31IpUWej+V6zYPRrpRnEbYA==}
+
+  '@skyway-sdk/token@2.1.5':
+    resolution: {integrity: sha512-pzoP8v4w85+Q6m4bWQAcSXnHu/2R4BQm+5j2O9OIy8HSRNtZL7+ptIfFfBAH4zkwB4KCwArajQNyuGzrQdeD/Q==}
 
   '@testing-library/dom@10.4.0':
     resolution: {integrity: sha512-pemlzrSESWbdAloYml3bAJMEfNh1Z7EduzqPKprCH5S341frlpYnUEW0H72dLxa6IsYr+mPno20GiSm+h9dEdQ==}
@@ -1698,6 +1710,9 @@ packages:
 
   '@types/debug@4.1.12':
     resolution: {integrity: sha512-vIChWdVG3LG1SMxEvI/AK+FWJthlrqlTu7fbrlywTkkaONwk/UAGaULXRlf8vkzFBLVm0zkMdCquhL5aOjhXPQ==}
+
+  '@types/debug@4.1.13':
+    resolution: {integrity: sha512-KSVgmQmzMwPlmtljOomayoR89W4FynCAi3E8PPs7vmDVPe84hT+vGPKkJfThkmXs0x0jAaa9U8uW8bbfyS2fWw==}
 
   '@types/deep-eql@4.0.2':
     resolution: {integrity: sha512-c9h9dVVMigMPc4bwTvC5dxqtqJZwQPePsWjPlpSOnojbor6pGqdk541lfA7AqFQr5pB1BRdq0juY9db81BwyFw==}
@@ -2089,8 +2104,15 @@ packages:
     resolution: {integrity: sha512-aZMQSpozgcAfKFLkhTRUMtiDo40EUb8KkXBrI2uHOysDzgRt/prnrt0oh9N8Mp7tRKtusmWxOimt8npn1vorug==}
     engines: {node: '>=20'}
 
+  awaitqueue@3.3.1:
+    resolution: {integrity: sha512-kzMN6Bdfalok/JWZvwDfI704cIyCvHDi6Ez/bApGzNPjGHQhwJ07DzGd3DDzeXH2fjr9P5g8paESFUvYnbs7rA==}
+    engines: {node: '>=22'}
+
   axios@1.11.0:
     resolution: {integrity: sha512-1Lx3WLFQWm3ooKDYZD1eXmoGO9fxYQjrycfHFC8P0sCfQVXyROp0p9PFWBehewBOdCwHc+f/b8I0fMto5eSfwA==}
+
+  axios@1.19.0:
+    resolution: {integrity: sha512-ht/iuYZXEjFxLH/Hkezgd7m6JKlHHXEUSneaDz8uZe1Gj5QZtCnpyDsckvAiEnT89OEbCLmnte4R4sn7P0EKFw==}
 
   babel-jest@27.5.1:
     resolution: {integrity: sha512-cdQ5dXjGRd0IBRATiQ4mZGlGlRE8kJpjPOixdNRdT+m3UcNqmYWN6rK6nvtXYfY3D76cb8s/O1Ss8ea24PIwcg==}
@@ -2484,6 +2506,15 @@ packages:
       supports-color:
         optional: true
 
+  debug@4.4.3:
+    resolution: {integrity: sha512-RGwwWnwQvkVfavKVt22FGLw+xYSdzARwm0ru6DhTVA3umU5hZc28V3kO4stgYryrTlLpuvgI9GiijltAjNbcqA==}
+    engines: {node: '>=6.0'}
+    peerDependencies:
+      supports-color: '*'
+    peerDependenciesMeta:
+      supports-color:
+        optional: true
+
   decamelize-keys@1.1.1:
     resolution: {integrity: sha512-WiPxgEirIV0/eIOMcnFBA3/IJZAZqKnwAwWyvvdi4lsr1WCN22nhdf/3db3DoZcUjTV2SqfzIwNyp6y2xs3nmg==}
     engines: {node: '>=0.10.0'}
@@ -2537,9 +2568,6 @@ packages:
   dequal@2.0.3:
     resolution: {integrity: sha512-0je+qPKHEMohvfRTCEo3CrPG6cAzAYgmzKyxRiYSSDkS6eGJdyVJm7WaYA5ECaAD9wLB2T4EEeymA5aFVcYXCA==}
     engines: {node: '>=6'}
-
-  detect-europe-js@0.1.2:
-    resolution: {integrity: sha512-lgdERlL3u0aUdHocoouzT10d9I89VVhk0qNRmll7mXdGfJT1/wqZ2ZLA4oJAjeACPY5fT1wsbq2AT+GkuInsow==}
 
   detect-indent@5.0.0:
     resolution: {integrity: sha512-rlpvsxUtM0PQvy9iZe640/IWwWYyBsTApREbA1pHOpmOUIl9MkP/U4z7vTtg4Oaojvqhxt7sdufnT0EzGaR31g==}
@@ -2859,6 +2887,10 @@ packages:
     resolution: {integrity: sha512-7ZFSI2vUmg63lqGzMYUG97GeqTVPBAOv2NbQe7YIDH+AU3ucEBcBzVmIDU89V17dezLxqi8U0U1C0X9TmhYYGA==}
     engines: {node: '>=18'}
 
+  fake-mediastreamtrack@2.2.1:
+    resolution: {integrity: sha512-SITLc7UTDirSdgLGORrlmqjWLJtbtfIz/xO7DwVbJH3f0ds+NQok4ccl/WEzz49NSgiUlXf2wDW0+y5C+TO6EA==}
+    engines: {node: '>=20'}
+
   fast-deep-equal@3.1.3:
     resolution: {integrity: sha512-f3qQ9oQy9j2AhBe/H9VC91wLmKBCCU/gDOnKNAYG5hswO7BLKj09Hc5HYNz9cGI++xlpDCIgDaitVs03ATR84Q==}
 
@@ -2935,6 +2967,15 @@ packages:
       debug:
         optional: true
 
+  follow-redirects@1.16.0:
+    resolution: {integrity: sha512-y5rN/uOsadFT/JfYwhxRS5R7Qce+g3zG97+JrtFZlC9klX/W5hD7iiLzScI4nZqUS7DNUdhPgw4xI8W2LuXlUw==}
+    engines: {node: '>=4.0'}
+    peerDependencies:
+      debug: '*'
+    peerDependenciesMeta:
+      debug:
+        optional: true
+
   foreground-child@3.3.1:
     resolution: {integrity: sha512-gIXjKqtFuWEgzFRJA9WCQeSJLZDjgJUOMCMzxtvFq/37KojM1BFGufqsCy0r4qSQmYLsZYMeyRqzIWOMup03sw==}
     engines: {node: '>=14'}
@@ -2945,6 +2986,10 @@ packages:
 
   form-data@4.0.4:
     resolution: {integrity: sha512-KrGhL9Q4zjj0kiUt5OO4Mr/A/jlI2jDYs5eHBpYHPcBEVSiipAvn2Ko2HnPe20rmcuuvMHNdZFp+4IlGTMF0Ow==}
+    engines: {node: '>= 6'}
+
+  form-data@4.0.6:
+    resolution: {integrity: sha512-vKatAh4SlVfgbv+YtmhiRjhEMJsYpsG1Y2rMQtR+SVSbytsSD1YGzDIcrAJmdFec88u/+VoGmxnl+80gL1tRCQ==}
     engines: {node: '>= 6'}
 
   front-matter@4.0.2:
@@ -3106,6 +3151,10 @@ packages:
     resolution: {integrity: sha512-LhhB3zIIu2TTZFyBC57s+pBddH6eTz8NMr6CwlWWRdy2kurhxxOU5TS0CguJ3i9MEc2B6a0aElAwBxMqS6FdLA==}
     engines: {node: '>=18'}
 
+  h264-profile-level-id@2.3.3:
+    resolution: {integrity: sha512-rPd5gpyWuIfEbBiHC/f9I4wdeCpAhg0aWdYgjMRdVTqhJT22C6VrWTi4hpAAgJad1Vv8BJDEvrzAQTW7CxzmJw==}
+    engines: {node: '>=22'}
+
   handlebars@4.7.8:
     resolution: {integrity: sha512-vafaFqs8MZkRrSX7sFVUdo3ap/eNiLnb4IakshzvP56X5Nr1iGKAIqdX6tMlm6HcNRIkr6AxO5jFEoJzzpT8aQ==}
     engines: {node: '>=0.4.7'}
@@ -3139,6 +3188,10 @@ packages:
 
   hasown@2.0.2:
     resolution: {integrity: sha512-0hJU9SCPvmMzIBdZFqNPXWa6dqh7WdH0cII9y+CyS8rG3nL48Bclra9HmKhVVUHyPWNH5Y7xDwAB7bfgSjkUMQ==}
+    engines: {node: '>= 0.4'}
+
+  hasown@2.0.4:
+    resolution: {integrity: sha512-T2UbfbBEF32wiepXIsMlTW9+dDYC6wMh/t/vYA4tuOMKqWz/n3vr1NFSxQiyP+zk2mXsoMA/i/7qV6LKut1t1A==}
     engines: {node: '>= 0.4'}
 
   hmac-drbg@1.0.1:
@@ -3344,9 +3397,6 @@ packages:
 
   is-ssh@1.4.1:
     resolution: {integrity: sha512-JNeu1wQsHjyHgn9NcWTaXq6zWSR6hqE0++zhfZlkFBbScNkyvxCdeV8sRkSBaeLKxmbpR21brail63ACNxJ0Tg==}
-
-  is-standalone-pwa@0.1.1:
-    resolution: {integrity: sha512-9Cbovsa52vNQCjdXOzeQq5CnCbAcRk05aU62K20WO372NrTv0NxibLFCK6lQ4/iZEFdEA3p3t2VNOn8AJ53F5g==}
 
   is-stream@2.0.0:
     resolution: {integrity: sha512-XCoy+WlUr7d1+Z8GgSuXmpuUFC9fOhRXglJMx+dwLKTkL44Cjd4W1Z5P+BQZpr+cR93aGP4S/s7Ftw6Nd/kiEw==}
@@ -3656,6 +3706,9 @@ packages:
   jsrsasign@11.1.0:
     resolution: {integrity: sha512-Ov74K9GihaK9/9WncTe1mPmvrO7Py665TUfUKvraXBpu+xcTWitrtuOwcjf4KMU9maPaYn0OuaWy0HOzy/GBXg==}
 
+  jsrsasign@11.1.3:
+    resolution: {integrity: sha512-nPnK5D/4lv0Dwr7TlzrKtAd8JlLZwFTqTUUB3NQCbtdobcRcohGFxjbPySDVh74iWUudcCsapYT6OxoyhJLhhA==}
+
   just-diff-apply@5.5.0:
     resolution: {integrity: sha512-OYTthRfSh55WOItVqwpefPtNt2VdKsq5AnAK6apdtR6yCH8pr0CmSr710J0Mf+WdQy7K/OzMy7K2MgAfdQURDw==}
 
@@ -3809,6 +3862,9 @@ packages:
   lodash@4.17.21:
     resolution: {integrity: sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==}
 
+  lodash@4.18.1:
+    resolution: {integrity: sha512-dMInicTPVE8d1e5otfwmmjlxkZoUpiVLwyeTdUsi/Caj/gfzzblBcCE5sRHV/AsjuCmxWrte2TNGSYuCeCq+0Q==}
+
   log-symbols@4.1.0:
     resolution: {integrity: sha512-8XPvpAA8uyhfteu8pIvQxpJZ7SYYdpUivZpGy6sFsBuKRY/7rQGavedeB8aK+Zkyq6upMFVL/9AW6vOYzfRyLg==}
     engines: {node: '>=10'}
@@ -3885,9 +3941,9 @@ packages:
   mediabunny@1.51.0:
     resolution: {integrity: sha512-u327374xU8Ho0gCaMII7fUK8t0PnqkabCox1k8uUwvgvGb9o6YQGZEG2Qr4DTe7nTMpzfL7ukgnHDvDROySZ+Q==}
 
-  mediasoup-client@3.8.1:
-    resolution: {integrity: sha512-v5y56/fIinIx0Uq5/iT4AvVr+zboJ101boY92mx3+YSZD4BvWFiZI4yVbS5Lt09dWoSLqicY/T60WFZXovQhZA==}
-    engines: {node: '>=18'}
+  mediasoup-client@3.21.0:
+    resolution: {integrity: sha512-KRpq0gqstqkeyjB3ykypM2u+pCdSQueB5Q2y8GDOPCNZYsKSRpYlmVR/GTVErKfe5wYtpnTZ1F+XSQkuAFmYyw==}
+    engines: {node: '>=22'}
 
   memorystream@0.3.1:
     resolution: {integrity: sha512-S3UwM3yj5mtUSEfP41UZmt/0SCoVYUcU1rkXv+BQ5Ig8ndL4sPoJNBUJERafdPb5jjHJGuMgytgKvKIf58XNBw==}
@@ -4510,6 +4566,10 @@ packages:
   proxy-from-env@1.1.0:
     resolution: {integrity: sha512-D+zkORCbA9f1tdWRK0RaCR3GPv50cMxcrz4X8k5LTSUD1Dkw47mKJEZQNunItRTkWwgtaUSo1RVFRIG9ZXiFYg==}
 
+  proxy-from-env@2.1.0:
+    resolution: {integrity: sha512-cJ+oHTW1VAEa8cJslgmUZrc+sjRKgAKl3Zyse6+PV38hZe/V6Z14TbCuXcan9F9ghlz4QrFr2c92TNF82UkYHA==}
+    engines: {node: '>=10'}
+
   pseudomap@1.0.2:
     resolution: {integrity: sha512-b/YwNhb8lk1Zz2+bXXpS/LK9OisiZZ1SNsSLxN1x2OXVEhW2Ckr/7mWE5vrC1ZTiJlD9g19jWszTmJsB+oEpFQ==}
 
@@ -4696,6 +4756,10 @@ packages:
 
   sdp-transform@2.15.0:
     resolution: {integrity: sha512-KrOH82c/W+GYQ0LHqtr3caRpM3ITglq3ljGUIb8LTki7ByacJZ9z+piSGiwZDsRyhQbYBOBJgr2k6X4BZXi3Kw==}
+    hasBin: true
+
+  sdp-transform@3.0.0:
+    resolution: {integrity: sha512-gfYVRGxjHkGF2NPeUWHw5u6T/KGFtS5/drPms73gaSuMaVHKCY3lpLnGDfswVQO0kddeePoti09AwhYP4zA8dQ==}
     hasBin: true
 
   semver@5.7.2:
@@ -4890,6 +4954,10 @@ packages:
 
   supports-color@10.2.0:
     resolution: {integrity: sha512-5eG9FQjEjDbAlI5+kdpdyPIBMRH4GfTVDGREVupaZHmVoppknhM29b/S9BkQz7cathp85BVgRi/As3Siln7e0Q==}
+    engines: {node: '>=18'}
+
+  supports-color@10.2.2:
+    resolution: {integrity: sha512-SS+jx45GF1QjgEXQx4NJZV9ImqmO2NPz5FNsIHrsDjh2YsHnawpan7SNQ1o8NuhrbHZy9AZhIoCUiCeaW/C80g==}
     engines: {node: '>=18'}
 
   supports-color@5.5.0:
@@ -5162,15 +5230,8 @@ packages:
     engines: {node: '>=4.2.0'}
     hasBin: true
 
-  ua-is-frozen@0.1.2:
-    resolution: {integrity: sha512-RwKDW2p3iyWn4UbaxpP2+VxwqXh0jpvdxsYpZ5j/MLLiQOfbsV5shpgQiw93+KMYQPcteeMQ289MaAFzs3G9pw==}
-
   ua-parser-js@1.0.40:
     resolution: {integrity: sha512-z6PJ8Lml+v3ichVojCiB8toQJBuwR42ySM4ezjXIqXK3M0HczmKQ3LF4rhU55PfD99KEEXQG6yb7iOMyvYuHew==}
-    hasBin: true
-
-  ua-parser-js@2.0.5:
-    resolution: {integrity: sha512-sZErtx3rhpvZQanWW5umau4o/snfoLqRcQwQIZ54377WtRzIecnIKvjpkd5JwPcSUMglGnbIgcsQBGAbdi3S9Q==}
     hasBin: true
 
   uglify-js@3.19.3:
@@ -5183,10 +5244,6 @@ packages:
 
   undici-types@6.21.0:
     resolution: {integrity: sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==}
-
-  undici@7.16.0:
-    resolution: {integrity: sha512-QEg3HPMll0o3t2ourKwOeUAZ159Kn9mx5pnzHRQO8+Wixmh88YdZRiIwat0iNzNNXn0yoEtXJqFpyW7eM8BV7g==}
-    engines: {node: '>=20.18.1'}
 
   unindent@2.0.0:
     resolution: {integrity: sha512-Mo5gKmshwTR3b2BwCSMish/UuwTqP5W7TIRa88HQTydH+07HhkOCE1P6HZ4lSxJS5klEqXFnhlZSxkxbBOMk4Q==}
@@ -5523,6 +5580,18 @@ packages:
       utf-8-validate:
         optional: true
 
+  ws@8.21.1:
+    resolution: {integrity: sha512-+0NTnW77fFN/DjQi6k/Sq/Yvk4Sgajw7urW8V+asjXnRgDs9gyGkdb7EzgfhA4goXsRIZKE28fzIXBHEzhuiWw==}
+    engines: {node: '>=10.0.0'}
+    peerDependencies:
+      bufferutil: ^4.0.1
+      utf-8-validate: '>=5.0.2'
+    peerDependenciesMeta:
+      bufferutil:
+        optional: true
+      utf-8-validate:
+        optional: true
+
   xml-name-validator@3.0.0:
     resolution: {integrity: sha512-A5CUptxDsvxKJEU3yO6DuWBSJz/qizqzJKOMIfUJHETbBw/sFaDxgd6fxm1ewUaM0jZ444Fc5vC5ROYurg/4Pw==}
 
@@ -5625,7 +5694,7 @@ snapshots:
       '@babel/traverse': 7.27.4
       '@babel/types': 7.27.6
       convert-source-map: 2.0.0
-      debug: 4.4.1(supports-color@9.4.0)
+      debug: 4.4.1
       gensync: 1.0.0-beta.2
       json5: 2.2.3
       semver: 6.3.1
@@ -5783,7 +5852,7 @@ snapshots:
       '@babel/parser': 7.27.5
       '@babel/template': 7.27.2
       '@babel/types': 7.27.6
-      debug: 4.4.1(supports-color@9.4.0)
+      debug: 4.4.1
       globals: 11.12.0
     transitivePeerDependencies:
       - supports-color
@@ -6045,7 +6114,7 @@ snapshots:
   '@eslint/eslintrc@0.4.3':
     dependencies:
       ajv: 6.12.6
-      debug: 4.4.1(supports-color@9.4.0)
+      debug: 4.4.1
       espree: 7.3.1
       globals: 13.24.0
       ignore: 4.0.6
@@ -6099,7 +6168,7 @@ snapshots:
   '@humanwhocodes/config-array@0.5.0':
     dependencies:
       '@humanwhocodes/object-schema': 1.2.1
-      debug: 4.4.1(supports-color@9.4.0)
+      debug: 4.4.1
       minimatch: 3.1.2
     transitivePeerDependencies:
       - supports-color
@@ -6397,6 +6466,12 @@ snapshots:
       - encoding
       - supports-color
       - typescript
+
+  '@lukeed/csprng@1.1.0': {}
+
+  '@lukeed/uuid@2.0.1':
+    dependencies:
+      '@lukeed/csprng': 1.1.0
 
   '@mapbox/node-pre-gyp@1.0.11(encoding@0.1.13)':
     dependencies:
@@ -6868,7 +6943,7 @@ snapshots:
 
   '@shinyoshiaki/jspack@0.0.6': {}
 
-  '@shinyoshiaki/skyway-nodejs-sdk-core@1.6.3(encoding@0.1.13)':
+  '@shinyoshiaki/skyway-nodejs-sdk-core@1.6.3(encoding@0.1.13)(ws@8.18.2)':
     dependencies:
       '@skyway-sdk/rtc-api-client': 1.8.4(ws@8.18.2)
       '@skyway-sdk/signaling-client': 1.0.9(encoding@0.1.13)
@@ -6886,18 +6961,14 @@ snapshots:
       - utf-8-validate
       - ws
 
-  '@shinyoshiaki/skyway-nodejs-sdk-core@file:packages/core(encoding@0.1.13)':
+  '@shinyoshiaki/skyway-nodejs-sdk-core@1.6.3(encoding@0.1.13)(ws@8.21.1)':
     dependencies:
-      '@skyway-sdk/analytics-client': 1.1.1
-      '@skyway-sdk/common': 1.5.0
-      '@skyway-sdk/model': 1.0.3
-      '@skyway-sdk/rtc-api-client': 1.8.4(ws@8.18.2)
+      '@skyway-sdk/rtc-api-client': 1.8.4(ws@8.21.1)
       '@skyway-sdk/signaling-client': 1.0.9(encoding@0.1.13)
-      '@skyway-sdk/token': 1.7.4
       bowser: 2.11.0
       deepmerge: 4.3.1
       lodash: 4.17.21
-      msc-node: 0.0.21
+      msc-node: 0.0.19
       sdp-transform: 2.15.0
       ua-parser-js: 1.0.40
       uuid: 9.0.1
@@ -6908,9 +6979,9 @@ snapshots:
       - utf-8-validate
       - ws
 
-  '@shinyoshiaki/skyway-nodejs-sdk-sfu-bot@1.6.3(encoding@0.1.13)':
+  '@shinyoshiaki/skyway-nodejs-sdk-sfu-bot@1.6.3(encoding@0.1.13)(ws@8.18.2)':
     dependencies:
-      '@shinyoshiaki/skyway-nodejs-sdk-core': 1.6.3(encoding@0.1.13)
+      '@shinyoshiaki/skyway-nodejs-sdk-core': 1.6.3(encoding@0.1.13)(ws@8.18.2)
       '@skyway-sdk/sfu-api-client': 1.5.4
       '@types/node': 20.19.17
       lodash: 4.17.21
@@ -6919,6 +6990,42 @@ snapshots:
       - bufferutil
       - debug
       - encoding
+      - utf-8-validate
+      - ws
+
+  '@shinyoshiaki/skyway-nodejs-sdk-sfu-bot@1.6.3(encoding@0.1.13)(ws@8.21.1)':
+    dependencies:
+      '@shinyoshiaki/skyway-nodejs-sdk-core': 1.6.3(encoding@0.1.13)(ws@8.21.1)
+      '@skyway-sdk/sfu-api-client': 1.5.4
+      '@types/node': 20.19.17
+      lodash: 4.17.21
+      msc-node: 0.0.19
+    transitivePeerDependencies:
+      - bufferutil
+      - debug
+      - encoding
+      - utf-8-validate
+      - ws
+
+  '@shinyoshiaki/skyway-nodejs-sdk@file:packages/room(encoding@0.1.13)(ws@8.21.1)':
+    dependencies:
+      '@shinyoshiaki/binary-data': 0.6.1
+      '@shinyoshiaki/ebml-builder': 0.0.1
+      '@shinyoshiaki/jspack': 0.0.6
+      '@shinyoshiaki/skyway-nodejs-sdk-core': 1.6.3(encoding@0.1.13)(ws@8.21.1)
+      '@shinyoshiaki/skyway-nodejs-sdk-sfu-bot': 1.6.3(encoding@0.1.13)(ws@8.21.1)
+      '@skyway-sdk/common': 2.0.6
+      '@skyway-sdk/model': 2.0.0
+      '@skyway-sdk/token': 2.1.5
+      msc-node: 0.0.26
+      multicast-dns: 7.2.5
+      uuid: 9.0.1
+      werift: 0.24.2
+    transitivePeerDependencies:
+      - bufferutil
+      - debug
+      - encoding
+      - supports-color
       - utf-8-validate
       - ws
 
@@ -6964,11 +7071,10 @@ snapshots:
     dependencies:
       '@sinonjs/commons': 1.8.6
 
-  '@skyway-sdk/analytics-client@1.1.1':
+  '@skyway-sdk/analytics-client@2.0.5':
     dependencies:
-      isomorphic-ws: 4.0.1(ws@8.18.2)
-      uuid: 9.0.1
-      ws: 8.18.2
+      isomorphic-ws: 4.0.1(ws@8.21.1)
+      ws: 8.21.1
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -6979,23 +7085,30 @@ snapshots:
     transitivePeerDependencies:
       - debug
 
-  '@skyway-sdk/core@1.15.2(encoding@0.1.13)':
+  '@skyway-sdk/common@2.0.6':
     dependencies:
-      '@skyway-sdk/analytics-client': 1.1.1
-      '@skyway-sdk/common': 1.5.0
-      '@skyway-sdk/rtc-api-client': 1.8.4(ws@8.18.2)
-      '@skyway-sdk/signaling-client': 1.0.9(encoding@0.1.13)
-      '@skyway-sdk/token': 1.7.4
+      axios: 1.19.0
+    transitivePeerDependencies:
+      - debug
+      - supports-color
+
+  '@skyway-sdk/core@2.5.1(encoding@0.1.13)(ws@8.21.1)':
+    dependencies:
+      '@skyway-sdk/analytics-client': 2.0.5
+      '@skyway-sdk/common': 2.0.6
+      '@skyway-sdk/rtc-api-client': 2.2.5(ws@8.21.1)
+      '@skyway-sdk/signaling-client': 2.0.4(encoding@0.1.13)
+      '@skyway-sdk/token': 2.1.5
       bowser: 2.11.0
       deepmerge: 4.3.1
-      lodash: 4.17.21
+      lodash: 4.18.1
       sdp-transform: 2.15.0
       ua-parser-js: 1.0.40
-      uuid: 9.0.1
     transitivePeerDependencies:
       - bufferutil
       - debug
       - encoding
+      - supports-color
       - utf-8-validate
       - ws
 
@@ -7014,17 +7127,19 @@ snapshots:
 
   '@skyway-sdk/model@1.0.3': {}
 
-  '@skyway-sdk/room@1.15.2(encoding@0.1.13)':
+  '@skyway-sdk/model@2.0.0': {}
+
+  '@skyway-sdk/room@2.5.1(encoding@0.1.13)(ws@8.21.1)':
     dependencies:
-      '@skyway-sdk/common': 1.5.0
-      '@skyway-sdk/core': 1.15.2(encoding@0.1.13)
-      '@skyway-sdk/sfu-bot': 1.14.3(encoding@0.1.13)
-      '@skyway-sdk/token': 1.7.4
-      uuid: 9.0.1
+      '@skyway-sdk/common': 2.0.6
+      '@skyway-sdk/core': 2.5.1(encoding@0.1.13)(ws@8.21.1)
+      '@skyway-sdk/sfu-bot': 2.2.8(encoding@0.1.13)(ws@8.21.1)
+      '@skyway-sdk/token': 2.1.5
     transitivePeerDependencies:
       - bufferutil
       - debug
       - encoding
+      - supports-color
       - utf-8-validate
       - ws
 
@@ -7039,6 +7154,28 @@ snapshots:
       - debug
       - ws
 
+  '@skyway-sdk/rtc-api-client@1.8.4(ws@8.21.1)':
+    dependencies:
+      '@skyway-sdk/common': 1.5.0
+      '@skyway-sdk/rtc-rpc-api-client': 1.8.3(ws@8.21.1)
+      '@skyway-sdk/token': 1.7.4
+      deepmerge: 4.3.1
+      uuid: 9.0.1
+    transitivePeerDependencies:
+      - debug
+      - ws
+
+  '@skyway-sdk/rtc-api-client@2.2.5(ws@8.21.1)':
+    dependencies:
+      '@skyway-sdk/common': 2.0.6
+      '@skyway-sdk/rtc-rpc-api-client': 2.1.5(ws@8.21.1)
+      '@skyway-sdk/token': 2.1.5
+      deepmerge: 4.3.1
+    transitivePeerDependencies:
+      - debug
+      - supports-color
+      - ws
+
   '@skyway-sdk/rtc-rpc-api-client@1.8.3(ws@8.18.2)':
     dependencies:
       '@skyway-sdk/common': 1.5.0
@@ -7049,6 +7186,26 @@ snapshots:
       - debug
       - ws
 
+  '@skyway-sdk/rtc-rpc-api-client@1.8.3(ws@8.21.1)':
+    dependencies:
+      '@skyway-sdk/common': 1.5.0
+      '@skyway-sdk/model': 1.0.3
+      isomorphic-ws: 4.0.1(ws@8.21.1)
+      uuid: 9.0.1
+    transitivePeerDependencies:
+      - debug
+      - ws
+
+  '@skyway-sdk/rtc-rpc-api-client@2.1.5(ws@8.21.1)':
+    dependencies:
+      '@skyway-sdk/common': 2.0.6
+      '@skyway-sdk/model': 2.0.0
+      isomorphic-ws: 4.0.1(ws@8.21.1)
+    transitivePeerDependencies:
+      - debug
+      - supports-color
+      - ws
+
   '@skyway-sdk/sfu-api-client@1.5.4':
     dependencies:
       '@skyway-sdk/common': 1.5.0
@@ -7056,17 +7213,26 @@ snapshots:
     transitivePeerDependencies:
       - debug
 
-  '@skyway-sdk/sfu-bot@1.14.3(encoding@0.1.13)':
+  '@skyway-sdk/sfu-api-client@2.0.6':
     dependencies:
-      '@skyway-sdk/common': 1.5.0
-      '@skyway-sdk/core': 1.15.2(encoding@0.1.13)
-      '@skyway-sdk/mediasoup-client': 3.15.2
-      '@skyway-sdk/sfu-api-client': 1.5.4
-      lodash: 4.17.21
+      '@skyway-sdk/common': 2.0.6
+      mediasoup-client: 3.21.0
+    transitivePeerDependencies:
+      - debug
+      - supports-color
+
+  '@skyway-sdk/sfu-bot@2.2.8(encoding@0.1.13)(ws@8.21.1)':
+    dependencies:
+      '@skyway-sdk/common': 2.0.6
+      '@skyway-sdk/core': 2.5.1(encoding@0.1.13)(ws@8.21.1)
+      '@skyway-sdk/sfu-api-client': 2.0.6
+      lodash: 4.18.1
+      mediasoup-client: 3.21.0
     transitivePeerDependencies:
       - bufferutil
       - debug
       - encoding
+      - supports-color
       - utf-8-validate
       - ws
 
@@ -7076,6 +7242,16 @@ snapshots:
       isomorphic-ws: 4.0.1(ws@8.18.2)
       uuid: 9.0.1
       ws: 8.18.2
+    transitivePeerDependencies:
+      - bufferutil
+      - encoding
+      - utf-8-validate
+
+  '@skyway-sdk/signaling-client@2.0.4(encoding@0.1.13)':
+    dependencies:
+      isomorphic-fetch: 3.0.0(encoding@0.1.13)
+      isomorphic-ws: 4.0.1(ws@8.21.1)
+      ws: 8.21.1
     transitivePeerDependencies:
       - bufferutil
       - encoding
@@ -7091,6 +7267,17 @@ snapshots:
       zod-validation-error: 3.5.2(zod@3.25.67)
     transitivePeerDependencies:
       - debug
+
+  '@skyway-sdk/token@2.1.5':
+    dependencies:
+      '@skyway-sdk/common': 2.0.6
+      jsrsasign: 11.1.3
+      jwt-decode: 3.1.2
+      zod: 3.25.67
+      zod-validation-error: 3.5.2(zod@3.25.67)
+    transitivePeerDependencies:
+      - debug
+      - supports-color
 
   '@testing-library/dom@10.4.0':
     dependencies:
@@ -7166,6 +7353,10 @@ snapshots:
       '@types/deep-eql': 4.0.2
 
   '@types/debug@4.1.12':
+    dependencies:
+      '@types/ms': 2.1.0
+
+  '@types/debug@4.1.13':
     dependencies:
       '@types/ms': 2.1.0
 
@@ -7251,7 +7442,7 @@ snapshots:
       '@typescript-eslint/experimental-utils': 4.33.0(eslint@7.32.0)(typescript@4.9.5)
       '@typescript-eslint/parser': 4.33.0(eslint@7.32.0)(typescript@4.9.5)
       '@typescript-eslint/scope-manager': 4.33.0
-      debug: 4.4.1(supports-color@9.4.0)
+      debug: 4.4.1
       eslint: 7.32.0
       functional-red-black-tree: 1.0.1
       ignore: 5.3.2
@@ -7281,7 +7472,7 @@ snapshots:
       '@typescript-eslint/scope-manager': 4.33.0
       '@typescript-eslint/types': 4.33.0
       '@typescript-eslint/typescript-estree': 4.33.0(typescript@4.9.5)
-      debug: 4.4.1(supports-color@9.4.0)
+      debug: 4.4.1
       eslint: 7.32.0
     optionalDependencies:
       typescript: 4.9.5
@@ -7306,7 +7497,7 @@ snapshots:
     dependencies:
       '@typescript-eslint/types': 4.33.0
       '@typescript-eslint/visitor-keys': 4.33.0
-      debug: 4.4.1(supports-color@9.4.0)
+      debug: 4.4.1
       globby: 11.1.0
       is-glob: 4.0.3
       semver: 7.7.2
@@ -7320,7 +7511,7 @@ snapshots:
     dependencies:
       '@typescript-eslint/types': 6.21.0
       '@typescript-eslint/visitor-keys': 6.21.0
-      debug: 4.4.1(supports-color@9.4.0)
+      debug: 4.4.1
       globby: 11.1.0
       is-glob: 4.0.3
       minimatch: 9.0.3
@@ -7364,7 +7555,7 @@ snapshots:
       magic-string: 0.30.17
       sirv: 3.0.1
       tinyrainbow: 2.0.0
-      vitest: 3.2.4(@types/debug@4.1.12)(@types/node@20.19.17)(@vitest/browser@3.2.4)(jsdom@20.0.3)(lightningcss@1.30.1)
+      vitest: 3.2.4(@types/debug@4.1.13)(@types/node@20.19.17)(@vitest/browser@3.2.4)(jsdom@20.0.3)(lightningcss@1.30.1)
       ws: 8.18.2
     optionalDependencies:
       playwright: 1.53.1
@@ -7471,7 +7662,7 @@ snapshots:
 
   agent-base@6.0.2:
     dependencies:
-      debug: 4.4.1(supports-color@9.4.0)
+      debug: 4.4.1
     transitivePeerDependencies:
       - supports-color
 
@@ -7574,9 +7765,9 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  awaitqueue@3.2.4(supports-color@9.4.0):
+  awaitqueue@3.3.1(supports-color@10.2.2):
     dependencies:
-      debug: 4.4.1(supports-color@9.4.0)
+      debug: 4.4.3(supports-color@10.2.2)
     transitivePeerDependencies:
       - supports-color
 
@@ -7587,6 +7778,16 @@ snapshots:
       proxy-from-env: 1.1.0
     transitivePeerDependencies:
       - debug
+
+  axios@1.19.0:
+    dependencies:
+      follow-redirects: 1.16.0
+      form-data: 4.0.6
+      https-proxy-agent: 5.0.1
+      proxy-from-env: 2.1.0
+    transitivePeerDependencies:
+      - debug
+      - supports-color
 
   babel-jest@27.5.1(@babel/core@7.27.4):
     dependencies:
@@ -8021,6 +8222,10 @@ snapshots:
     dependencies:
       ms: 2.1.3
 
+  debug@4.4.1:
+    dependencies:
+      ms: 2.1.3
+
   debug@4.4.1(supports-color@10.2.0):
     dependencies:
       ms: 2.1.3
@@ -8032,6 +8237,12 @@ snapshots:
       ms: 2.1.3
     optionalDependencies:
       supports-color: 9.4.0
+
+  debug@4.4.3(supports-color@10.2.2):
+    dependencies:
+      ms: 2.1.3
+    optionalDependencies:
+      supports-color: 10.2.2
 
   decamelize-keys@1.1.1:
     dependencies:
@@ -8065,8 +8276,6 @@ snapshots:
   deprecation@2.3.1: {}
 
   dequal@2.0.3: {}
-
-  detect-europe-js@0.1.2: {}
 
   detect-indent@5.0.0: {}
 
@@ -8356,7 +8565,7 @@ snapshots:
       ajv: 6.12.6
       chalk: 4.1.2
       cross-spawn: 7.0.6
-      debug: 4.4.1(supports-color@9.4.0)
+      debug: 4.4.1
       doctrine: 3.0.0
       enquirer: 2.4.1
       escape-string-regexp: 4.0.0
@@ -8471,6 +8680,10 @@ snapshots:
     dependencies:
       uuid: 11.1.0
 
+  fake-mediastreamtrack@2.2.1:
+    dependencies:
+      '@lukeed/uuid': 2.0.1
+
   fast-deep-equal@3.1.3: {}
 
   fast-diff@1.3.0: {}
@@ -8538,6 +8751,8 @@ snapshots:
 
   follow-redirects@1.15.11: {}
 
+  follow-redirects@1.16.0: {}
+
   foreground-child@3.3.1:
     dependencies:
       cross-spawn: 7.0.6
@@ -8557,6 +8772,14 @@ snapshots:
       combined-stream: 1.0.8
       es-set-tostringtag: 2.1.0
       hasown: 2.0.2
+      mime-types: 2.1.35
+
+  form-data@4.0.6:
+    dependencies:
+      asynckit: 0.4.0
+      combined-stream: 1.0.8
+      es-set-tostringtag: 2.1.0
+      hasown: 2.0.4
       mime-types: 2.1.35
 
   front-matter@4.0.2:
@@ -8745,9 +8968,9 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  h264-profile-level-id@2.2.3(supports-color@9.4.0):
+  h264-profile-level-id@2.3.3(supports-color@10.2.2):
     dependencies:
-      debug: 4.4.1(supports-color@9.4.0)
+      debug: 4.4.3(supports-color@10.2.2)
     transitivePeerDependencies:
       - supports-color
 
@@ -8780,6 +9003,10 @@ snapshots:
       minimalistic-assert: 1.0.1
 
   hasown@2.0.2:
+    dependencies:
+      function-bind: 1.1.2
+
+  hasown@2.0.4:
     dependencies:
       function-bind: 1.1.2
 
@@ -8816,7 +9043,7 @@ snapshots:
     dependencies:
       '@tootallnate/once': 1.1.2
       agent-base: 6.0.2
-      debug: 4.4.1(supports-color@9.4.0)
+      debug: 4.4.1
     transitivePeerDependencies:
       - supports-color
 
@@ -8824,7 +9051,7 @@ snapshots:
     dependencies:
       '@tootallnate/once': 2.0.0
       agent-base: 6.0.2
-      debug: 4.4.1(supports-color@9.4.0)
+      debug: 4.4.1
     transitivePeerDependencies:
       - supports-color
     optional: true
@@ -8832,21 +9059,21 @@ snapshots:
   http-proxy-agent@7.0.2:
     dependencies:
       agent-base: 7.1.4
-      debug: 4.4.1(supports-color@9.4.0)
+      debug: 4.4.1
     transitivePeerDependencies:
       - supports-color
 
   https-proxy-agent@5.0.1:
     dependencies:
       agent-base: 6.0.2
-      debug: 4.4.1(supports-color@9.4.0)
+      debug: 4.4.1
     transitivePeerDependencies:
       - supports-color
 
   https-proxy-agent@7.0.6:
     dependencies:
       agent-base: 7.1.4
-      debug: 4.4.1(supports-color@9.4.0)
+      debug: 4.4.1
     transitivePeerDependencies:
       - supports-color
 
@@ -8993,8 +9220,6 @@ snapshots:
     dependencies:
       protocols: 2.0.2
 
-  is-standalone-pwa@0.1.1: {}
-
   is-stream@2.0.0: {}
 
   is-stream@2.0.1: {}
@@ -9030,6 +9255,10 @@ snapshots:
     dependencies:
       ws: 8.18.2
 
+  isomorphic-ws@4.0.1(ws@8.21.1):
+    dependencies:
+      ws: 8.21.1
+
   istanbul-lib-coverage@3.2.2: {}
 
   istanbul-lib-instrument@5.2.1:
@@ -9050,7 +9279,7 @@ snapshots:
 
   istanbul-lib-source-maps@4.0.1:
     dependencies:
-      debug: 4.4.1(supports-color@9.4.0)
+      debug: 4.4.1
       istanbul-lib-coverage: 3.2.2
       source-map: 0.6.1
     transitivePeerDependencies:
@@ -9560,6 +9789,8 @@ snapshots:
 
   jsrsasign@11.1.0: {}
 
+  jsrsasign@11.1.3: {}
+
   just-diff-apply@5.5.0: {}
 
   just-diff@6.0.2: {}
@@ -9781,6 +10012,8 @@ snapshots:
 
   lodash@4.17.21: {}
 
+  lodash@4.18.1: {}
+
   log-symbols@4.1.0:
     dependencies:
       chalk: 4.1.2
@@ -9876,19 +10109,17 @@ snapshots:
       '@types/dom-mediacapture-transform': 0.1.12
       '@types/dom-webcodecs': 0.1.13
 
-  mediasoup-client@3.8.1:
+  mediasoup-client@3.21.0:
     dependencies:
-      '@types/debug': 4.1.12
-      '@types/npm-events-package': '@types/events@3.0.3'
-      awaitqueue: 3.2.4(supports-color@9.4.0)
-      debug: 4.4.1(supports-color@9.4.0)
-      fake-mediastreamtrack: 1.2.0
-      h264-profile-level-id: 2.2.3(supports-color@9.4.0)
-      npm-events-package: events@3.3.0
-      queue-microtask: 1.2.3
-      sdp-transform: 2.15.0
-      supports-color: 9.4.0
-      ua-parser-js: 2.0.5
+      '@types/debug': 4.1.13
+      '@types/events-alias': '@types/events@3.0.3'
+      awaitqueue: 3.3.1(supports-color@10.2.2)
+      debug: 4.4.3(supports-color@10.2.2)
+      events-alias: events@3.3.0
+      fake-mediastreamtrack: 2.2.1
+      h264-profile-level-id: 2.3.3(supports-color@10.2.2)
+      sdp-transform: 3.0.0
+      supports-color: 10.2.2
 
   memorystream@0.3.1: {}
 
@@ -10614,6 +10845,8 @@ snapshots:
 
   proxy-from-env@1.1.0: {}
 
+  proxy-from-env@2.1.0: {}
+
   pseudomap@1.0.2: {}
 
   psl@1.15.0:
@@ -10804,6 +11037,8 @@ snapshots:
 
   sdp-transform@2.15.0: {}
 
+  sdp-transform@3.0.0: {}
+
   semver@5.7.2: {}
 
   semver@6.3.1: {}
@@ -10870,7 +11105,7 @@ snapshots:
   socks-proxy-agent@8.0.5:
     dependencies:
       agent-base: 7.1.4
-      debug: 4.4.1(supports-color@9.4.0)
+      debug: 4.4.1
       socks: 2.8.7
     transitivePeerDependencies:
       - supports-color
@@ -10987,6 +11222,8 @@ snapshots:
       js-tokens: 9.0.1
 
   supports-color@10.2.0: {}
+
+  supports-color@10.2.2: {}
 
   supports-color@5.5.0:
     dependencies:
@@ -11225,7 +11462,7 @@ snapshots:
   tuf-js@2.2.1:
     dependencies:
       '@tufjs/models': 2.0.1
-      debug: 4.4.1(supports-color@9.4.0)
+      debug: 4.4.1
       make-fetch-happen: 13.0.1
     transitivePeerDependencies:
       - supports-color
@@ -11274,16 +11511,7 @@ snapshots:
 
   typescript@4.9.5: {}
 
-  ua-is-frozen@0.1.2: {}
-
   ua-parser-js@1.0.40: {}
-
-  ua-parser-js@2.0.5:
-    dependencies:
-      detect-europe-js: 0.1.2
-      is-standalone-pwa: 0.1.1
-      ua-is-frozen: 0.1.2
-      undici: 7.16.0
 
   uglify-js@3.19.3:
     optional: true
@@ -11291,8 +11519,6 @@ snapshots:
   undici-types@5.26.5: {}
 
   undici-types@6.21.0: {}
-
-  undici@7.16.0: {}
 
   unindent@2.0.0: {}
 
@@ -11363,7 +11589,7 @@ snapshots:
   vite-node@3.2.4(@types/node@20.19.17)(lightningcss@1.30.1):
     dependencies:
       cac: 6.7.14
-      debug: 4.4.1(supports-color@9.4.0)
+      debug: 4.4.1
       es-module-lexer: 1.7.0
       pathe: 2.0.3
       vite: 5.4.19(@types/node@20.19.17)(lightningcss@1.30.1)
@@ -11388,7 +11614,7 @@ snapshots:
       fsevents: 2.3.3
       lightningcss: 1.30.1
 
-  vitest@3.2.4(@types/debug@4.1.12)(@types/node@20.19.17)(@vitest/browser@3.2.4)(jsdom@20.0.3)(lightningcss@1.30.1):
+  vitest@3.2.4(@types/debug@4.1.13)(@types/node@20.19.17)(@vitest/browser@3.2.4)(jsdom@20.0.3)(lightningcss@1.30.1):
     dependencies:
       '@types/chai': 5.2.2
       '@vitest/expect': 3.2.4
@@ -11399,7 +11625,7 @@ snapshots:
       '@vitest/spy': 3.2.4
       '@vitest/utils': 3.2.4
       chai: 5.2.0
-      debug: 4.4.1(supports-color@9.4.0)
+      debug: 4.4.1
       expect-type: 1.2.1
       magic-string: 0.30.17
       pathe: 2.0.3
@@ -11414,7 +11640,7 @@ snapshots:
       vite-node: 3.2.4(@types/node@20.19.17)(lightningcss@1.30.1)
       why-is-node-running: 2.3.0
     optionalDependencies:
-      '@types/debug': 4.1.12
+      '@types/debug': 4.1.13
       '@types/node': 20.19.17
       '@vitest/browser': 3.2.4(playwright@1.53.1)(vite@5.4.19(@types/node@20.19.17)(lightningcss@1.30.1))(vitest@3.2.4)
       jsdom: 20.0.3
@@ -11476,7 +11702,7 @@ snapshots:
   werift-common@0.0.3:
     dependencies:
       '@shinyoshiaki/jspack': 0.0.6
-      debug: 4.4.1(supports-color@9.4.0)
+      debug: 4.4.1
     transitivePeerDependencies:
       - supports-color
 
@@ -11495,7 +11721,7 @@ snapshots:
     dependencies:
       '@shinyoshiaki/jspack': 0.0.6
       buffer-crc32: 1.0.0
-      debug: 4.4.1(supports-color@9.4.0)
+      debug: 4.4.1
       int64-buffer: 1.1.0
       ip: 2.0.1
       lodash: 4.17.21
@@ -11681,6 +11907,8 @@ snapshots:
   ws@7.5.10: {}
 
   ws@8.18.2: {}
+
+  ws@8.21.1: {}
 
   xml-name-validator@3.0.0: {}
 

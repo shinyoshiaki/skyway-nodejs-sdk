@@ -1,11 +1,5 @@
 import { Event, Logger, PromiseQueue } from '@skyway-sdk/common';
 
-import { SFUBotPlugin } from '.';
-import { SFUConnection } from './connection';
-import { TransportRepository } from './connection/transport/transportRepository';
-import { defaultMaxSubscribers } from './const';
-import { errors } from './errors';
-import { Forwarding, ForwardingConfigure } from './forwarding';
 import {
   errors as coreErrors,
   createError,

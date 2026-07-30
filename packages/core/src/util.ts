@@ -11,6 +11,7 @@ import { UAParser } from 'ua-parser-js';
 import type { Channel, SkyWayChannelImpl } from './channel';
 import type { SkyWayContext } from './context';
 import { errors } from './errors';
+import { RTCPeerConnection } from './imports/mediasoup';
 import type { Codec } from './media';
 import type { LocalStream, RemoteStream, WebRTCStats } from './media/stream';
 import type { Member } from './member';

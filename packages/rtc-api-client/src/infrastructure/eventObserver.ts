@@ -1,9 +1,5 @@
 import { Event, Logger } from '@skyway-sdk/common';
 import type model from '@skyway-sdk/model';
-import type {
-  ChannelEvent,
-  RtcRpcApiClient,
-} from '../imports/rpc';
 
 import type { RtcApiConfig } from '../config';
 import type { EventObserver } from '../domain/eventObserver';

@@ -18,9 +18,6 @@ import {
   type SkyWayContext,
   type SubscriptionImpl,
   setEncodingParams,
-  type SkyWayChannelImpl,
-  type SkyWayContext,
-  type SubscriptionImpl,
   statsToArray,
   type TransportConnectionState,
   uuidV4,
@@ -527,7 +524,7 @@ export class Sender {
           continue;
         }
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        //@ts-expect-error
+        //@ts-ignore
         target[key] = src[key];
       }
     };

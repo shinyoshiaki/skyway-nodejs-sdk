@@ -6,7 +6,7 @@
     "skyway",
     "conferencing"
   ],
-  "version": "1.15.6",
+  "version": "2.5.1",
   "homepage": "https://skyway.ntt.com/",
   "repository": {
     "type": "git",
@@ -57,24 +57,25 @@
     "@shinyoshiaki/jspack": "^0.0.6",
     "@shinyoshiaki/skyway-nodejs-sdk-core": "^1.6.3",
     "@shinyoshiaki/skyway-nodejs-sdk-sfu-bot": "^1.6.3",
-    "@skyway-sdk/common": "^1.5.0",
-    "@skyway-sdk/model": "^1.0.1",
-    "@skyway-sdk/token": "^1.7.0",
+    "@skyway-sdk/common": "^2.0.6",
+    "@skyway-sdk/model": "^2.0.0",
+    "@skyway-sdk/token": "^2.1.5",
     "msc-node": "^0.0.26",
-    "werift": "^0.24.2",
     "multicast-dns": "^7.2.5",
-    "@skyway-sdk/core": "^1.12.0",
-    "@skyway-sdk/sfu-bot": "^1.12.0",
-    "uuid": "^9.0.0"
+    "uuid": "^9.0.0",
+    "werift": "^0.24.2"
   },
   "devDependencies": {
     "@types/node": "^20.8.8",
     "@types/uuid": "^9.0.1",
+    "vitest": "^3.0.5",
     "werift-common": "^0.0.3",
     "werift-dtls": "^0.5.8",
     "werift-ice": "^0.2.2",
     "werift-rtp": "^0.8.9",
-    "werift-sctp": "^0.0.11",
-    "vitest": "^3.0.5"
+    "werift-sctp": "^0.0.11"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

@@ -5,10 +5,6 @@ import type {
   Publication,
   Subscription,
 } from '@skyway-sdk/model';
-import type {
-  RtcRpcApiClient,
-  errors as rpcErrors,
-} from '../imports/rpc';
 import { SkyWayAuthToken } from '@skyway-sdk/token';
 
 import type {

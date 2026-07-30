@@ -1,8 +1,6 @@
 import { Logger } from '@skyway-sdk/common';
-import model from '@skyway-sdk/model';
+import type model from '@skyway-sdk/model';
 
-import { TransportRepository } from './connection/transport/transportRepository';
-import { errors } from './errors';
 import {
   type Channel,
   createError,
@@ -10,11 +8,7 @@ import {
   type SkyWayChannelImpl,
   SkyWayPlugin,
 } from './imports/core';
-import type model from '@skyway-sdk/model';
-import {
-  type SFUApiOptions,
-  SFURestApiClient,
-} from './imports/sfu';
+import { type SFUApiOptions, SFURestApiClient } from './imports/sfu';
 
 import { TransportRepository } from './connection/transport/transportRepository';
 import { errors } from './errors';

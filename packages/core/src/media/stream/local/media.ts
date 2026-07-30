@@ -1,12 +1,11 @@
-import { Event, EventDisposer, Logger } from '@skyway-sdk/common';
-
-import { MediaStreamTrack } from '../../../imports/mediasoup';
 import {
   Event,
   EventDisposer,
   type EventInterface,
   Logger,
 } from '@skyway-sdk/common';
+
+import { MediaStreamTrack } from '../../../imports/mediasoup';
 
 import type {
   AudioMediaTrackConstraints,

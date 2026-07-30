@@ -27,7 +27,7 @@ describe('p2p', () => {
       );
 
       const receiver = await (
-        await SkyWayRoom.Find(context, room, 'p2p')
+        await SkyWayRoom.Find(context, room, { type: 'p2p' })
       ).join();
       const { stream: remoteStream } =
         await receiver.subscribe<RemoteVideoStream>(publication);
@@ -60,11 +60,11 @@ describe('p2p', () => {
         const __vite_ssr_import_3__ = (...args) => {};
         const load = new Function('url', 'return import(url)');
         const skyway = await load(
-          'https://cdn.jsdelivr.net/npm/@skyway-sdk/room@1.12.0/+esm'
+          'https://cdn.jsdelivr.net/npm/@skyway-sdk/room@2.5.1/+esm'
         );
         const context = await skyway.SkyWayContext.Create(testTokenString);
         const receiver = await (
-          await skyway.SkyWayRoom.Find(context, { id: roomId }, 'p2p')
+          await skyway.SkyWayRoom.Find(context, { id: roomId }, { type: 'p2p' })
         ).join();
         const { subscription } = await receiver.subscribe(publicationId);
 
@@ -116,11 +116,11 @@ describe('p2p', () => {
         const __vite_ssr_import_3__ = (...args) => {};
         const load = new Function('url', 'return import(url)');
         const skyway = await load(
-          'https://cdn.jsdelivr.net/npm/@skyway-sdk/room@1.12.0/+esm'
+          'https://cdn.jsdelivr.net/npm/@skyway-sdk/room@2.5.1/+esm'
         );
         const context = await skyway.SkyWayContext.Create(testTokenString);
         const sender = await (
-          await skyway.SkyWayRoom.Find(context, { id: roomId }, 'p2p')
+          await skyway.SkyWayRoom.Find(context, { id: roomId }, { type: 'p2p' })
         ).join();
         const stream =
           await skyway.SkyWayStreamFactory.createMicrophoneAudioStream();

@@ -5,21 +5,9 @@ import model, {
   type Publication,
   type Subscription,
 } from '@skyway-sdk/model';
-import type {
-  PublicationDisabledEvent,
-  PublicationEnabledEvent,
-  PublicationMetadataUpdatedEvent,
-  PublicationSummary,
-  StreamPublishedEvent,
-  StreamSubscribedEvent,
-  StreamUnpublishedEvent,
-  StreamUnsubscribedEvent,
-  SubscriptionSummary,
-} from '../imports/rpc';
-
 import type { Config } from '../config';
 import { errors } from '../errors';
-import {
+import type {
   PublicationDisabledEvent,
   PublicationEnabledEvent,
   PublicationMetadataUpdatedEvent,

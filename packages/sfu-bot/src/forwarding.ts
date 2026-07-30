@@ -9,8 +9,6 @@ import {
 } from './imports/core';
 import type { SFURestApiClient } from './imports/sfu';
 
-import { errors } from './errors';
-
 const log = new Logger('packages/sfu-bot/src/connection/sender.ts');
 
 export class Forwarding {

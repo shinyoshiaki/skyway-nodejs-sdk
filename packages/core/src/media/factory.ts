@@ -2,6 +2,7 @@ import { Event, Logger } from '@skyway-sdk/common';
 
 import {
   MediaDevices,
+  type MediaStreamTrack,
   MediaStreamTrackFactory,
   Navigator,
 } from '../imports/mediasoup';

@@ -19,6 +19,12 @@ export const errors = {
     solution:
       'stunPortsに [443]、[3478]、[443, 3478] のいずれかを指定してください',
   },
+  notSupportedInNodejs: {
+    name: 'notSupportedInNodejs',
+    detail: 'この機能はNode.js環境では利用できません',
+    solution:
+      'ブラウザ向けの @skyway-sdk/room を利用するか、この機能の利用を避けてください',
+  },
   invalidContentType: {
     name: 'invalidContentType',
     detail: 'contentTypeが正しくありません',

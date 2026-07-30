@@ -958,9 +958,9 @@ export class Sender extends Peer {
     this._log.debug('<handleReceiverAnswer> [end]');
   }
 
-  // private _safariSetupEncoding(publication: PublicationImpl<LocalVideoStream>) {
-  //   // 映像の送信が始まる前にEncodeの設定をするとEncodeの設定の更新ができなくなる
-  //   const transceiver = this.transceivers[publication.id];
+  private _safariSetupEncoding(publication: PublicationImpl<LocalVideoStream>) {
+    // 映像の送信が始まる前にEncodeの設定をするとEncodeの設定の更新ができなくなる
+    const transceiver = this.transceivers[publication.id];
 
     const stream = publication.stream as LocalVideoStream;
     this.waitForStats({

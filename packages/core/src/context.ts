@@ -87,7 +87,10 @@ export class SkyWayContext implements SkyWayContextInterface {
   static async CreateForDevelopment(
     appId: string,
     secretKey: string,
-    configOptions: Partial<SkyWayConfigOptions> = {},
+    // Node.js 版では利用するコーデックを明示する必要があるため Create と同じ形にする
+    configOptions: Partial<SkyWayConfigOptions> & {
+      codecCapabilities: Codec[];
+    },
   ) {
     const warningPayload = createWarnPayload({
       operationName: 'SkyWayContext.CreateForDevelopment',

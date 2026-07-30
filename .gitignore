@@ -5,6 +5,7 @@ lib
 build
 .parcel-cache
 .cache
+.nx
 packages/**/reports
 packages/**/coverage
 *.tgz

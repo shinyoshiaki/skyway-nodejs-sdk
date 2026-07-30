@@ -1,8 +1,10 @@
-import { type ScopeV3, SkyWayAuthToken, uuidV4 } from '@skyway-sdk/token';
+import { type AuthTokenV3, SkyWayAuthToken, uuidV4 } from '@skyway-sdk/token';
 
 const TOKEN_EXPIRES_IN_SECONDS = 60 * 60 * 24;
 
-function createForDevelopmentScopeV3(appId: string): ScopeV3 {
+// npm 公開版の @skyway-sdk/token では ScopeV3 と AuthTokenV3['scope'] が
+// zod の型シリアライズ差で相互代入できないため、AuthTokenV3 側の型を使う。
+function createForDevelopmentScopeV3(appId: string): AuthTokenV3['scope'] {
   return {
     appId,
     rooms: [

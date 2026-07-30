@@ -3,10 +3,27 @@
 SkyWay JS-SDK を Node.js に非公式に対応させた SDK です。
 JS-SDK と API はほとんど同じですが、一部機能に対応していません。
 
+本 SDK は [skyway-js-sdk](https://github.com/skyway/js-sdk) の **v2.5.1** に追従しています。
+v2 は破壊的変更を含むメジャーアップデートであり、本 SDK もブラウザ版 v2 の API をそのまま採用しています。
+
 # サンプルコード
 
 - https://github.com/shinyoshiaki/skyway-nodejs-sdk/tree/nodejs/examples
 - https://github.com/shinyoshiaki/skyway-nodejs-playground
+
+# v1 系からの移行
+
+ブラウザ版 v2.0.0 の破壊的変更がそのまま適用されます。主な変更点は次のとおりです。
+
+- P2P と SFU を同一 Room で同時に使える統合 `Room` 型が追加された（`SkyWayRoom.Create` / `Find` / `FindOrCreate` で `type` を省略、または `'default'` を指定すると統合 Room になる）。
+- `SkyWayRoom.Find` の第 3 引数が文字列からオブジェクトに変更された。
+  - v1: `SkyWayRoom.Find(context, { id }, 'sfu')`
+  - v2: `SkyWayRoom.Find(context, { id }, { type: 'sfu' })`
+- `SfuRoom` → `SFURoom`、`SfuBotMember` → `SFUBotMember` など `Sfu` を含む識別子が `SFU` にリネームされた。
+- `updateReminderSec` → `updateRemindSec` にリネームされた。
+- `P2PRoom.moveRoom` / `SFURoom.moveRoom` が削除された。
+- `cancel` / `onCanceled` / `LocalStream.isEnabled` などの deprecated なメンバーが削除された。
+- `Member` に `side` プロパティが追加された。
 
 # skyway-js-sdk との違い
 
@@ -15,17 +32,23 @@ JS-SDK と API はほとんど同じですが、一部機能に対応してい�
 - 提供パッケージ
   - room
 - 対応動作環境
-  - Node.js
+  - Node.js v22 以降
 - 対応通信方法
+  - P2P
   - SFU
 - 対応コーデック
   - opus
   - vp8
   - h264
+- 対応機能（ブラウザ版と同様に利用できるもの）
+  - `getStats`（`Publication.getStats` / `Subscription.getStats`、および内部の統計収集）
+  - `restartIce`
+  - `rtcConfig.stunPorts`（`[443]` / `[3478]` / `[443, 3478]` のいずれも利用可能）
 - 非対応機能
-  - getStats
-  - restartIce
   - simulcast
+  - `LocalAudioStream.getAudioLevel` / `RemoteAudioStream.getAudioLevel`（Web Audio API に依存するため。呼び出すと `notSupportedInNodejs` エラーになります）
+  - `SkyWayStreamFactory` のうちブラウザのデバイス列挙・`getUserMedia` に依存する API
+    （`createCameraVideoStream` などの代わりに `registerAudioTestSrc` / `registerVideoTestSrc` / `registerMediaDevices` を利用します）
 
 ## 使い方
 
@@ -66,6 +89,7 @@ const { SkyWayAuthToken, nowInSec, uuidV4 } = skyway_token;
 一部 API に対応していません。
 
 - [Room ライブラリ](https://javascript-sdk.api-reference.skyway.ntt.com/room)
+- [Token ライブラリ](https://javascript-sdk.api-reference.skyway.ntt.com/token)
 
 # サンプルアプリの起動方法
 
@@ -87,7 +111,7 @@ npm run dev
 
 ## 初期設定時
 
-- Node.js をインストールする（バージョンは v16.17.1 以降）
+- Node.js をインストールする（バージョンは v22.0.0 以降。upstream の要求に合わせています）
 - examples の依存パッケージをインストール
 
 ```

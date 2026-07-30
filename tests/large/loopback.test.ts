@@ -32,7 +32,7 @@ describe('loopback', () => {
         const sender = await room.join();
 
         const receiver = await (
-          await SkyWayRoom.Find(context, room, type)
+          await SkyWayRoom.Find(context, room, { type })
         ).join();
 
         let getSenderPc = (): undefined | RTCPeerConnection => undefined;
@@ -107,7 +107,7 @@ describe('loopback', () => {
       await SkyWayStreamFactory.createMicrophoneAudioStream()
     );
 
-    const receiver = await (await SkyWayRoom.Find(context, room, 'sfu')).join();
+    const receiver = await (await SkyWayRoom.Find(context, room, { type: 'sfu' })).join();
 
     const subscribe = async (publication: RoomPublication) =>
       new Promise<void>(async (done) => {
@@ -171,7 +171,7 @@ describe('loopback', () => {
       );
 
       const receiver = await (
-        await SkyWayRoom.Find(context, room, 'sfu')
+        await SkyWayRoom.Find(context, room, { type: 'sfu' })
       ).join();
       const { stream: remoteStream, subscription } =
         await receiver.subscribe<RemoteVideoStream>(publication);
@@ -215,7 +215,7 @@ describe('loopback', () => {
       );
 
       const receiver = await (
-        await SkyWayRoom.Find(context, room, 'sfu')
+        await SkyWayRoom.Find(context, room, { type: 'sfu' })
       ).join();
       const { stream: remoteStream } =
         await receiver.subscribe<RemoteVideoStream>(publication);

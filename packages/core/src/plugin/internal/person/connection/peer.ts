@@ -7,6 +7,7 @@ import type { AnalyticsSession } from '../../../../external/analytics';
 import type { IceManager } from '../../../../external/ice';
 import type { SignalingSession } from '../../../../external/signaling';
 import {
+  type MediaStreamTrack,
   RTCIceCandidate,
   RTCPeerConnection,
   RTCPeerConnectionIceEvent,

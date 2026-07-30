@@ -210,7 +210,7 @@ export abstract class LocalRoomMemberBase
     );
 
     return {
-      subscription: roomSubscription as RoomSubscription<T>,
+      subscription: roomSubscription as any as RoomSubscription<T>,
       stream: stream as T,
     };
   }

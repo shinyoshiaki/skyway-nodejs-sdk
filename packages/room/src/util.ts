@@ -1,5 +1,5 @@
 import { type ErrorInfo, SkyWayError } from '@skyway-sdk/common';
-import type { SkyWayContext } from 'imports/core';
+import type { SkyWayContext } from './imports/core';
 
 import type { Room } from './room/default';
 

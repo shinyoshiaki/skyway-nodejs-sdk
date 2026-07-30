@@ -42,7 +42,7 @@ describe('turn', () => {
         );
 
         const receiver = await (
-          await SkyWayRoom.Find(context, room, 'sfu')
+          await SkyWayRoom.Find(context, room, { type: 'sfu' })
         ).join();
         const { stream: remoteStream, subscription } =
           await receiver.subscribe<RemoteVideoStream>(publication);
