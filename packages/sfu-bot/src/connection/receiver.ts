@@ -12,17 +12,17 @@ import {
   uuidV4,
 } from '../imports/core';
 import { MediaStreamTrack, types } from '../imports/mediasoup';
-import { SfuRestApiClient } from '../imports/sfu';
-import { SfuBotMember } from '../member';
+import { SFURestApiClient } from '../imports/sfu';
+import { SFUBotMember } from '../member';
 import { getLayerFromEncodings } from '../util';
-import { SfuTransport } from './transport/transport';
+import { SFUTransport } from './transport/transport';
 import { TransportRepository } from './transport/transportRepository';
 
 const log = new Logger('packages/sfu-bot/src/connection/receiver.ts');
 
 export class Receiver {
   consumer?: types.Consumer;
-  transport?: SfuTransport;
+  transport?: SFUTransport;
 
   private _disposer = new EventDisposer();
   private sendSubscriptionStatsReportTimer: ReturnType<
@@ -32,10 +32,10 @@ export class Receiver {
 
   constructor(
     readonly subscription: SubscriptionImpl,
-    private readonly _api: SfuRestApiClient,
+    private readonly _api: SFURestApiClient,
     private readonly _transportRepository: TransportRepository,
     private _localPerson: LocalPersonImpl,
-    private _bot: SfuBotMember,
+    private _bot: SFUBotMember,
     private _iceManager: IceManager,
     private _context: SkyWayContext
   ) {

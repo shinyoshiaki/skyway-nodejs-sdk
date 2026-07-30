@@ -15,24 +15,24 @@ import {
   RTCPeerConnection,
   types,
 } from '../../imports/mediasoup';
-import { SfuRestApiClient } from '../../imports/sfu';
-import { SfuBotMember } from '../../member';
-import { SfuBotPluginOptions } from '../../option';
-import { SfuBotPlugin } from '../../plugin';
+import { SFURestApiClient } from '../../imports/sfu';
+import { SFUBotMember } from '../../member';
+import { SFUBotPluginOptions } from '../../option';
+import { SFUBotPlugin } from '../../plugin';
 import { createWarnPayload } from '../../util';
 
 const log = new Logger(
   'packages/sfu-bot/src/connection/transport/transport.ts'
 );
 
-export class SfuTransport {
+export class SFUTransport {
   private _backoffIceRestart = new BackOff({
     times: 8,
     interval: 100,
     jitter: 100,
   });
   private _connectionState: TransportConnectionState = 'new';
-  private _options: SfuBotPluginOptions;
+  private _options: SFUBotPluginOptions;
 
   readonly onProduce = new Event<{
     producerOptions: {
@@ -65,15 +65,15 @@ export class SfuTransport {
 
   constructor(
     public msTransport: types.Transport,
-    private _bot: SfuBotMember,
+    private _bot: SFUBotMember,
     private _iceManager: IceManager,
-    private _sfuApi: SfuRestApiClient,
+    private _sfuApi: SFURestApiClient,
     private _context: SkyWayContext,
     private _analyticsSession?: AnalyticsSession
   ) {
     const sfuPlugin = _context.plugins.find(
-      (p) => p.subtype === SfuBotPlugin.subtype
-    ) as SfuBotPlugin;
+      (p) => p.subtype === SFUBotPlugin.subtype
+    ) as SFUBotPlugin;
     this._options = sfuPlugin.options;
 
     log.debug('peerConfig', this.pc?.getConfiguration?.() ?? {});
@@ -205,7 +205,7 @@ export class SfuTransport {
       log.error(
         '_iceRestartedCount exceeded',
         createError({
-          operationName: 'SfuTransport.restartIce',
+          operationName: 'SFUTransport.restartIce',
           context: this._context,
           info: errors.netWorkError,
           path: log.prefix,
@@ -219,7 +219,7 @@ export class SfuTransport {
       createWarnPayload({
         bot: this._bot,
         detail: 'start restartIce',
-        operationName: 'SfuTransport.restartIce',
+        operationName: 'SFUTransport.restartIce',
         payload: { count: this._backoffIceRestart.count, transport: this },
       })
     );
@@ -234,7 +234,7 @@ export class SfuTransport {
           createWarnPayload({
             bot: this._bot,
             detail: 'end restartIce',
-            operationName: 'SfuTransport.restartIce',
+            operationName: 'SFUTransport.restartIce',
             payload: { count: this._backoffIceRestart.count, transport: this },
           })
         );
@@ -250,7 +250,7 @@ export class SfuTransport {
           createWarnPayload({
             bot: this._bot,
             detail: 'end restartIce',
-            operationName: 'SfuTransport.restartIce',
+            operationName: 'SFUTransport.restartIce',
             payload: { count: this._backoffIceRestart.count, transport: this },
           })
         );
@@ -281,7 +281,7 @@ export class SfuTransport {
       log.warn(
         'updateIceParams failed',
         createWarnPayload({
-          operationName: 'SfuTransport.restartIce',
+          operationName: 'SFUTransport.restartIce',
           detail: 'updateIceParams failed',
           bot: this._bot,
           payload: { transport: this },
@@ -323,7 +323,7 @@ export class SfuTransport {
       log.warn(
         'iceRestart failed',
         createWarnPayload({
-          operationName: 'SfuTransport._mediasoupRestartIce',
+          operationName: 'SFUTransport._mediasoupRestartIce',
           detail: 'iceRestart failed',
           bot: this._bot,
           payload: { transport: this },
@@ -347,7 +347,7 @@ export class SfuTransport {
       .watch(() => state === this.msTransport.connectionState, timeout)
       .catch((err) => {
         throw createError({
-          operationName: 'SfuTransport._waitForMsConnectionState',
+          operationName: 'SFUTransport._waitForMsConnectionState',
           context: this._context,
           info: { ...errors.timeout, detail: 'waitForConnectionState timeout' },
           error: err,

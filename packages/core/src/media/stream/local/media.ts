@@ -37,11 +37,6 @@ export abstract class LocalMediaStreamBase extends LocalStreamBase {
   _replacingTrack = false;
   /**@internal */
   _onReplacingTrackDone = new Event<void>();
-  /**
-   * @deprecated
-   * @use {@link Publication.state}
-   */
-  abstract isEnabled: boolean;
   /**@internal */
   _onEnableChanged = new Event<MediaStreamTrack | null>();
   /**@internal */
@@ -52,7 +47,6 @@ export abstract class LocalMediaStreamBase extends LocalStreamBase {
     return {
       ...base,
       trackConstraints: this.trackConstraints,
-      isEnabled: this.isEnabled,
       _options: this._options,
     };
   }

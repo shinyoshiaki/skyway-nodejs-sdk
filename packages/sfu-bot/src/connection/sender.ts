@@ -23,10 +23,10 @@ import {
   waitForLocalStats,
 } from '../imports/core';
 import { MediaStreamTrack, types } from '../imports/mediasoup';
-import { SfuRestApiClient } from '../imports/sfu';
-import { SfuBotMember } from '../member';
+import { SFURestApiClient } from '../imports/sfu';
+import { SFUBotMember } from '../member';
 import { createWarnPayload } from '../util';
-import { SfuTransport } from './transport/transport';
+import { SFUTransport } from './transport/transport';
 import { TransportRepository } from './transport/transportRepository';
 
 const log = new Logger('packages/sfu-bot/src/connection/sender.ts');
@@ -36,7 +36,7 @@ export class Sender {
   forwardingId?: string;
   private _producer?: types.Producer;
   /**@private */
-  _broadcasterTransport?: SfuTransport;
+  _broadcasterTransport?: SFUTransport;
   private _disposer = new EventDisposer();
   private _unsubscribeStreamEnableChange?: () => void;
   private _cleanupStreamCallbacks?: () => void;
@@ -54,10 +54,10 @@ export class Sender {
       LocalAudioStream | LocalVideoStream | LocalCustomVideoStream
     >,
     readonly channel: SkyWayChannelImpl,
-    private readonly _api: SfuRestApiClient,
+    private readonly _api: SFURestApiClient,
     private _transportRepository: TransportRepository,
     private _localPerson: LocalPersonImpl,
-    private _bot: SfuBotMember,
+    private _bot: SFUBotMember,
     private _iceManager: IceManager,
     private _context: SkyWayContext
   ) {
@@ -229,7 +229,7 @@ export class Sender {
               context: this._context,
               info: {
                 ...errors.timeout,
-                detail: 'SfuBotMember onStreamPublished',
+                detail: 'SFUBotMember onStreamPublished',
               },
               path: log.prefix,
               channel: this.channel,
@@ -341,7 +341,7 @@ export class Sender {
 
   private async _produce(
     stream: LocalAudioStream | LocalVideoStream | LocalCustomVideoStream,
-    transport: SfuTransport
+    transport: SFUTransport
   ) {
     this.publication._onReplaceStream
       .add(async ({ newStream }) => {
@@ -568,7 +568,7 @@ export class Sender {
 
   private _setupTransportAccessForStream(
     stream: LocalStream,
-    transport: SfuTransport,
+    transport: SFUTransport,
     producer: types.Producer
   ) {
     stream._getTransportCallbacks[this._bot.id] = () => ({

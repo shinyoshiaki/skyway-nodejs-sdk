@@ -574,6 +574,7 @@ export class RtcApiImpl implements RtcApi {
         codecCapabilities: init.codecCapabilities,
         encodings: init.encodings,
         isEnabled: init.isEnabled,
+        type: init.type,
         appId,
       })
       .catch((e) => {

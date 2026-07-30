@@ -54,12 +54,4 @@ export class LocalAudioStream extends LocalMediaStreamBase {
       }
     });
   }
-
-  /**
-   * @deprecated
-   * @use {@link Publication.state}
-   */
-  get isEnabled() {
-    return this._isEnabled;
-  }
 }

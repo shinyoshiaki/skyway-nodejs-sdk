@@ -28,12 +28,13 @@ import {
   normalizeEncodings,
   Publication,
   PublicationImpl,
+  PublicationType,
   sortEncodingParameters,
 } from '../../publication';
 import { Subscription, SubscriptionImpl } from '../../subscription';
 import { createError, createLogPayload } from '../../util';
 import { Person } from '../person';
-import { isRemoteMember } from '../remoteMember';
+import { isRemoteMember, RemoteMemberImplInterface } from '../remoteMember';
 import { PublishingAgent, SubscribingAgent } from './agent';
 
 export * from './adapter';
@@ -392,7 +393,10 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
       );
 
       await this._publishingAgent
-        .stopPublishing(subscription.publication, subscription.subscriber)
+        .stopPublishing(
+          subscription.publication,
+          subscription.subscriber as RemoteMemberImplInterface
+        )
         .catch((e) => {
           log.error('[failed] stopPublishing', e, { subscription });
           throw e;
@@ -477,6 +481,8 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
       );
     }
 
+    options.type = options.type ?? 'p2p';
+
     const init: PublicationInit = {
       metadata: options.metadata,
       publisher: this.id,
@@ -484,6 +490,7 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
       contentType: stream.contentType,
       codecCapabilities: options.codecCapabilities ?? [],
       isEnabled: options.isEnabled,
+      type: options.type,
     };
     if (stream.contentType !== 'data') {
       if (init.codecCapabilities.length === 0) {
@@ -627,6 +634,7 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
     }
 
     await this._requestQueue.push(() => this.channel._unpublish(publicationId));
+    publication._setStream(undefined);
 
     publication.subscriptions
       .map((s) => s.subscriber)
@@ -920,10 +928,10 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
     );
   }
 
-  private _getConnections() {
-    const connections = this.channel.members.map((m) =>
-      m._getConnection(this.id)
-    );
+  private _getRemoteMemberConnections() {
+    const connections = this.channel.members
+      .filter(isRemoteMember)
+      .map((m) => m._getConnection(this.id));
 
     const active = connections.filter(
       (c): c is SkyWayConnection => c?.closed === false
@@ -956,7 +964,7 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
       this._analytics.close();
     }
 
-    this._getConnections().forEach((c) =>
+    this._getRemoteMemberConnections().forEach((c) =>
       c.close({ reason: 'localPerson disposed' })
     );
 
@@ -989,6 +997,12 @@ export type PublicationOptions = {
    * falseに設定された場合、publicationは一時停止された状態でpublishされる。
    */
   isEnabled?: boolean;
+  /**
+   * @description [japanese]
+   * DefaultRoom利用時に、publicationがP2Pで利用されるかSFUで利用されるかを指定する。
+   * デフォルトではP2Pが設定される。
+   */
+  type?: PublicationType;
 };
 
 export type SubscriptionOptions = {

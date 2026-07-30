@@ -17,10 +17,10 @@ import {
   WebRTCStats,
 } from '../imports/core';
 import { RTCPeerConnection } from '../imports/mediasoup';
-import { SfuBotMember } from '../imports/sfu';
+import { SFUBotMember } from '../imports/sfu';
+import { Encoding, PublicationType } from '@skyway-sdk/model';
 import { RoomMember, RoomMemberImpl } from '../member';
-import { Encoding } from '@skyway-sdk/model';
-import { RoomImpl } from '../room/base';
+import { Room } from '../room/default';
 import { StreamSubscribedEvent, StreamUnsubscribedEvent } from '../room/event';
 import { RoomSubscription } from '../subscription';
 import { createError } from '../util';
@@ -33,6 +33,7 @@ export interface RoomPublication<T extends LocalStream = LocalStream> {
   readonly contentType: ContentType;
   metadata?: string;
   readonly publisher: RoomMember;
+  readonly type: PublicationType;
   /**
    * @description [japanese] このPublicationをSubscribeしているSubscriptionの一覧
    */
@@ -55,12 +56,6 @@ export interface RoomPublication<T extends LocalStream = LocalStream> {
    * ローカルで作られたPublicationでなければundefinedとなる
    */
   readonly stream?: T;
-  /**
-   * @deprecated
-   * @use {@link LocalPerson.onStreamUnpublished} or {@link Channel.onStreamUnpublished}
-   * @description [japanese] このPublicationがUnPublishされたときに発火するイベント
-   */
-  readonly onCanceled: Event<void>;
   /**@description [japanese] このPublicationがSubscribeされたときに発火するイベント */
   readonly onSubscribed: Event<StreamSubscribedEvent>;
   /**@description [japanese] このPublicationがUnsubscribeされたときに発火するイベント */
@@ -89,12 +84,6 @@ export interface RoomPublication<T extends LocalStream = LocalStream> {
    * @description [japanese] Metadataの更新
    */
   updateMetadata: (metadata: string) => Promise<void>;
-  /**
-   * @deprecated
-   * @use {@link LocalPerson.unpublish}
-   * @description [japanese] unpublishする
-   */
-  cancel: () => Promise<void>;
   /**
    * @description [japanese] Video|Audio Streamの場合、encoding設定を更新する
    */
@@ -140,11 +129,11 @@ export class RoomPublicationImpl<StreamType extends LocalStream = LocalStream>
   readonly id: string;
   readonly contentType: ContentType;
   readonly publisher: RoomMemberImpl;
-  private readonly _origin?: Publication;
+  readonly type: PublicationType;
   private readonly _disposer = new EventDisposer();
+  private readonly _origin?: Publication;
 
   private readonly _events = new Events();
-  readonly onCanceled = this._events.make<void>();
   readonly onSubscribed = this._events.make<StreamSubscribedEvent>();
   readonly onUnsubscribed = this._events.make<StreamUnsubscribedEvent>();
   readonly onSubscriptionListChanged = this._events.make<void>();
@@ -157,10 +146,11 @@ export class RoomPublicationImpl<StreamType extends LocalStream = LocalStream>
     state: TransportConnectionState;
   }>();
 
-  constructor(public _publication: Publication, private _room: RoomImpl) {
+  constructor(public _publication: Publication, private _room: Room) {
     this.id = _publication.id;
     this.contentType = _publication.contentType;
     this._origin = _publication.origin;
+    this.type = _publication.type;
 
     {
       const publication = this._origin ?? this._publication;
@@ -249,18 +239,6 @@ export class RoomPublicationImpl<StreamType extends LocalStream = LocalStream>
     return this._preferredPublication.metadata;
   }
 
-  /**
-   * @deprecated
-   * @use {@link LocalPerson.unpublish}
-   * @description [japanese] unpublishする
-   */
-  async cancel() {
-    await Promise.all([
-      this._preferredPublication.cancel(),
-      this.onCanceled.asPromise(),
-    ]);
-  }
-
   async updateMetadata(metadata: string) {
     await this._preferredPublication.updateMetadata(metadata);
   }
@@ -317,7 +295,6 @@ export class RoomPublicationImpl<StreamType extends LocalStream = LocalStream>
   };
 
   private _dispose() {
-    this.onCanceled.emit();
     this._events.dispose();
     this._disposer.dispose();
   }
@@ -325,7 +302,7 @@ export class RoomPublicationImpl<StreamType extends LocalStream = LocalStream>
   getStats(selector: string | RoomMember): Promise<WebRTCStats> {
     if (this._origin) {
       const bot = this._origin.subscriptions.find(
-        (s) => s.subscriber.subtype === SfuBotMember.subtype
+        (s) => s.subscriber.subtype === SFUBotMember.subtype
       )?.subscriber;
       if (!bot) {
         throw createError({
@@ -347,7 +324,7 @@ export class RoomPublicationImpl<StreamType extends LocalStream = LocalStream>
   ): RTCPeerConnection | undefined {
     if (this._origin) {
       const bot = this._origin.subscriptions.find(
-        (s) => s.subscriber.subtype === SfuBotMember.subtype
+        (s) => s.subscriber.subtype === SFUBotMember.subtype
       )?.subscriber;
       if (!bot) {
         throw createError({
@@ -367,7 +344,7 @@ export class RoomPublicationImpl<StreamType extends LocalStream = LocalStream>
   getConnectionState(selector: string | RoomMember): TransportConnectionState {
     if (this._origin) {
       const bot = this._origin.subscriptions.find(
-        (s) => s.subscriber.subtype === SfuBotMember.subtype
+        (s) => s.subscriber.subtype === SFUBotMember.subtype
       )?.subscriber;
       if (!bot) {
         throw createError({
