@@ -51,7 +51,7 @@
     "watch:tsc": "tsc -p tsconfig.build.json -w"
   },
   "dependencies": {
-    "@skyway-sdk/analytics-client": "^2.0.5",
+    "@skyway-sdk/analytics-client": "workspace:*",
     "@skyway-sdk/common": "^2.0.6",
     "@skyway-sdk/model": "^2.0.0",
     "@skyway-sdk/signaling-client": "^2.0.4",

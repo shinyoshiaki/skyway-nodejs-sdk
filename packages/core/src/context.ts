@@ -200,6 +200,9 @@ export class SkyWayContext implements SkyWayContextInterface {
       await context._setTokenExpireTimer();
 
       if (token.getAnalyticsEnabled()) {
+        // SkyWay の AnalyticsServer は Node.js からの WebSocket 接続を受け付けない
+        // (User-Agent 必須の 4100 close 等)ため、Node.js 版では analytics を無効にする。
+        // 統計収集自体(werift の getStats)は Publication/Subscription.getStats で利用できる。
         // context.analyticsSession = await setupAnalyticsSession(context);
       }
 

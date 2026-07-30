@@ -44,7 +44,7 @@
     "@shinyoshiaki/skyway-nodejs-sdk-core": "file:../core",
     "@skyway-sdk/common": "^2.0.6",
     "@skyway-sdk/model": "^2.0.0",
-    "@skyway-sdk/sfu-api-client": "^2.0.6",
+    "@skyway-sdk/sfu-api-client": "workspace:*",
     "@types/node": "^20.8.8",
     "lodash": "4.17.21",
     "msc-node": "^0.0.24"

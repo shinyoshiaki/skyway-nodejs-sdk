@@ -49,6 +49,10 @@ v2 は破壊的変更を含むメジャーアップデートであり、本 SDK 
   - `LocalAudioStream.getAudioLevel` / `RemoteAudioStream.getAudioLevel`（Web Audio API に依存するため。呼び出すと `notSupportedInNodejs` エラーになります）
   - `SkyWayStreamFactory` のうちブラウザのデバイス列挙・`getUserMedia` に依存する API
     （`createCameraVideoStream` などの代わりに `registerAudioTestSrc` / `registerVideoTestSrc` / `registerMediaDevices` を利用します）
+  - Analytics（統計情報の SkyWay サーバへの自動送信）。
+    SkyWay の AnalyticsServer が Node.js からの WebSocket 接続を受け付けないため、
+    トークンで `analytics: true` を指定しても Analytics セッションは作成されません。
+    統計情報そのものは `Publication.getStats` / `Subscription.getStats` で取得できます。
 
 ## 使い方
 
