@@ -47,8 +47,8 @@ v2 は破壊的変更を含むメジャーアップデートであり、本 SDK 
 - 制限付きで動作する機能
   - **ICE 切断時の再接続（`restartIce`）は切断検知と `restartIce` の実行までは動作しますが、
     ICE restart 後のメディア（RTP）再開は成立しません。**
-    restart 後の candidate が werift 側で
-    `No media section matched the ICE usernameFragment` により弾かれるためです。
+    werift の ICE が restart 後に state だけ `completed` になり、採用された
+    candidate pair（`nominated`）が null のままになるため、送信は続くのに相手へ届きません。
     切断が長引いた場合は Room に再入室し直してください。
     （検証内容は [VERIFICATION.md](./VERIFICATION.md) の restartIce の節を参照）
   - `rtcConfig.stunPorts` に **複数ポートを指定した場合は先頭のポートのみ使用** します。

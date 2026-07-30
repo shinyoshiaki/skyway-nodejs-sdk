@@ -24,9 +24,11 @@ import { waitForRtp } from './util';
  * 検証範囲について:
  * `reconnecting` は `Sender.restartIce()` の中でのみ発行されるため、この状態遷移が
  * 「切断が検知され restartIce が実行された」ことの証跡になる。
- * 一方で **ICE restart 後のメディア再開は現時点の werift では成立しない**
- * （restart 後の candidate が `No media section matched the ICE usernameFragment` で
- * 弾かれる）。この制限は README に記載している。
+ * 一方で **ICE restart 後のメディア再開は現時点の werift では成立しない**ため、
+ * ここでは RTP 再開までは検証しない。restart 後に werift の ICE は state だけ
+ * `completed` になり `nominated` が null のままになるので、送信側は送り続けるが
+ * 受信側に届かない（VERIFICATION.md の restartIce の節に計測値を記載）。
+ * この制限は README にも記載している。
  */
 describe('restartIce', () => {
   it(

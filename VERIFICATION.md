@@ -157,12 +157,27 @@ $ pnpm --dir tests exec vitest -c large/vitest.config.ts run ./large/restartIce.
 発行される状態なので、この遷移が実行の証跡になります。
 
 **確認できなかったこと（既知の制限）**: **ICE restart 後のメディア（RTP）再開は
-現時点の werift では成立しません。** restart 後の candidate が
-`OperationError: No media section matched the ICE usernameFragment` で弾かれ、
-新しい candidate pair が形成されません。また werift の `pc.connectionState` が
-実際には経路が無い状態でも `connected` を返すため、SDK の `restartIce()` 内の
-「復帰済みなら何もしない」判定（`checkNeedEnd`）が早期 return します。
-いずれも werift 側の修正が必要で、README の「制限付きで動作する機能」に記載しています。
+現時点の werift では成立しません。** 原因を計測で特定しています。
+
+restart 前後で送信側 / 受信側の統計と ICE の状態を取ると次のようになります。
+
+```
+before-break        senderIce=connected  nominated=stun  packetsSent=1     packetsReceived=1
+(restartIce 実行)
+after-reconnect +3s senderIce=completed  nominated=null  packetsSent=1700  packetsReceived=1
+after-reconnect +10s senderIce=completed nominated=null  packetsSent=2050  packetsReceived=1
+```
+
+- werift の ICE は restart 後に state だけ `completed` になり、**`nominated`（採用された
+  candidate pair）が null のまま**です。
+- そのため送信側は送信を続ける（`packetsSent` が増える）のに、受信側には 1 パケットも
+  届きません（`packetsReceived` が増えない）。
+- 併せて restart 直後の candidate が
+  `OperationError: No media section matched the ICE usernameFragment` で弾かれます。
+
+これは werift 内部の ICE restart 時の状態遷移の問題で、SDK 側（本リポジトリ）からは
+修正できません。`submodules/mediasoup/submodules/werift` の ice / webrtc パッケージへの
+修正が必要です。README の「制限付きで動作する機能」に利用者向けの記載をしています。
 
 ## submodule の扱い
 
