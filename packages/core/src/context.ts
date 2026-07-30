@@ -16,6 +16,19 @@ import { Codec } from './media';
 
 const log = new Logger('packages/core/src/context.ts');
 
+/**
+ * appId は token の version によって位置が違う。
+ * v1 / v2 は `scope.app.id`、v3 は `scope.appId` に入っている。
+ * @internal
+ */
+type AppIdScope = { app?: { id: string }; appId?: string };
+
+/**@internal */
+export const getAppIdFromAuthToken = (token: SkyWayAuthToken): string => {
+  const scope = token.scope as AppIdScope;
+  return scope.app ? scope.app.id : scope.appId!;
+};
+
 export class SkyWayContext {
   /**@internal */
   static version = PACKAGE_VERSION;
@@ -67,7 +80,7 @@ export class SkyWayContext {
 
     try {
       const api = await RtcApiClient.Create({
-        appId: token.scope.app.id,
+        appId: getAppIdFromAuthToken(token),
         token: authTokenString,
         log: config.log,
         rtcApi: config.rtcApi,
@@ -134,7 +147,7 @@ export class SkyWayContext {
     readonly info: { endpoint: EndpointInfo; runtime: RuntimeInfo }
   ) {
     this._authTokenString = authToken.tokenString!;
-    this.appId = this.authToken.scope.app.id;
+    this.appId = getAppIdFromAuthToken(this.authToken);
 
     registerPersonPlugin(this);
 
@@ -216,13 +229,16 @@ export class SkyWayContext {
       { oldToken: this.authToken, newToken }
     );
 
-    if (newToken.scope.app.id !== this.appId) {
+    if (getAppIdFromAuthToken(newToken) !== this.appId) {
       throw createError({
         operationName: 'SkyWayContext.updateAuthToken',
         context: this,
         info: errors.invalidTokenAppId,
         path: log.prefix,
-        payload: { invalid: this.authToken.scope.app.id, expect: this.appId },
+        payload: {
+          invalid: getAppIdFromAuthToken(this.authToken),
+          expect: this.appId,
+        },
       });
     }
 

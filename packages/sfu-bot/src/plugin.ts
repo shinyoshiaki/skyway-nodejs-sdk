@@ -94,7 +94,7 @@ export class SfuBotPlugin extends SkyWayPlugin {
       })
     );
     const botId = await this._api.createBot({
-      appId: this._context!.authToken.scope.app.id,
+      appId: this._context!.appId,
       channelId: channel.id,
     });
     const member =
