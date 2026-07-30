@@ -47,6 +47,21 @@ fork の核心は browser API を werift ベースに差し替える層。merge 
 
 **【決定】v2.5.0 で追加された `rtcConfig.stunPorts` など WebRTC 層に触れる新機能は、werift / mediasoup-client-node（`submodules/mediasoup`、nested submodule に werift 本体）のコードベースを調査し、必要に応じて werift / mediasoup-client-node 側に機能追加して対応する。**「非対応として明記して済ませる」は最終手段とし、まず実装可否を調査する。werift は直近で最新化済み（commit `7dcac013`）なので、その版を起点に不足機能を洗い出す。
 
+#### WebRTC 新機能の調査結果（2026-07-30 実施、v1.15.2→v2.5.1 の diff と現行 werift コードの突き合わせ）
+
+| v2 の変更 | 実体 | werift / mediasoup-client-node の対応状況 | 必要な作業 |
+| --- | --- | --- | --- |
+| `rtcConfig.stunPorts`（v2.5.0） | SDK 層のみの変更。`config.ts` でのバリデーション（443/3478 を 1〜2 個、重複不可）と `external/ice.ts` での `stun:<domain>:<port>` URL 生成（v2.5.1 の `ice.ts:77-81`） | werift の `parseIceServerUrl`（webrtc/src/utils.ts）は `stun:host:port` の明示ポートをパース可能 → **単一ポート指定 `[443]` / `[3478]` はそのまま動作**。ただし `parseIceServers` は**最初の 1 STUN サーバーしか採用しない**（ice パッケージの `options.stunServer` が単数）ため、`[443, 3478]` の 2 個指定時は先頭のみ使用される | SDK 側は upstream コードの取り込みのみ。werift 側は `packages/ice` の `stunServer` を複数対応にする機能追加を行う（できない場合は「複数指定時は先頭ポートのみ使用」と README に明記） |
+| 内部での `pc.getStats()` / `sender.getStats()` / `receiver.getStats()` 使用（v2 の analytics 統計収集: `connection/index.ts:273-298`、`receiver.ts:263`、`sender.ts:690` 等） | 公開 API の getStats は v2 で削除されたが、**内部実装が getStats に依存**するようになった | 現行 werift は `pc.getStats()`（peerConnection.ts:1183）、`RTCRtpSender.getStats()`（rtpSender.ts:683）、receiver 側 getStats を**実装済み** | 追加実装不要の見込み。ただし analytics が参照する RTCStatsReport のフィールドが werift の `buildStatsReport` の出力と一致するかを merge 後に実測確認 |
+| `restartIce()` を使う再接続処理（v2 sender.ts で多用） | SDK 層の再接続ロジック強化 | werift は `restartIce()` 実装済み（peerConnection.ts:919）。fork の現行 `sender.ts` にも restartIce 使用実績あり | 追加実装不要の見込み |
+| `pc.connectionState === 'closed'` チェック追加（v2.x transport/sender） | SDK 層の状態チェック | werift は `connectionState` 実装済み | 不要 |
+| `iceDisconnectBufferTimeout` | v1.15.2 に既存（新機能ではない） | 対応済み | 不要 |
+| RemoteDataStream 安定化（v2.4.3、`datachannel.ts` / `messageBuffer.ts`） | SDK 層のメッセージバッファリング変更 | werift の RTCDataChannel API の範囲内 | upstream コードの取り込みのみ |
+| 再接続イベントハンドラ追加（v2.4.0） | signaling / SDK 層のイベント。WebRTC 層への新要求なし | — | upstream コードの取り込みのみ |
+| TURN URL 生成（turn tcp / turn udp / turns tcp の 3 種） | v1 から変更なし | werift は 1 TURN サーバーのみ採用（既存挙動のまま） | 不要（現状維持） |
+
+**結論**: werift への必須の機能追加は「STUN サーバー複数指定対応」のみで、それも `stunPorts` を 2 個指定した場合に限る縮退（先頭のみ使用）で初期リリースを許容する選択肢がある。getStats / restartIce は最新化済み werift が既に実装しているため、v2 内部実装の要求は満たせる見込み。
+
 ### 2.5 ドキュメント更新
 
 - README の「skyway-js-sdk との違い」（対応機能・非対応機能）を v2 基準で更新。
@@ -63,7 +78,7 @@ fork の核心は browser API を werift ベースに差し替える層。merge 
 ## 4. 制約・注意点
 
 - **werift / mediasoup-client-node との整合**: werift は直近で最新化済み（commit `7dcac013`）。v2 の WebRTC 関連新機能（stunPorts 等）は原則 werift / mediasoup-client-node への機能追加で対応する（§2.4 の決定参照）。submodule 側の変更は fork リポジトリ（shinyoshiaki/mediasoup-client-node、werift）へのコミットと参照 SHA 更新を伴う点に注意。
-- **既知の非対応機能**（getStats / restartIce / simulcast）は v2 でも維持。v2 で getStats 系 API が削除されたため公開 API 上のギャップは縮小する。
+- **README の非対応機能一覧（getStats / restartIce / simulcast）は古くなっている**: 最新化済みの werift は getStats / restartIce を実装済み（§2.4 調査結果参照）で、v2 では getStats 系の公開 API 自体が削除された。v2 追従後の実質的な非対応は simulcast のみになる見込みのため、README 更新時に一覧を見直す。
 - **`pnpm run type` は mp4box 起因で通らない既知問題**があるため、型チェックの完了判定は `compile`（tsc -p tsconfig.build.json）基準にする。
 - **テスト**: `tests/large`（loopback / p2p / turn）は実 SkyWay 接続が必要。**認証情報はリポジトリ直下の `env.ts`（appId / secret）に設定済み**のため、ローカルで実接続テストを実行して合格を必須とする（CI も secrets 設定済みの Node CI workflow で同テストを実行）。integrate 系は flaky 傾向があるためリトライを考慮。
 - **submodule 運用**: `submodules/mediasoup` の checkout 状態を壊さないこと（core.worktree 問題の再発防止のため `git submodule` 操作後の `git status` 確認を行う）。CI では wpt nested submodule を除外する既存手順を維持。
@@ -77,6 +92,6 @@ fork の核心は browser API を werift ベースに差し替える層。merge 
 3. `tests/small` がローカルで pass する。
 4. `tests/large`（loopback / p2p / turn）が `env.ts` の認証情報を使った実接続で pass する（ローカル実行および CI の Node CI workflow の両方で合格必須）。
 5. v2 の主要 API 変更（統合 Room、`SFURoom` リネーム、`SkyWayRoom.Find` 新引数、`Member.side`）が examples レベルで動作確認できる（`examples/sendrecv` の更新を含む）。
-6. v2 の WebRTC 新機能（`rtcConfig.stunPorts` 等）について werift / mediasoup-client-node の調査結果が記録され、必要な機能追加が実装済み（実装不能と判断したものは理由とともに README の非対応一覧に記載）である。
+6. `rtcConfig.stunPorts` が Node.js 上で動作する: 単一ポート指定（`[443]` / `[3478]`）での接続が確認済みで、複数指定 `[443, 3478]` は werift の ice パッケージへの複数 STUN 対応追加で動作する（縮退運用とした場合は「先頭ポートのみ使用」の制限が README に明記されている）。また v2 内部の getStats / restartIce 依存箇所（analytics 統計収集・再接続処理）が werift 実装で動作することが実接続テストで確認済みである。
 7. README の対応/非対応機能・バージョン・動作環境（Node >=22）記載が v2 基準に更新され、各公開パッケージの `engines.node` が `>=22` になっている。
 8. npm 依存の `@skyway-sdk/*` がすべて 2.x 系に更新され、`pnpm install --frozen-lockfile` が通る lockfile がコミットされている。
