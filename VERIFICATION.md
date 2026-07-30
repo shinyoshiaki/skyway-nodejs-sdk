@@ -176,8 +176,29 @@ after-reconnect +10s senderIce=completed nominated=null  packetsSent=2050  packe
   `OperationError: No media section matched the ICE usernameFragment` で弾かれます。
 
 これは werift 内部の ICE restart 時の状態遷移の問題で、SDK 側（本リポジトリ）からは
-修正できません。`submodules/mediasoup/submodules/werift` の ice / webrtc パッケージへの
-修正が必要です。README の「制限付きで動作する機能」に利用者向けの記載をしています。
+修正できません。README の「制限付きで動作する機能」に利用者向けの記載をしています。
+
+### 原因の所在と修正に必要な作業
+
+`packages/ice/src/ice.ts` の `gatherCandidates()` は末尾で無条件に
+`this.setState("completed")` を呼びます。つまり **candidate の収集完了が
+そのまま「接続完了」として扱われています**。初回接続では収集後に `connect()` が
+`connected` を立てるので問題になりませんが、ICE restart では収集だけが再実行され、
+`nominated` が未選出のまま状態が `completed` になります。
+
+SDK 側で試した対処と結果:
+
+- `Peer.resolveCandidates` で usernameFragment 不一致の candidate を破棄せず
+  次の `setRemoteDescription` 後に再試行する → **メディアは復帰せず**
+  （`nominated` が null のままなので効果なし）。unverified な変更を残さないため revert 済み。
+- werift 側で `gatherCandidates()` の `setState("completed")` を
+  「`nominated` があるときだけ」に変更 → werift の ice テストは 112 件すべて通るが、
+  **webrtc パッケージのテストが 11 件失敗**（`iceTransport > test_connect`、
+  DTLS ハンドシェイク系など）。werift は `completed` を収集完了の意味でも使っており、
+  収集状態（`iceGatheringState`）と接続状態の分離を伴う設計変更が必要です。
+
+したがってこの項目は **werift 本体の修正とその公開（push）が前提** になります。
+本チケットは push を禁止しているため、対応するには利用者の明示的な許可が必要です。
 
 ## submodule の扱い
 
