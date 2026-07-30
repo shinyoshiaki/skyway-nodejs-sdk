@@ -6,6 +6,7 @@ build
 .parcel-cache
 .cache
 .nx
+lerna-debug.log
 packages/**/reports
 packages/**/coverage
 *.tgz

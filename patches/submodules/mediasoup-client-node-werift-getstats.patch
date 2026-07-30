@@ -1,0 +1,62 @@
+diff --git a/src/handlers/werift.ts b/src/handlers/werift.ts
+index 60f1d08..8cae529 100644
+--- a/src/handlers/werift.ts
++++ b/src/handlers/werift.ts
+@@ -42,6 +42,10 @@ const logger = new Logger("werift");
+ 
+ const SCTP_NUM_STREAMS = { OS: 1024, MIS: 1024 };
+ 
++// getStats の対象 transceiver が見つからない場合に返す空のレポート。
++// DOM の RTCStatsReport は Map 互換なので Map を返しておけばよい。
++const emptyStatsReport = (): RTCStatsReport => new Map() as RTCStatsReport;
++
+ export class Werift extends HandlerInterface {
+   // Handler direction.
+   private _direction?: "send" | "recv";
+@@ -253,9 +257,9 @@ export class Werift extends HandlerInterface {
+   // todo impl
+   async restartIce(iceParameters: IceParameters): Promise<void> {}
+ 
+-  // todo impl
+-  // @ts-expect-error
+-  async getTransportStats(): Promise<RTCStatsReport> {}
++  async getTransportStats(): Promise<RTCStatsReport> {
++    return this._pc.getStats();
++  }
+ 
+   async send({
+     track,
+@@ -395,9 +399,13 @@ export class Werift extends HandlerInterface {
+   // todo impl
+   async setRtpEncodingParameters(localId: string, params: any): Promise<void> {}
+ 
+-  // todo impl
+-  // @ts-expect-error
+-  async getSenderStats(localId: string): Promise<RTCStatsReport> {}
++  async getSenderStats(localId: string): Promise<RTCStatsReport> {
++    const transceiver = this._mapMidTransceiver.get(localId);
++    if (!transceiver) {
++      return emptyStatsReport();
++    }
++    return transceiver.sender.getStats();
++  }
+ 
+   async sendDataChannel({
+     ordered,
+@@ -577,9 +585,13 @@ export class Werift extends HandlerInterface {
+     await this._pc.setLocalDescription(answer);
+   }
+ 
+-  // todo impl
+-  // @ts-expect-error
+-  async getReceiverStats(localId: string): Promise<RTCStatsReport> {}
++  async getReceiverStats(localId: string): Promise<RTCStatsReport> {
++    const transceiver = this._mapMidTransceiver.get(localId);
++    if (!transceiver) {
++      return emptyStatsReport();
++    }
++    return transceiver.receiver.getStats();
++  }
+ 
+   async receiveDataChannel({
+     sctpStreamParameters,

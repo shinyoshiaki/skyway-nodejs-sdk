@@ -41,7 +41,7 @@
     "watch:tsc": "tsc -p tsconfig.build.json -w"
   },
   "dependencies": {
-    "@shinyoshiaki/skyway-nodejs-sdk-core": "file:../core",
+    "@skyway-sdk/analytics-client": "workspace:*",
     "@skyway-sdk/common": "^2.0.6",
     "@skyway-sdk/model": "^2.0.0",
     "@skyway-sdk/sfu-api-client": "workspace:*",

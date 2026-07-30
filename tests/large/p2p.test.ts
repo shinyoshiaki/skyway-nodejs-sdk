@@ -10,18 +10,18 @@ import { gst, testTokenString } from './fixture';
 import { browserExec } from './util';
 
 describe('p2p', () => {
-  it('node-to-node', () =>
-    new Promise<void>(async (done) => {
-      const context = await SkyWayContext.Create(testTokenString, {
-        codecCapabilities: [{ mimeType: 'audio/opus' }],
-      });
-      const room = await SkyWayRoom.Create(context, {
-        type: 'p2p',
-      });
-      const sender = await room.join();
+  it('node-to-node', async () => {
+    const context = await SkyWayContext.Create(testTokenString, {
+      codecCapabilities: [{ mimeType: 'audio/opus' }],
+    });
+    const room = await SkyWayRoom.Create(context, {
+      type: 'p2p',
+    });
+    const sender = await room.join();
 
-      const disposer = await SkyWayStreamFactory.registerAudioTestSrc({ gst });
+    const disposer = await SkyWayStreamFactory.registerAudioTestSrc({ gst });
 
+    try {
       const publication = await sender.publish(
         await SkyWayStreamFactory.createMicrophoneAudioStream()
       );
@@ -35,9 +35,12 @@ describe('p2p', () => {
       const [rtp] = await remoteStream.track.onReceiveRtp.asPromise();
       expect(rtp.payload).toBeDefined();
 
+      await room.close();
+    } finally {
+      context.dispose();
       disposer();
-      done();
-    }));
+    }
+  });
 
   it('node-to-browser', async () => {
     const context = await SkyWayContext.Create(testTokenString, {
@@ -109,7 +112,11 @@ describe('p2p', () => {
     });
     const receiver = await room.join();
 
-    browserExec(
+    // ブラウザ側は publish 後に一定時間待つだけなので待ち合わせはしないが、
+    // 起動や publish が失敗したときに「node 側の待ちがタイムアウトする」形で
+    // 原因が隠れないよう、エラーは node 側の待ちと race させて表に出す。
+    let browserFailed: Promise<never> | undefined;
+    const browserDone = browserExec(
       async ({ testTokenString, roomId }) => {
         // vite用のハック
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -128,13 +135,30 @@ describe('p2p', () => {
         await new Promise((r) => setTimeout(r, 5000));
       },
       { testTokenString, roomId: room.id }
-    ).catch(() => {});
-
-    const p = await room.onStreamPublished.asPromise();
-    const { stream } = await receiver.subscribe<RemoteVideoStream>(
-      p.publication.id
     );
-    const [rtp] = await stream.track.onReceiveRtp.asPromise();
-    expect(rtp.payload).toBeDefined();
+    browserFailed = browserDone.then(
+      () => new Promise<never>(() => {}),
+      (error) => {
+        throw new Error(`browser side failed: ${error?.message ?? error}`);
+      }
+    );
+
+    const raceWithBrowser = <T>(promise: Promise<T>) =>
+      Promise.race([promise, browserFailed!]) as Promise<T>;
+
+    try {
+      const p = await raceWithBrowser(room.onStreamPublished.asPromise());
+      const { stream } = await raceWithBrowser(
+        receiver.subscribe<RemoteVideoStream>(p.publication.id)
+      );
+      const [rtp] = await raceWithBrowser(
+        stream.track.onReceiveRtp.asPromise()
+      );
+      expect(rtp.payload).toBeDefined();
+
+      await room.close();
+    } finally {
+      context.dispose();
+    }
   });
 });

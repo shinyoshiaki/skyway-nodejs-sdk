@@ -129,23 +129,49 @@ sudo apt-get -y install build-essential git gobject-introspection libgirepositor
 ```
 
 - corepack を有効化するために次のコマンドを実行する
-  - `sudo corepack enable npm`
-- ルートディレクトリで次のコマンドを実行する
-  - `git submodule update --init --recursive`
+  - `sudo corepack enable`
+  - パッケージマネージャは `package.json` の `packageManager`（pnpm 11 系）に従います
 - ルートディレクトリで次のコマンドを実行する
 
 ```sh
 pnpm run first
 ```
 
+`pnpm run first` は次を順に実行します。
+
+1. `submodule:init` — submodule を取得する（werift の `third_party/wpt` は除外）
+2. `submodule:patch` — `patches/submodules/` 配下の patch を submodule に適用する
+3. `pnpm i` → `submodule:install` → `compile`
+
 - `env.ts.template`を`env.ts`にリネームし、ファイル中の appId と secret にダッシュボードで発行した appId と secret を入力する
   - appId と secret の発行方法は[こちら](https://skyway.ntt.com/ja/docs/user-guide/javascript-sdk/quickstart/#199)
+
+## submodule への独自修正（patches/）
+
+`submodules/mediasoup`（mediasoup-client-node）とその中の werift に対する fork 独自の修正は、
+submodule リポジトリへ push せず **本リポジトリの `patches/submodules/` で管理** しています。
+gitlink は upstream の remote から取得できる SHA を指したままなので、clone 直後でも
+`pnpm run submodule:patch` を実行すれば同じ状態を再現できます。
+
+| patch | 内容 |
+| --- | --- |
+| `werift-multiple-stun-servers.patch` | `rtcConfig.stunPorts` に複数ポートを指定できるよう ice パッケージを複数 STUN サーバー対応にする。DataChannel に DOM 互換の `onbufferedamountlow` を追加 |
+| `mediasoup-client-node-werift-getstats.patch` | werift handler の `getTransportStats` / `getSenderStats` / `getReceiverStats` を実装する（v2 の内部統計収集が依存） |
+
+patch を更新する場合は submodule 内で修正したあと、対象 submodule で
+`git diff <gitlink の SHA> > ../../patches/submodules/<name>.patch` のように取り直してください。
+
+なお patch 適用後は submodule の working tree が dirty になります（`git status` で
+`m submodules/mediasoup` と表示される）。これは意図した状態なので、submodule 側で
+コミットして解消しないでください（コミットすると gitlink が remote から取得できない
+SHA を指すことになり、fresh checkout / CI で再現できなくなります）。
 
 ## 更新時
 
 git で更新を同期した時や packages ディレクトリ以下のソースコードを編集した際にはルートディレクトリで以下のコマンドを実行する必要があります。
 
 ```sh
+pnpm run submodule:patch
 pnpm run compile
 ```
 

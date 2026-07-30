@@ -16,11 +16,12 @@
     "playground": "cd examples/playground && pnpm run dev",
     "playground-room": "cd examples/playground-room && pnpm run dev",
     "submodule:init": "git -c submodule.third_party/wpt.update=none submodule update --init --recursive",
+    "submodule:patch": "zx scripts/apply_submodule_patches.mjs",
     "submodule:install": "zx scripts/install_submodules.mjs",
     "test": "cd tests && pnpm test",
     "watch": "lerna run watch",
     "upgrade-interactive": "pnpm dlx npm-check --update",
-    "first": "pnpm run submodule:init && pnpm i && pnpm run submodule:install && pnpm run compile",
+    "first": "pnpm run submodule:init && pnpm run submodule:patch && pnpm i && pnpm run submodule:install && pnpm run compile",
     "update-mirror": "zx scripts/update-mirror-repo.mjs",
     "debug": "tsx examples/sendrecv/p2p.ts"
   },
@@ -52,12 +53,5 @@
   "engines": {
     "node": ">=22"
   },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "esbuild",
-      "node-gtk",
-      "nx"
-    ]
-  },
-  "packageManager": "pnpm@10.5.2+sha512.da9dc28cd3ff40d0592188235ab25d3202add8a207afbedc682220e4a0029ffbff4562102b9e6e46b4e3f9e8bd53e6d05de48544b0c57d4b0179e22c76d1199b"
+  "packageManager": "pnpm@11.9.0+sha512.bd682d5d03fe525ef7c9fd6780c6884d1e756ac4c9c9fe00c538782824310dcf90e3ddc4f53835f06dfaebd5085e41855e0bcbb3b60de2ac5bbab89e5036f03b"
 }
