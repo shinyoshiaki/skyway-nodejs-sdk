@@ -48,6 +48,18 @@ const log = new Logger(
   'packages/core/src/plugin/internal/person/connection/sender.ts',
 );
 
+/**
+ * PeerConnection が閉じているために失敗したかどうか。
+ *
+ * werift の close() は isClosed だけを立てて connectionState を 'closed' にしないため、
+ * 事前チェックだけでは close との競合を防ぎきれない。unpublish の後片付け中に閉じた場合は
+ * 異常ではないので、この判定でエラーを飲み込む。
+ */
+const isPeerConnectionClosedError = (err: unknown) =>
+  err instanceof Error &&
+  (err.name === 'InvalidStateError' ||
+    /RTCPeerConnection is closed/.test(err.message));
+
 export class Sender extends Peer {
   readonly id = globalThis.crypto.randomUUID();
   readonly onConnectionStateChanged = new Event<TransportConnectionState>();
@@ -789,6 +801,17 @@ export class Sender extends Peer {
       return;
     }
 
+    // channel/room の close で PeerConnection が閉じたあとに unpublish が走ることがある。
+    // 閉じた PeerConnection では再ネゴシエーションできず、後片付けとしても不要なので
+    // ここで打ち切る（そのまま進むと setLocalDescription が InvalidStateError になる）。
+    if (this.pc.connectionState === 'closed') {
+      this._log.debug('<remove> skipped: peer connection already closed', {
+        publicationId,
+      });
+      delete this.publications[publicationId];
+      return;
+    }
+
     // 対向のConnectionがcloseされた際にanswerが帰ってこなくなり、
     // _isNegotiatingが永久にfalseにならなくなる。
     // この時点でpublicationを削除しないと、このConnectionのcloseIfNeedが
@@ -840,6 +863,10 @@ export class Sender extends Peer {
     }
 
     const offer = await this.pc.createOffer().catch((err) => {
+      // close と競合した場合は後片付けとして正常終了させる（下の catch と同じ理由）
+      if (isPeerConnectionClosedError(err)) {
+        return undefined;
+      }
       throw createError({
         operationName: 'Sender.remove',
         info: {
@@ -852,6 +879,12 @@ export class Sender extends Peer {
         error: err,
       });
     });
+    if (!offer) {
+      this._log.debug('<remove> skipped: peer connection closed while removing', {
+        publicationId,
+      });
+      return;
+    }
 
     if (
       this.localPerson._analytics &&
@@ -868,7 +901,18 @@ export class Sender extends Peer {
       });
     }
 
-    await this.pc.setLocalDescription(offer);
+    try {
+      await this.pc.setLocalDescription(offer);
+    } catch (err) {
+      if (isPeerConnectionClosedError(err)) {
+        this._log.debug(
+          '<remove> skipped: peer connection closed while removing',
+          { publicationId },
+        );
+        return;
+      }
+      throw err;
+    }
 
     const message: SenderUnproduceMessage = {
       kind: 'senderUnproduceMessage',
