@@ -52,7 +52,10 @@ v2 は破壊的変更を含むメジャーアップデートであり、本 SDK 
 
 ## 使い方
 
-[./examples/sendrecv/audio.ts](./examples/sendrecv/audio.ts)
+- SFU: [./examples/sendrecv/audio.ts](./examples/sendrecv/audio.ts)
+- P2P: [./examples/sendrecv/p2p.ts](./examples/sendrecv/p2p.ts)
+- 統合 Room（P2P と SFU の同時利用 / `Member.side` / `rtcConfig.stunPorts`）:
+  [./examples/sendrecv/unified_room.ts](./examples/sendrecv/unified_room.ts)
 
 # SDK のインストール方法
 
