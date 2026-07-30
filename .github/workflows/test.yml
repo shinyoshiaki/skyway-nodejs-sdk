@@ -15,9 +15,13 @@ jobs:
         node-version: [24.x]
 
     steps:
+      # werift (submodules/mediasoup/submodules/werift) は third_party/wpt という
+      # 巨大な nested submodule を持つが、これは werift 自身の WPT 適合テスト専用で
+      # ビルドには不要。actions/checkout の submodules: recursive では除外できないため
+      # 直下のみ checkout し、残りは submodule:init（wpt を除外）で初期化する。
       - uses: actions/checkout@v4
         with:
-          submodules: 'recursive'
+          submodules: true
       - name: Enable Corepack
         run: sudo corepack enable
       - name: Use Node.js ${{ matrix.node-version }}
@@ -32,6 +36,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get -y install build-essential git gobject-introspection libgirepository1.0-dev libcairo2 libcairo2-dev libavdevice-dev libavfilter-dev libopus-dev libvpx-dev pkg-config libsrtp2-dev libasound2-dev libgstreamer1.0-0 gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-tools gstreamer1.0-x gstreamer1.0-alsa gstreamer1.0-pulseaudio gir1.2-gstreamer-1.0
+          pnpm run submodule:init
           pnpm install --frozen-lockfile
           pnpm run submodule:install
           pnpm exec playwright install chromium
