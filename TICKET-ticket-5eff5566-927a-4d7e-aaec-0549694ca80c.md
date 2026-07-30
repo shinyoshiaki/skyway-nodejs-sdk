@@ -58,13 +58,15 @@ node .sak-context/link/cli/src/index.ts config set-ci-command \
 node .sak-context/link/cli/src/index.ts config get-ci-command --project-id skyway-nodejs-sdk
 ```
 
-### 2-2. worktree postCreateCommands の登録
+### 2-2. worktree postCreateCommands の登録（submodule 取得はホスト側で実施）
 
 worktree 作成直後に依存解決とビルドを走らせます。`first` は submodule init/install + `npm i` + `compile` を一括で行うため、これを package-json source で登録します。
 
-※ **注意**: `postCreateCommands`（host worktree 用）と `containerPostCreateCommands`（コンテナ隔離用）は別フィールドです。config グループの専用コマンドは後者（`set-container-post-create-command`）のみで、前者は `config update --patch` による read-modify-write が必要です。**本チケットではコンテナ隔離を有効化するので、コンテナ側（2-4）にも同等の post-create を登録します。**
+**役割分担（確定方針）**: `.gitmodules` の URL が SSH（`git@github.com:...`）であるため、submodule 取得は **SSH 鍵が使えるホスト側の worktree 初期化タイミング**で行います。worktree 初期化（host `postCreateCommands`）はホスト側で実行されるので、ここで `npm run first`（`submodule:init` → `submodule:install` → `npm i` → `compile`）まで完了させ、**コンテナ側の post-create には submodule 取得を含めない**構成にします。
 
-host worktree 用（`project.postCreateCommandsOverrides`）:
+※ **注意**: `postCreateCommands`（host worktree 用）と `containerPostCreateCommands`（コンテナ隔離用）は別フィールドです。config グループの専用コマンドは後者（`set-container-post-create-command`）のみで、前者は `config update --patch` による read-modify-write が必要です。
+
+host worktree 用（`project.postCreateCommandsOverrides`）— **submodule 取得を含む本体はこちら**:
 
 ```bash
 node .sak-context/link/cli/src/index.ts config get --section project > /tmp/ide-config.project.json
@@ -85,15 +87,18 @@ node .sak-context/link/cli/src/index.ts config update --stdin <<'JSON'
 JSON
 ```
 
-コンテナ側（`project.containerPostCreateCommandsOverrides`）は専用コマンドで投入できます:
+コンテナ側（`project.containerPostCreateCommandsOverrides`）は専用コマンドで投入します。**submodule 取得（SSH アクセス）を含めず**、ホスト側で取得済みの submodule 実体に対してコンテナ内でのネイティブビルド／再インストールだけを行います:
 
 ```bash
 node .sak-context/link/cli/src/index.ts config set-container-post-create-command \
   --project-id skyway-nodejs-sdk \
-  --id skyway-nodejs-sdk-first \
-  --command-source package-json --package-script-name first \
-  --command "npm run first" --enabled true
+  --id skyway-nodejs-sdk-install-compile \
+  --command-source manual \
+  --command "npm i && npm run compile" --enabled true
 ```
+
+- `npm run submodule:init` / `submodule:install`（= `npm run first` 全体）はコンテナ側では実行しない
+- ホスト側でビルドしたネイティブモジュール（mediasoup / werift 系）がコンテナ環境で使えない場合のみ、上記コンテナ post-create で再ビルドさせる。不要と判断できれば `--remove` で外してよい
 
 > `config update` は partial merge だが **配列フィールドは丸ごと置換**。`postCreateCommandsOverrides` はオブジェクトなのでキー単位マージが期待できるが、実際の挙動は投入後に `config get` で他プロジェクト分が残っているか必ず検証すること（消えていた場合は取得済み全体を含めて再投入）。
 
@@ -173,7 +178,7 @@ node .sak-context/link/cli/src/index.ts config get-container-isolation --project
 補足:
 
 - `engines.node = "=24"` / `packageManager: npm@11.11.1` を満たす必要がある。生成された Dockerfile の node が 24 でない場合は `--additional-run-command` で node 24 セットアップ（例: `n 24` / nodesource / corepack 有効化）を追加する。
-- submodule の URL は SSH（`git@github.com:shinyoshiaki/mediasoup-client-node.git`）。コンテナ内で submodule 取得を行うため、`mountHostHomeDirectory: true`（グローバル既定）による SSH 鍵の参照可否を確認する。ダメなら submodule mirror（既定で有効）に依存させる。
+- submodule の URL は SSH（`git@github.com:shinyoshiaki/mediasoup-client-node.git`）だが、**submodule 取得はホスト側の worktree 初期化で完了させる**方針（2-2）なので、コンテナ内での git SSH 認証は要件から外れる。コンテナは取得済みの submodule ディレクトリをそのまま使う。
 - 隔離を実際に使うには、チケット側の実行環境も container に切り替える必要がある（`ticket update --help` の sysbox / execution environment 系オプションを参照）。
 - large テストが SkyWay 本番サービスに接続するため、コンテナからの外向き通信（UDP 含む）が通ることを確認する。
 
@@ -204,10 +209,10 @@ node .sak-context/link/cli/src/index.ts config get-container-isolation --project
 ## 4. 制約・注意点
 
 1. **グローバル共有ファイルを書き換える**: `ide-config.json` は全プロジェクト共通。patch ミスで他プロジェクト（js-sdk, skyway-service-recording 等）の override を消さないこと。変更前に `config get --section all > backup.json` を取る。
-2. **large テストは実クレデンシャル + 外部通信**: CI 対象に含める方針のため、`env.ts`（`appId` / `secret`）が worktree に必ず存在すること、SkyWay 本番サービスへ到達できることが CI 成功の前提。テスト失敗時は「実装起因」と「クレデンシャル/ネットワーク起因」を切り分けて報告する。課金・レート制限にも留意。
+2. **large テストは実クレデンシャル + 外部通信**: CI 対象に含める方針のため、`env.ts`（`appId` / `secret`）が worktree に必ず存在すること、SkyWay 本番サービスへ到達できることが CI 成功の前提。テスト失敗時は「実装起因」と「クレデンシャル/ネットワーク起因」を切り分けて報告する（課金・レート制限は考慮不要という判断）。
 3. **`env.ts` は秘密情報**: `.gitignore` 済みで、コミット・ログ・チケットへの値の転記は禁止。ファイルコピー設定は「default project path のファイルを worktree へ複製する」仕組みなので、値そのものを設定ファイルに書かない。
 4. **ネイティブ依存**: `submodules/mediasoup`（mediasoup-client-node）と werift 系は apt パッケージ群を要求する。コンテナイメージに 2-4 の apt/run command を必ず含める。
-5. **submodule の SSH URL**: `git@github.com:shinyoshiaki/mediasoup-client-node.git`。コンテナ内で認証が通らないと `npm run first` の submodule ステップが失敗する。
+5. **submodule の SSH URL**: `git@github.com:shinyoshiaki/mediasoup-client-node.git`。**worktree 初期化（host `postCreateCommands`）はホスト側で実行される**ため、SSH 鍵が使えるホスト側で submodule 取得まで完了させる方針とする（2-2 参照）。コンテナ側の post-create では submodule 取得を行わせない。
 6. **node バージョン**: `engines.node = "=24"`、`packageManager: npm@11.11.1`。コンテナイメージ・GHA（2-5 で 24 化）・host のいずれも 24 前提に揃える。
 7. **イメージ build は長時間**: `build-sysbox-image` はバックグラウンドジョブで数十分かかる可能性がある。`get-sysbox-image-state` でポーリングする。
 8. **コンテナ設定変更は既存コンテナに即時反映されない**（メモリ/CPU 上限や apt 追加などは再作成が必要）。
@@ -215,7 +220,9 @@ node .sak-context/link/cli/src/index.ts config get-container-isolation --project
 ## 5. 完了条件
 
 - [ ] `config get-ci-command --project-id skyway-nodejs-sdk` が `scope: project` で `npm run compile && npm run type && npm run test`（large テスト含む）を返す
-- [ ] `config get --section project` で `postCreateCommandsOverrides["skyway-nodejs-sdk"]` と `containerPostCreateCommandsOverrides["skyway-nodejs-sdk"]` に `npm run first` 相当が登録されている
+- [ ] `config get --section project` で `postCreateCommandsOverrides["skyway-nodejs-sdk"]` に `npm run first`（submodule 取得を含む・ホスト実行）が登録されている
+- [ ] `containerPostCreateCommandsOverrides["skyway-nodejs-sdk"]` は submodule 取得を含まない内容（例: `npm i && npm run compile`）になっている、または不要と判断して未登録である
+- [ ] ホスト側 worktree 初期化で `submodules/mediasoup` が取得され、コンテナ側で git SSH 認証を必要としないことを確認済み
 - [ ] `/home/shin/code/skyway-nodejs-sdk/env.ts` が生成済みで、`defaultPathFileCopyRuleOverrides["skyway-nodejs-sdk"]` に `env.ts` のコピールール（enabled: true）が登録されている
 - [ ] 新規（または再作成した）worktree に `env.ts` が実際に配置されることを確認済み
 - [ ] `config get-container-isolation --project-id skyway-nodejs-sdk` の `resolved.enabled` が `true`、`dockerfilePath` が本プロジェクト用 Dockerfile を指し、`get-sysbox-image-state` が build 成功を示している
