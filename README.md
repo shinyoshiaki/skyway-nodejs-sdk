@@ -42,10 +42,15 @@ v2 は破壊的変更を含むメジャーアップデートであり、本 SDK 
   - h264
 - 対応機能（ブラウザ版と同様に利用できるもの）
   - `Publication.getStats` / `Subscription.getStats` / `getRTCPeerConnection`
-  - `restartIce`
   - `rtcConfig.stunPorts`（`[443]` / `[3478]` / `[443, 3478]` のいずれも指定可能。
     ただし後述の制限あり）
 - 制限付きで動作する機能
+  - **ICE 切断時の再接続（`restartIce`）は切断検知と `restartIce` の実行までは動作しますが、
+    ICE restart 後のメディア（RTP）再開は成立しません。**
+    restart 後の candidate が werift 側で
+    `No media section matched the ICE usernameFragment` により弾かれるためです。
+    切断が長引いた場合は Room に再入室し直してください。
+    （検証内容は [VERIFICATION.md](./VERIFICATION.md) の restartIce の節を参照）
   - `rtcConfig.stunPorts` に **複数ポートを指定した場合は先頭のポートのみ使用** します。
     werift の ice 実装が STUN サーバーを 1 台しか参照しないためです
     （`[443, 3478]` を指定した場合は 443 のみに問い合わせます）。

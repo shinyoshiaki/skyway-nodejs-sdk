@@ -4,6 +4,23 @@
 検証結果です。実行環境は Node.js v24.18.0 / pnpm 11.9.0、実接続テストの認証情報はリポジトリ直下の
 `env.ts` を使用しています。
 
+## 0. 公開パッケージのバージョン
+
+チケット §2.3 の「`@shinyoshiaki/*` パッケージのバージョンを 2.5.x 系へ引き上げる」に対応し、
+vendor した fork 名義のパッケージは全て `2.5.1` に揃えています（`src/version.ts` の埋め込みも同じ）。
+
+| パッケージ | version |
+| --- | --- |
+| `@shinyoshiaki/skyway-nodejs-sdk-core` | 2.5.1 |
+| `@shinyoshiaki/skyway-nodejs-sdk`（room） | 2.5.1 |
+| `@shinyoshiaki/skyway-rtc-api-client` | 2.5.1 |
+| `@shinyoshiaki/skyway-rtc-rpc-api-client` | 2.5.1 |
+| `@shinyoshiaki/skyway-nodejs-sdk-sfu-bot` | 2.5.1 |
+
+`packages/analytics-client`（2.0.5）と `packages/sfu-api-client`（2.0.6）は
+`@skyway-sdk/*` の名前のまま vendor しており、npm 上の同名パッケージの range を
+満たして workspace 側が使われる必要があるため upstream の版数を維持しています。
+
 ## 1. upstream v2.5.1 の merge
 
 ```
@@ -36,26 +53,28 @@ $ pnpm --dir tests run test-small
 
 ```
 $ pnpm --dir tests run test-large
- ✓ large/getStats.test.ts (2 tests) 2159ms
-   ✓ getStats > p2p  907ms
-   ✓ getStats > sfu  1251ms
- ✓ large/stunPorts.test.ts (3 tests) 2176ms
-   ✓ stunPorts > single port 443  771ms
-   ✓ stunPorts > single port 3478  723ms
-   ✓ stunPorts > both ports (uses the first one)  680ms
- ✓ large/turn.test.ts (1 test) 2456ms
-   ✓ turn > force_turn  2454ms
- ✓ large/p2p.test.ts (3 tests) 3627ms
-   ✓ p2p > node-to-node  857ms
-   ✓ p2p > node-to-browser  1722ms
-   ✓ p2p > browser-to-node  1046ms
- ✓ large/loopback.test.ts (4 tests | 1 skipped) 4760ms
-   ✓ loopback > audio  860ms
-   ✓ loopback > audio_multiple  1597ms
-   ✓ loopback > video_h264  2302ms
+ ✓ large/getStats.test.ts (2 tests) 2110ms
+   ✓ getStats > p2p
+   ✓ getStats > sfu
+ ✓ large/stunPorts.test.ts (3 tests) 2244ms
+   ✓ stunPorts > single port 443
+   ✓ stunPorts > single port 3478
+   ✓ stunPorts > both ports (uses the first one)
+ ✓ large/turn.test.ts (1 test) 2487ms
+   ✓ turn > force_turn
+ ✓ large/p2p.test.ts (3 tests) 3742ms
+   ✓ p2p > node-to-node
+   ✓ p2p > node-to-browser
+   ✓ p2p > browser-to-node
+ ✓ large/loopback.test.ts (4 tests | 1 skipped) 4890ms
+   ✓ loopback > audio
+   ✓ loopback > audio_multiple
+   ✓ loopback > video_h264
+ ✓ large/restartIce.test.ts (1 test) 31745ms
+   ✓ restartIce > detects the broken ICE path and runs restartIce
 
- Test Files  5 passed (5)
-      Tests  12 passed | 1 skipped (13)
+ Test Files  6 passed (6)
+      Tests  13 passed | 1 skipped (14)
 exit code: 0
 ```
 
@@ -74,8 +93,8 @@ ci.status: success
  Lerna (powered by Nx)   Successfully ran target type for 7 projects
  Test Files  1 passed (1)
       Tests  1 passed (1)
- Test Files  5 passed (5)
-      Tests  12 passed | 1 skipped (13)
+ Test Files  6 passed (6)
+      Tests  13 passed | 1 skipped (14)
 ```
 
 ## 6. v2 主要 API の examples レベル動作確認
@@ -115,8 +134,35 @@ exit code: 0
   テストでも `ice.connection.stunServer` が先頭ポートであることを検証しています。
 - v2 内部が依存する getStats は `getStats.test.ts` で P2P / SFU 両方について
   `Subscription.getStats`（receiver 側）、`Publication.getStats`（sender 側）、
-  `pc.getStats` を実接続で検証しています。`restartIce` は werift 実装済みで
-  `sfu-bot` の transport 再接続経路から利用しています。
+  `pc.getStats` を実接続で検証しています。
+
+## 8. restartIce（再接続処理）
+
+`tests/large/restartIce.test.ts` で ICE 切断を意図的に発生させて検証しています。
+
+障害注入は「接続確立後、送信側 PeerConnection の ICE ソケットを全て閉じる」方法を使います。
+nominated pair だけを閉じると ICE が別の候補ペアへ自力で切り替わり restartIce まで到達しないため、
+自己回復できない状態にする必要がありました。
+
+```
+$ pnpm --dir tests exec vitest -c large/vitest.config.ts run ./large/restartIce.test.ts
+ ✓ large/restartIce.test.ts (1 test) 31651ms
+   ✓ restartIce > detects the broken ICE path and runs restartIce  31651ms
+```
+
+**確認できたこと**: 経路を壊すと werift が consent freshness の期限切れ（RFC 7675、
+`CONSENT_TIMEOUT` = 30 秒）で ICE を failed にし、SDK の
+`onPeerConnectionStateChanged` が `iceDisconnectBufferTimeout` だけ復帰を待った後
+`Sender.restartIce()` を実行します。`reconnecting` は `restartIce()` の中だけで
+発行される状態なので、この遷移が実行の証跡になります。
+
+**確認できなかったこと（既知の制限）**: **ICE restart 後のメディア（RTP）再開は
+現時点の werift では成立しません。** restart 後の candidate が
+`OperationError: No media section matched the ICE usernameFragment` で弾かれ、
+新しい candidate pair が形成されません。また werift の `pc.connectionState` が
+実際には経路が無い状態でも `connected` を返すため、SDK の `restartIce()` 内の
+「復帰済みなら何もしない」判定（`checkNeedEnd`）が早期 return します。
+いずれも werift 側の修正が必要で、README の「制限付きで動作する機能」に記載しています。
 
 ## submodule の扱い
 
