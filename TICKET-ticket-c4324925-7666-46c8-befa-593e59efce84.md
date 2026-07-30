@@ -77,12 +77,19 @@ fork の核心は browser API を werift ベースに差し替える層。merge 
 
 ## 4. 制約・注意点
 
-- **werift / mediasoup-client-node との整合**: werift は直近で最新化済み（commit `7dcac013`）。v2 の WebRTC 関連新機能（stunPorts 等）は原則 werift / mediasoup-client-node への機能追加で対応する（§2.4 の決定参照）。submodule 側の変更は fork リポジトリ（shinyoshiaki/mediasoup-client-node、werift）へのコミットと参照 SHA 更新を伴う点に注意。
+- **werift / mediasoup-client-node との整合**: werift は直近で最新化済み（commit `7dcac013`）。v2 の WebRTC 関連新機能（stunPorts 等）は原則 werift / mediasoup-client-node への機能追加で対応する（§2.4 の決定参照）。submodule 側の変更は fork リポジトリ（shinyoshiaki/mediasoup-client-node、werift）へのコミットと参照 SHA 更新を伴う点に注意（ただし push は行わず、ローカルコミットまでにとどめる。後述の禁止事項参照）。
 - **README の非対応機能一覧（getStats / restartIce / simulcast）は古くなっている**: 最新化済みの werift は getStats / restartIce を実装済み（§2.4 調査結果参照）で、v2 では getStats 系の公開 API 自体が削除された。v2 追従後の実質的な非対応は simulcast のみになる見込みのため、README 更新時に一覧を見直す。
 - **`pnpm run type` は mp4box 起因で通らない既知問題**があるため、型チェックの完了判定は `compile`（tsc -p tsconfig.build.json）基準にする。
 - **テスト**: `tests/large`（loopback / p2p / turn）は実 SkyWay 接続が必要。**認証情報はリポジトリ直下の `env.ts`（appId / secret）に設定済み**のため、ローカルで実接続テストを実行して合格を必須とする（CI も secrets 設定済みの Node CI workflow で同テストを実行）。integrate 系は flaky 傾向があるためリトライを考慮。
 - **submodule 運用**: `submodules/mediasoup` の checkout 状態を壊さないこと（core.worktree 問題の再発防止のため `git submodule` 操作後の `git status` 確認を行う）。CI では wpt nested submodule を除外する既存手順を維持。
 - **バージョン表記**: `packages/*/src/version.ts` 等、SDK バージョン埋め込み箇所の更新漏れに注意。
+- **【禁止】作業中の `git push` は行わない**: 本チケットの作業範囲はローカルのコミットまでとし、リモートへの push は一切行わない。対象は本リポジトリだけでなく、submodule 側（shinyoshiaki/mediasoup-client-node、werift）への push も含む。具体的に禁止する操作は以下:
+  - `git push` / `git push --tags` / `git push --force`（本リポジトリ・submodule いずれも）
+  - `git submodule foreach git push` など間接的に push を発生させるコマンド
+  - `npm publish` / `pnpm publish`（リモートへの公開を伴うため）
+  - PR 作成やブランチ公開（`gh pr create` 等）
+
+  §2.4 の werift / mediasoup-client-node への機能追加も **submodule 内のローカルコミットまで**にとどめ、参照 SHA の更新はローカルコミットを指す状態で構わない。push が必要になった場合は作業を止め、利用者に push 対象（リポジトリ・ブランチ・コミット）を提示して明示的な許可を得てから実行する。
 - 破壊的変更を含むため、`@shinyoshiaki/skyway-nodejs-sdk` の npm publish 時はメジャーバージョンを 2.x に上げる（publish 自体は本チケットのスコープ外とし、必要なら別チケット化）。
 
 ## 5. 完了条件
@@ -95,3 +102,4 @@ fork の核心は browser API を werift ベースに差し替える層。merge 
 6. `rtcConfig.stunPorts` が Node.js 上で動作する: 単一ポート指定（`[443]` / `[3478]`）での接続が確認済みで、複数指定 `[443, 3478]` は werift の ice パッケージへの複数 STUN 対応追加で動作する（縮退運用とした場合は「先頭ポートのみ使用」の制限が README に明記されている）。また v2 内部の getStats / restartIce 依存箇所（analytics 統計収集・再接続処理）が werift 実装で動作することが実接続テストで確認済みである。
 7. README の対応/非対応機能・バージョン・動作環境（Node >=22）記載が v2 基準に更新され、各公開パッケージの `engines.node` が `>=22` になっている。
 8. npm 依存の `@skyway-sdk/*` がすべて 2.x 系に更新され、`pnpm install --frozen-lockfile` が通る lockfile がコミットされている。
+9. 成果物がすべてローカルコミットのみで完結しており、本リポジトリ・submodule のいずれに対しても `git push` / publish / PR 作成が行われていない（§4 の禁止事項）。
