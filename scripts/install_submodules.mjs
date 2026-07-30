@@ -15,4 +15,9 @@ cd('submodules/werift');
 await $`npm ci`;
 
 cd('../..');
-await $`npm ci`;
+// mediasoup submodule（パッケージ名は msc-node）の prepare は自身の dist を tsc で
+// ビルドするが、本 SDK は dist ではなく src を直接 import するため不要。
+// しかも fresh checkout では submodules/werift/node_modules 配下の第三者型定義
+// （@types/dom-webcodecs / mediabunny）が prepare の tsc 設定（skipLibCheck 無効）で
+// エラーになり npm ci 全体が失敗する。依存の取得だけが目的なのでスクリプトは実行しない。
+await $`npm ci --ignore-scripts`;

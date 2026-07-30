@@ -11,8 +11,8 @@ import { gst, testTokenString } from './fixture';
 import { waitForRtp } from './util';
 
 /**
- * js-sdk v2 の再接続処理（ICE 切断検知 → Sender.restartIce()）が Node.js 上で
- * 実際に動作することを実接続で確認する。
+ * js-sdk v2 の再接続処理（ICE 切断検知 → Sender.restartIce() → メディア再開）が
+ * Node.js 上で動作することを実接続で確認する。
  *
  * 障害の起こし方: 接続確立後、送信側 PeerConnection が持つ ICE のソケットを全て閉じて
  * 経路を壊す。nominated pair だけ閉じると ICE が別の候補ペアへ自力で切り替わってしまい
@@ -21,18 +21,20 @@ import { waitForRtp } from './util';
  * （CONSENT_TIMEOUT = 30 秒）ので、SDK 側の onPeerConnectionStateChanged ハンドラが
  * iceDisconnectBufferTimeout だけ復帰を待ち、復帰しなければ restartIce() を実行する。
  *
- * 検証範囲について:
- * `reconnecting` は `Sender.restartIce()` の中でのみ発行されるため、この状態遷移が
- * 「切断が検知され restartIce が実行された」ことの証跡になる。
- * 一方で **ICE restart 後のメディア再開は現時点の werift では成立しない**ため、
- * ここでは RTP 再開までは検証しない。restart 後に werift の ICE は state だけ
- * `completed` になり `nominated` が null のままになるので、送信側は送り続けるが
- * 受信側に届かない（VERIFICATION.md の restartIce の節に計測値を記載）。
- * この制限は README にも記載している。
+ * 検証範囲:
+ * 1. RTP が流れていること
+ * 2. 切断が検知され restartIce が実行されること
+ *    （`reconnecting` は `Sender.restartIce()` の中でのみ発行される状態なので、
+ *    この遷移が実行の証跡になる）
+ * 3. 再接続後に新しい `nominated`（採用された candidate pair）が選出されていること
+ * 4. RTP が実際に届くこと（`inbound-rtp.packetsReceived` の増加）
+ *
+ * 3 / 4 は werift 側の ICE restart 修正が必要だった。詳細は VERIFICATION.md の
+ * restartIce の節を参照。
  */
 describe('restartIce', () => {
   it(
-    'detects the broken ICE path and runs restartIce',
+    'reconnects and resumes RTP after the ICE path breaks',
     async () => {
       const context = await SkyWayContext.Create(testTokenString, {
         codecCapabilities: [{ mimeType: 'audio/opus' }],
@@ -55,7 +57,7 @@ describe('restartIce', () => {
         const receiver = await (
           await SkyWayRoom.Find(context, room, { type: 'p2p' })
         ).join();
-        const { stream: remoteStream } =
+        const { stream: remoteStream, subscription } =
           await receiver.subscribe<RemoteAudioStream>(publication);
 
         // 1. まず通常に RTP が流れることを確認する
@@ -88,6 +90,27 @@ describe('restartIce', () => {
         // 3. 切断が検知され restartIce が走る
         await reconnecting;
         expect(states).toContain('reconnecting');
+
+        // 4. 再接続が完了する（nominated pair が選び直されている）
+        await publication.onConnectionStateChanged.watch(
+          ({ state }) => state === 'connected',
+          120_000
+        );
+        expect(states).toContain('connected');
+        expect(pc.iceTransports[0].connection.nominated).toBeDefined();
+
+        // 5. 再接続後に RTP が実際に届く（メディア到達性）
+        const before = (await subscription.getStats()).find(
+          (s) => s.type === 'inbound-rtp'
+        );
+        const resumedRtp = await waitForRtp(remoteStream.track, () => true, {
+          timeoutMs: 60_000,
+        });
+        expect(resumedRtp.payload).toBeDefined();
+        const after = (await subscription.getStats()).find(
+          (s) => s.type === 'inbound-rtp'
+        );
+        expect(after.packetsReceived).toBeGreaterThan(before.packetsReceived);
 
         await room.close();
       } finally {

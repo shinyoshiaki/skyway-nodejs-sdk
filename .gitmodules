@@ -1,3 +1,7 @@
 [submodule "submodules/mediasoup"]
 	path = submodules/mediasoup
 	url = git@github.com:shinyoshiaki/mediasoup-client-node.git
+	# patches/submodules/ を submodule の working tree に適用して使うため、この
+	# submodule は常に dirty になる。gitlink（= remote から取得できる SHA）の変更だけを
+	# 親リポジトリの差分として扱う。
+	ignore = dirty

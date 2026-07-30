@@ -42,19 +42,10 @@ v2 は破壊的変更を含むメジャーアップデートであり、本 SDK 
   - h264
 - 対応機能（ブラウザ版と同様に利用できるもの）
   - `Publication.getStats` / `Subscription.getStats` / `getRTCPeerConnection`
-  - `rtcConfig.stunPorts`（`[443]` / `[3478]` / `[443, 3478]` のいずれも指定可能。
-    ただし後述の制限あり）
-- 制限付きで動作する機能
-  - **ICE 切断時の再接続（`restartIce`）は切断検知と `restartIce` の実行までは動作しますが、
-    ICE restart 後のメディア（RTP）再開は成立しません。**
-    werift の ICE が restart 後に state だけ `completed` になり、採用された
-    candidate pair（`nominated`）が null のままになるため、送信は続くのに相手へ届きません。
-    切断が長引いた場合は Room に再入室し直してください。
-    （検証内容は [VERIFICATION.md](./VERIFICATION.md) の restartIce の節を参照）
-  - `rtcConfig.stunPorts` に **複数ポートを指定した場合は先頭のポートのみ使用** します。
-    werift の ice 実装が STUN サーバーを 1 台しか参照しないためです
-    （`[443, 3478]` を指定した場合は 443 のみに問い合わせます）。
-    単一ポート指定（`[443]` / `[3478]`）は指定どおりに動作します。
+  - `restartIce`（ICE 切断時の再接続。切断検知 → ICE restart → メディア再開まで
+    実接続テストで確認しています）
+  - `rtcConfig.stunPorts`（`[443]` / `[3478]` / `[443, 3478]` のいずれも指定どおりに動作。
+    複数指定時は全てのポートに問い合わせます）
 - 非対応機能
   - simulcast
   - `LocalAudioStream.getAudioLevel` / `RemoteAudioStream.getAudioLevel`

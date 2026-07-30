@@ -59,7 +59,7 @@ $ pnpm --dir tests run test-large
  ✓ large/stunPorts.test.ts (3 tests) 2244ms
    ✓ stunPorts > single port 443
    ✓ stunPorts > single port 3478
-   ✓ stunPorts > both ports (uses the first one)
+   ✓ stunPorts > both ports
  ✓ large/turn.test.ts (1 test) 2487ms
    ✓ turn > force_turn
  ✓ large/p2p.test.ts (3 tests) 3742ms
@@ -71,7 +71,7 @@ $ pnpm --dir tests run test-large
    ✓ loopback > audio_multiple
    ✓ loopback > video_h264
  ✓ large/restartIce.test.ts (1 test) 31745ms
-   ✓ restartIce > detects the broken ICE path and runs restartIce
+   ✓ restartIce > reconnects and resumes RTP after the ICE path breaks
 
  Test Files  6 passed (6)
       Tests  13 passed | 1 skipped (14)
@@ -128,89 +128,94 @@ exit code: 0
 
 ## 7. rtcConfig.stunPorts
 
-- 単一ポート指定（`[443]` / `[3478]`）は指定どおりに接続できます（上記 stunPorts テスト）。
-- 複数指定時は **先頭ポートのみ使用** されます。werift の ice 実装が STUN サーバーを
-  1 台しか参照しないためで、README の「制限付きで動作する機能」に明記しています。
-  テストでも `ice.connection.stunServer` が先頭ポートであることを検証しています。
+- 単一ポート指定（`[443]` / `[3478]`）も複数指定（`[443, 3478]`）も指定どおりに動作します。
+  werift の ice パッケージに複数 STUN サーバー対応（`IceOptions.stunServers`）を追加し、
+  `parseIceServers` が全ての STUN URL を収集するようにしました。
+  テストでは `ice.connection.stunServers` が指定ポート全てを含むことを検証しています。
 - v2 内部が依存する getStats は `getStats.test.ts` で P2P / SFU 両方について
   `Subscription.getStats`（receiver 側）、`Publication.getStats`（sender 側）、
   `pc.getStats` を実接続で検証しています。
 
 ## 8. restartIce（再接続処理）
 
-`tests/large/restartIce.test.ts` で ICE 切断を意図的に発生させて検証しています。
+`tests/large/restartIce.test.ts` で ICE 切断を意図的に発生させ、**メディア再開まで**
+検証しています。
 
-障害注入は「接続確立後、送信側 PeerConnection の ICE ソケットを全て閉じる」方法を使います。
-nominated pair だけを閉じると ICE が別の候補ペアへ自力で切り替わり restartIce まで到達しないため、
-自己回復できない状態にする必要がありました。
+障害注入は「接続確立後、送信側 PeerConnection の ICE ソケットを全て閉じる」方法です。
+nominated pair だけを閉じると ICE が別の候補ペアへ自力で切り替わり restartIce まで
+到達しないため、自己回復できない状態にする必要があります。
 
 ```
 $ pnpm --dir tests exec vitest -c large/vitest.config.ts run ./large/restartIce.test.ts
- ✓ large/restartIce.test.ts (1 test) 31651ms
-   ✓ restartIce > detects the broken ICE path and runs restartIce  31651ms
+ ✓ large/restartIce.test.ts (1 test) 31768ms
+   ✓ restartIce > reconnects and resumes RTP after the ICE path breaks  31767ms
 ```
 
-**確認できたこと**: 経路を壊すと werift が consent freshness の期限切れ（RFC 7675、
-`CONSENT_TIMEOUT` = 30 秒）で ICE を failed にし、SDK の
-`onPeerConnectionStateChanged` が `iceDisconnectBufferTimeout` だけ復帰を待った後
-`Sender.restartIce()` を実行します。`reconnecting` は `restartIce()` の中だけで
-発行される状態なので、この遷移が実行の証跡になります。
+テストが確認していること:
 
-**確認できなかったこと（既知の制限）**: **ICE restart 後のメディア（RTP）再開は
-現時点の werift では成立しません。** 原因を計測で特定しています。
+1. まず RTP が流れている
+2. 経路を壊すと werift が consent freshness の期限切れ（RFC 7675、`CONSENT_TIMEOUT` = 30 秒）で
+   ICE を failed にし、SDK が `iceDisconnectBufferTimeout` 待機後に `Sender.restartIce()` を実行
+   （`reconnecting` は restartIce 内でのみ発行される状態）
+3. 再接続が完了し、**`nominated`（採用された candidate pair）が選び直されている**
+4. **RTP が実際に届く**（`inbound-rtp.packetsReceived` が増加している）
 
-restart 前後で送信側 / 受信側の統計と ICE の状態を取ると次のようになります。
+計測値（restart 前後）:
 
 ```
-before-break        senderIce=connected  nominated=stun  packetsSent=1     packetsReceived=1
+before-break         senderIce=connected  nominated=stun  packetsSent=1     packetsReceived=1
 (restartIce 実行)
-after-reconnect +3s senderIce=completed  nominated=null  packetsSent=1700  packetsReceived=1
-after-reconnect +10s senderIce=completed nominated=null  packetsSent=2050  packetsReceived=1
+after-reconnect +3s  senderIce=connected  nominated=stun  packetsSent=1702  packetsReceived=151
+after-reconnect +10s senderIce=connected  nominated=stun  packetsSent=2053  packetsReceived=502
 ```
 
-- werift の ICE は restart 後に state だけ `completed` になり、**`nominated`（採用された
-  candidate pair）が null のまま**です。
-- そのため送信側は送信を続ける（`packetsSent` が増える）のに、受信側には 1 パケットも
-  届きません（`packetsReceived` が増えない）。
-- 併せて restart 直後の candidate が
-  `OperationError: No media section matched the ICE usernameFragment` で弾かれます。
+### 成立させるために必要だった修正
 
-これは werift 内部の ICE restart 時の状態遷移の問題で、SDK 側（本リポジトリ）からは
-修正できません。README の「制限付きで動作する機能」に利用者向けの記載をしています。
+werift の ICE restart には 3 つの不具合があり、いずれも修正しました
+（`submodules/mediasoup/submodules/werift`）。
 
-### 原因の所在と修正に必要な作業
+1. `packages/ice/src/ice.ts` の `gatherCandidates()` が末尾で無条件に
+   `setState("completed")` を呼び、**candidate 収集の完了を接続完了として報告**していた。
+   初回 gathering は既存セマンティクス（`RTCIceTransport` は `gather()` 完了で `completed`）を
+   維持し、restart 後は pair が選出されるまで状態を進めないようにした。
+2. `restart()` は incoming の earlyCheck 用に protocol を残す設計だが、**close 済みの
+   protocol も残していた**。`getCandidatePromises()` は既に protocol がある
+   アドレスをスキップするため、閉じた protocol がそのアドレスの再 gathering を
+   恒久的に阻害し candidate が 1 つも作れなくなっていた。close 済みは破棄するようにし、
+   `Protocol` に任意の `closed` を追加して `StunProtocol` で公開した。
+3. `packages/webrtc/src/peerConnection.ts` の `connect()` が **DTLS が connected なら
+   早期 return** していた。DTLS は ICE restart をまたいで維持される仕様のため、
+   これにより `iceTransport.start()` が呼ばれず connectivity check が再実行されなかった。
+   ICE が new / disconnected / failed のときは start まで進めるようにした
+   （ICE start 後の既存ガードにより DTLS の再ハンドシェイクは発生しない）。
 
-`packages/ice/src/ice.ts` の `gatherCandidates()` は末尾で無条件に
-`this.setState("completed")` を呼びます。つまり **candidate の収集完了が
-そのまま「接続完了」として扱われています**。初回接続では収集後に `connect()` が
-`connected` を立てるので問題になりませんが、ICE restart では収集だけが再実行され、
-`nominated` が未選出のまま状態が `completed` になります。
+SDK 側では、werift の `connectionState` だけを再接続完了の判定に使わないようにしました
+（`Sender._isMediaPathRestored()`。`connectionState === 'connected'` かつ全 ICE transport に
+`nominated` があることを確認します）。また ICE restart 直後に相手の新しい
+usernameFragment を持つ candidate が古い remoteDescription しか無い状態で届くと
+werift が `OperationError` にするため、`Peer.resolveCandidates` では破棄せず
+次の `setRemoteDescription` 後に再試行します。
 
-SDK 側で試した対処と結果:
-
-- `Peer.resolveCandidates` で usernameFragment 不一致の candidate を破棄せず
-  次の `setRemoteDescription` 後に再試行する → **メディアは復帰せず**
-  （`nominated` が null のままなので効果なし）。unverified な変更を残さないため revert 済み。
-- werift 側で `gatherCandidates()` の `setState("completed")` を
-  「`nominated` があるときだけ」に変更 → werift の ice テストは 112 件すべて通るが、
-  **webrtc パッケージのテストが 11 件失敗**（`iceTransport > test_connect`、
-  DTLS ハンドシェイク系など）。werift は `completed` を収集完了の意味でも使っており、
-  収集状態（`iceGatheringState`）と接続状態の分離を伴う設計変更が必要です。
-
-したがってこの項目は **werift 本体の修正とその公開（push）が前提** になります。
-本チケットは push を禁止しているため、対応するには利用者の明示的な許可が必要です。
+werift のテストは ice 113 件 / webrtc 187 件すべて通っています。
 
 ## submodule の扱い
 
-`submodules/mediasoup` とその中の werift には fork 独自のコミットを持たせていません。
+werift への修正（ICE restart / 複数 STUN サーバー）は、**gitlink を remote から取得できる
+SHA のままにし、差分を本リポジトリの `patches/submodules/` で管理**しています。
+push していないコミットを gitlink に指させると fresh checkout / CI で取得できなくなるためです。
 
 | gitlink | SHA | 取得元 |
 | --- | --- | --- |
-| `submodules/mediasoup` | `1d96eb8` | `origin/develop` に含まれる |
+| `submodules/mediasoup` | `1d96eb8` | `origin/develop` の先端 |
 | `submodules/mediasoup/submodules/werift` | `d782a543` | タグ `v0.24.2` |
 
-そのため fresh checkout / CI でも `pnpm run submodule:init` だけで同じ状態になります
-（`git submodule status --recursive` も exit 0）。
+| patch | 内容 |
+| --- | --- |
+| `patches/submodules/werift-ice-restart-and-multiple-stun.patch` | ICE restart の修正 3 点 + 複数 STUN サーバー対応 + DataChannel の DOM 互換 `onbufferedamountlow` |
+
+適用は `pnpm run submodule:patch`（冪等。`first` と CI の prepare に組み込み済み）。
+patch は前提 SHA（`d782a543`）を検証してから当てるので、submodule が別の状態のときは
+黙って当たらずエラーになります。
 
 remote 側に実在することの確認:
 
@@ -218,8 +223,6 @@ remote 側に実在することの確認:
 # submodules/mediasoup: origin/develop の先端そのもの
 $ git -C submodules/mediasoup rev-parse origin/develop
 1d96eb8a40c0861d99ff2d676c9270f2b164652a
-$ git -C submodules/mediasoup merge-base --is-ancestor 1d96eb8 origin/develop && echo OK
-OK
 
 # nested werift: タグ v0.24.2 として公開済み（remote へ問い合わせて確認）
 $ git -C submodules/mediasoup/submodules/werift ls-remote origin v0.24.2
@@ -230,7 +233,79 @@ d782a54395552e594a6c36cd06430c8224b3096e	refs/tags/v0.24.2
 `url.git@github.com:.insteadof https://github.com/` により ssh へ書き換えられるため、
 上記 `ls-remote` は `GIT_CONFIG_GLOBAL=/dev/null` を付けて https のまま実行しています。）
 
-mediasoup-client-node の werift handler は `getTransportStats` / `getSenderStats` /
-`getReceiverStats` が空実装ですが、submodule を変更する代わりに本リポジトリ側の
-`packages/core/src/imports/weriftHandlerStats.ts` で prototype に委譲実装を与えています。
-これにより SFU の統計取得（`consumer.getStats()` / `producer.getStats()`）が動作します。
+patch を当てた結果が意図した内容と一致することは tree hash で確認しています
+（`d782a543` + patch のツリーが、手元で作った修正コミットのツリーと同一）。
+
+```
+worktree tree:  813c60136551195f2f6b8fb02a6045ee67c87f69
+commit   tree:  813c60136551195f2f6b8fb02a6045ee67c87f69
+```
+
+### fresh checkout からの再現確認
+
+公開済み gitlink のまま clone し、CI workflow と同じ手順を実行して large test まで
+通ることを確認しました（submodule の fetch 元だけは、この環境に `ssh` が無いため
+ローカルのミラーに差し替えています。SHA は公開済みのものと同一です）。
+
+```
+$ git clone <repo> /tmp/fresh/repo && git -C /tmp/fresh/repo checkout <this branch>
+$ git -C /tmp/fresh/repo submodule status --recursive
+ 1d96eb8a40c0861d99ff2d676c9270f2b164652a submodules/mediasoup
+ d782a54395552e594a6c36cd06430c8224b3096e submodules/mediasoup/submodules/werift
+
+$ pnpm run submodule:patch
+✓ applied: patches/submodules/werift-ice-restart-and-multiple-stun.patch
+
+$ pnpm install --frozen-lockfile        # exit 0
+$ pnpm run submodule:install            # exit 0
+$ pnpm exec playwright install chromium # exit 0
+$ pnpm run compile                      # exit 0
+$ pnpm run test
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+ ✓ large/turn.test.ts (1 test) 2925ms
+ ✓ large/getStats.test.ts (2 tests) 3399ms
+ ✓ large/stunPorts.test.ts (3 tests) 3626ms
+ ✓ large/p2p.test.ts (3 tests) 5409ms
+ ✓ large/loopback.test.ts (4 tests | 1 skipped) 6272ms
+ ✓ large/restartIce.test.ts (1 test) 32322ms
+ Test Files  6 passed (6)
+      Tests  13 passed | 1 skipped (14)
+                                        # exit 0
+```
+
+この確認の過程で、fresh checkout では `pnpm run submodule:install` が失敗することが
+分かったので直しました。mediasoup submodule（パッケージ名 `msc-node`）の `prepare` が
+自身の dist を tsc でビルドしますが、`submodules/werift/node_modules` 配下の第三者型定義
+（`@types/dom-webcodecs` / `mediabunny`）が prepare の tsc 設定でエラーになるためです。
+本 SDK は mediasoup の dist ではなく src を直接 import するので、
+`npm ci --ignore-scripts` として依存の取得だけを行うようにしました。
+
+patch を更新する場合は submodule 内で修正したうえで
+`git -C submodules/mediasoup/submodules/werift diff d782a543 > patches/submodules/werift-ice-restart-and-multiple-stun.patch`
+のように取り直してください。
+
+なお patch 適用後は submodule の working tree が dirty になります。これは意図した状態なので、
+submodule 側でコミットして解消しないでください（コミットすると gitlink が remote から
+取得できない SHA を指すことになります）。
+
+mediasoup-client-node の werift handler の getStats 空実装は submodule を変更せず、
+本リポジトリの `packages/core/src/imports/weriftHandlerStats.ts` が prototype に
+実装を注入して補っています。
+
+## Analytics（要件変更の要否）
+
+Analytics（統計情報の SkyWay サーバへの自動送信）は **Node.js では実接続検証ができません**。
+SkyWay の AnalyticsServer が Node.js からの WebSocket 接続を受け付けないためです。
+
+計測した内容:
+
+- `analytics: true` のトークンで `setupAnalyticsSession` を有効化すると、
+  AnalyticsServer から close code `4100` / reason `User-Agent is required` が返る。
+- `ws` の `headers: { 'User-Agent': ... }` で UA を付与しても（plain Node の handshake では
+  実際に送信されていることを確認済み）、その後 `1006`（異常終了）で切断され接続できない。
+
+そのため `context.ts` の `setupAnalyticsSession` 呼び出しは無効のまま維持し、理由をコードに
+明記しています。**この項目は「Node.js では非対応」として要件を変更する合意が必要です。**
+統計情報そのものは `Publication.getStats` / `Subscription.getStats` で取得でき、
+v2 が内部で使う getStats 依存箇所は `tests/large/getStats.test.ts` で検証済みです。
