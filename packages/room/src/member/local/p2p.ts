@@ -1,4 +1,6 @@
 import { Logger } from '@skyway-sdk/common';
+
+import { errors } from '../../errors';
 import {
   LocalPersonAdapter,
   LocalStream,
@@ -7,8 +9,6 @@ import {
   RemoteVideoStream,
   SubscriptionImpl,
 } from '../../imports/core';
-
-import { errors } from '../../errors';
 import { RoomPublication } from '../../publication';
 import { P2PRoomImpl } from '../../room/p2p';
 import { RoomSubscription } from '../../subscription';

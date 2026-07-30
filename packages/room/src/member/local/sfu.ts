@@ -1,4 +1,7 @@
 import { Logger } from '@skyway-sdk/common';
+
+import { defaultMaxSubscribers } from '../../const';
+import { errors } from '../../errors';
 import {
   LocalDataStream,
   LocalPersonAdapter,
@@ -10,9 +13,6 @@ import {
   SubscriptionOptions,
 } from '../../imports/core';
 import { errors as sfuErrors, SfuBotMember } from '../../imports/sfu';
-
-import { defaultMaxSubscribers } from '../../const';
-import { errors } from '../../errors';
 import { RoomPublication } from '../../publication';
 import { SfuRoomImpl } from '../../room/sfu';
 import { RoomSubscription } from '../../subscription';

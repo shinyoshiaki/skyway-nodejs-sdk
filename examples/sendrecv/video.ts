@@ -1,15 +1,16 @@
+import Gst from '@girs/node-gst-1.0';
+import nodeGtk from 'node-gtk';
+
 import {
+  dePacketizeRtpPackets,
+  MediaStreamTrackFactory,
   RemoteVideoStream,
   SkyWayContext,
   SkyWayRoom,
-  dePacketizeRtpPackets,
-  MediaStreamTrackFactory,
   SkyWayStreamFactory,
 } from '../../packages/room/src';
 import { testTokenString } from './fixture';
-import Gst from '@girs/node-gst-1.0';
-
-const gst = require('node-gtk').require('Gst', '1.0') as typeof Gst;
+const gst = nodeGtk.require('Gst', '1.0') as typeof Gst;
 gst.init([]);
 
 (async () => {

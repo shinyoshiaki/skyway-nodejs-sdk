@@ -1,12 +1,12 @@
 import { Logger, PromiseQueue } from '@skyway-sdk/common';
 
+import { MediaStreamTrack } from '../../../imports/mediasoup';
 import { VideoMediaTrackConstraints } from '../../factory';
 import {
   emptyVideoTrack,
   LocalMediaStreamBase,
   LocalMediaStreamOptions,
 } from './media';
-import { MediaStreamTrack } from '../../../imports/mediasoup';
 
 const log = new Logger('packages/core/src/media/stream/local/customVideo.ts');
 
@@ -51,6 +51,10 @@ export class LocalCustomVideoStream extends LocalMediaStreamBase {
     this._onEnableChanged.emit(track);
   }
 
+  /**
+   * @deprecated
+   * @use {@link Publication.state}
+   */
   get isEnabled() {
     return this._isEnabled;
   }

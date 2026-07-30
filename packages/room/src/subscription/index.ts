@@ -1,4 +1,6 @@
 import { Logger } from '@skyway-sdk/common';
+
+import { errors } from '../errors';
 import {
   Codec,
   ContentType,
@@ -12,13 +14,11 @@ import {
   TransportConnectionState,
   WebRTCStats,
 } from '../imports/core';
-
-import { errors } from '../errors';
+import { RTCPeerConnection } from '../imports/mediasoup';
 import { RemoteRoomMember } from '../member/remote/base';
 import { RoomPublication } from '../publication';
 import { RoomImpl } from '../room/base';
 import { createError } from '../util';
-import { RTCPeerConnection } from '../imports/mediasoup';
 
 const log = new Logger('packages/room/src/subscription/index.ts');
 
@@ -33,7 +33,11 @@ export interface RoomSubscription<
   readonly publication: RoomPublication;
   /**@description [japanese] このSubscriptionにStreamが紐つけられた時に発火する */
   readonly onStreamAttached: Event<void>;
-  /**@description [japanese] このSubscriptionがUnsubscribeされた時に発火する */
+  /**
+   * @deprecated
+   * @use {@link LocalPerson.onPublicationUnsubscribed} or {@link Channel.onPublicationUnsubscribed}
+   * @description [japanese] このSubscriptionがUnsubscribeされた時に発火する
+   */
   readonly onCanceled: Event<void>;
   /**
    * @description [japanese] メディア通信の状態が変化した時に発火するイベント
@@ -52,6 +56,8 @@ export interface RoomSubscription<
   preferredEncoding?: string;
   state: RoomSubscriptionState;
   /**
+   * @deprecated
+   * @use {@link LocalPerson.unsubscribe}
    * @description [japanese] unsubscribeする
    */
   cancel: () => Promise<void>;

@@ -1,4 +1,11 @@
 import { Event, Logger, PromiseQueue } from '@skyway-sdk/common';
+
+import { SfuBotPlugin } from '.';
+import { SFUConnection } from './connection';
+import { TransportRepository } from './connection/transport/transportRepository';
+import { defaultMaxSubscribers } from './const';
+import { errors } from './errors';
+import { Forwarding, ForwardingConfigure } from './forwarding';
 import {
   createError,
   createLogPayload,
@@ -16,13 +23,6 @@ import {
   SkyWayContext,
 } from './imports/core';
 import { SfuRestApiClient } from './imports/sfu';
-
-import { SfuBotPlugin } from '.';
-import { SFUConnection } from './connection';
-import { TransportRepository } from './connection/transport/transportRepository';
-import { defaultMaxSubscribers } from './const';
-import { errors } from './errors';
-import { Forwarding, ForwardingConfigure } from './forwarding';
 import { SfuBotPluginOptions } from './option';
 
 const log = new Logger('packages/sfu-bot/src/member.ts');
@@ -166,17 +166,6 @@ export class SfuBotMember
   ): Promise<Forwarding> {
     if (configure.maxSubscribers == undefined) {
       configure.maxSubscribers = defaultMaxSubscribers;
-    }
-
-    if (configure.maxSubscribers === 0) {
-      throw createError({
-        operationName: 'SfuBotMember._startForwarding',
-        context: this._context,
-        channel: this.channel,
-        info: errors.maxSubscribersMustNotBeZero,
-        path: log.prefix,
-        payload: { configure },
-      });
     }
 
     if (this.state !== 'joined') {

@@ -1,12 +1,12 @@
 import { Logger, SkyWayError } from '@skyway-sdk/common';
 import { Event } from '@skyway-sdk/common';
 import { Channel } from '@skyway-sdk/model';
-import { RtcRpcApiClient } from './imports/rpc';
 
 import { channelFactory, ChannelInit, RtcApi } from '.';
 import { Config, ConfigOptions } from './config';
 import { ChannelQuery } from './domain/api';
 import { EventObserver } from './domain/eventObserver';
+import { RtcRpcApiClient } from './imports/rpc';
 import { RtcApiImpl } from './infrastructure/api';
 import { EventObserverImpl } from './infrastructure/eventObserver';
 

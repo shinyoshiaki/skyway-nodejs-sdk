@@ -9,11 +9,14 @@ import {
 } from '../channel/event';
 import { SkyWayContext } from '../context';
 import { errors } from '../errors';
+import { AnalyticsSession } from '../external/analytics';
+import { RTCPeerConnection } from '../imports/mediasoup';
 import { Codec, EncodingParameters } from '../media';
 import { ContentType, WebRTCStats } from '../media/stream';
 import { LocalMediaStreamBase, LocalStream } from '../media/stream/local';
 import { LocalAudioStream } from '../media/stream/local/audio';
 import { LocalCustomVideoStream } from '../media/stream/local/customVideo';
+import { LocalDataStream } from '../media/stream/local/data';
 import { LocalVideoStream } from '../media/stream/local/video';
 import { Member } from '../member';
 import {
@@ -23,7 +26,6 @@ import {
 import { TransportConnectionState } from '../plugin/interface';
 import { Subscription } from '../subscription';
 import { createError, createLogPayload, createWarnPayload } from '../util';
-import { RTCPeerConnection } from '../imports/mediasoup';
 
 export * from './factory';
 
@@ -47,7 +49,11 @@ export interface Publication<T extends LocalStream = LocalStream> {
 
   //--------------------
 
-  /** @description [japanese] Unpublishされた時に発火するイベント */
+  /**
+   * @deprecated
+   * @use {@link LocalPerson.onStreamUnpublished} or {@link Channel.onStreamUnpublished}
+   * @description [japanese] Unpublishされた時に発火するイベント
+   */
   onCanceled: Event<void>;
   /** @description [japanese] Subscribeされた時に発火するイベント */
   onSubscribed: Event<StreamSubscribedEvent>;
@@ -78,6 +84,8 @@ export interface Publication<T extends LocalStream = LocalStream> {
    */
   updateMetadata: (metadata: string) => Promise<void>;
   /**
+   * @deprecated
+   * @use {@link LocalPerson.unpublish}
    * @description [japanese] unpublishする
    */
   cancel: () => Promise<void>;
@@ -172,6 +180,18 @@ export class PublicationImpl<T extends LocalStream = LocalStream>
     return this._state;
   }
 
+  get deviceName(): string | undefined {
+    if (this.stream instanceof LocalDataStream) {
+      return undefined;
+    } else {
+      const withDeviceStream = this.stream as
+        | LocalVideoStream
+        | LocalCustomVideoStream
+        | LocalAudioStream;
+      return withDeviceStream.track.label;
+    }
+  }
+
   private readonly _events = new Events();
   readonly onCanceled = this._events.make<void>();
   readonly onSubscribed = this._events.make<StreamSubscribedEvent>();
@@ -194,6 +214,8 @@ export class PublicationImpl<T extends LocalStream = LocalStream>
   }>();
   private readonly _onEnabled = this._events.make<void>();
   private streamEventDisposer = new EventDisposer();
+  /**@private */
+  readonly _analytics?: AnalyticsSession;
 
   private _context: SkyWayContext;
 
@@ -218,10 +240,11 @@ export class PublicationImpl<T extends LocalStream = LocalStream>
     this.origin = args.origin;
     this.setCodecCapabilities(args.codecCapabilities ?? []);
     this.setEncodings(normalizeEncodings(args.encodings ?? []));
+    this._state = args.isEnabled ? 'enabled' : 'disabled';
     if (args.stream) {
       this._setStream(args.stream);
     }
-    this._state = args.isEnabled ? 'enabled' : 'disabled';
+    this._analytics = this._channel.localPerson?._analytics;
 
     log.debug('publication spawned', this.toJSON());
   }
@@ -239,8 +262,8 @@ export class PublicationImpl<T extends LocalStream = LocalStream>
   }
 
   /**@private */
-  _disable() {
-    this._disableStream();
+  async _disable() {
+    await this._disableStream();
 
     this.onDisabled.emit();
     this.onStateChanged.emit();
@@ -283,6 +306,10 @@ export class PublicationImpl<T extends LocalStream = LocalStream>
     this.onSubscriptionListChanged.emit();
   }
 
+  /**
+   * @deprecated
+   * @use {@link LocalPerson.unpublish}
+   */
   cancel = () =>
     new Promise<void>((r, f) => {
       let failed = false;
@@ -353,12 +380,27 @@ export class PublicationImpl<T extends LocalStream = LocalStream>
 
   updateEncodings(encodings: EncodingParameters[]) {
     log.info('updateEncodings', { encodings }, this);
-    this.setEncodings(normalizeEncodings(encodings));
+    this.setEncodings(normalizeEncodings(sortEncodingParameters(encodings)));
     this._onEncodingsChanged.emit(encodings);
+
+    if (this._analytics && !this._analytics.isClosed()) {
+      // 再送時に他の処理をブロックしないためにawaitしない
+      void this._analytics.client.sendPublicationUpdateEncodingsReport({
+        publicationId: this.id,
+        encodings: this.encodings,
+        updatedAt: Date.now(),
+      });
+    }
   }
 
   disable = () =>
     new Promise<void>(async (r, f) => {
+      // すでに disabled の場合は何もしない
+      if (this.state === 'disabled') {
+        r();
+        return;
+      }
+
       const timestamp = log.info(
         '[start] disable',
         await createLogPayload({
@@ -368,7 +410,7 @@ export class PublicationImpl<T extends LocalStream = LocalStream>
         this
       );
 
-      this._disableStream();
+      await this._disableStream();
 
       let failed = false;
       this._channel._disablePublication(this.id).catch((e) => {
@@ -396,7 +438,7 @@ export class PublicationImpl<T extends LocalStream = LocalStream>
         });
     });
 
-  private _disableStream() {
+  private async _disableStream() {
     if (this.state === 'disabled') {
       return;
     }
@@ -408,7 +450,7 @@ export class PublicationImpl<T extends LocalStream = LocalStream>
     if (this.stream.contentType === 'data') {
       this.stream.setIsEnabled(false);
     } else {
-      this.stream.setEnabled(false).catch((e) => {
+      await this.stream.setEnabled(false).catch((e) => {
         log.warn(
           createWarnPayload({
             channel: this._channel,
@@ -441,6 +483,12 @@ export class PublicationImpl<T extends LocalStream = LocalStream>
             path: log.prefix,
           })
         );
+        return;
+      }
+
+      // すでに enabled の場合は何もしない
+      if (this.state === 'enabled') {
+        r();
         return;
       }
 
@@ -561,6 +609,16 @@ export class PublicationImpl<T extends LocalStream = LocalStream>
     this._setStream(stream as T);
 
     this._onReplaceStream.emit({ newStream: stream, oldStream });
+
+    if (this._analytics && !this._analytics.isClosed()) {
+      // 再送時に他の処理をブロックしないためにawaitしない
+      void this._analytics.client.sendMediaDeviceReport({
+        publicationId: this.id,
+        mediaDeviceName: this.deviceName as string,
+        mediaDeviceTrigger: 'replaceStream',
+        updatedAt: Date.now(),
+      });
+    }
   }
 
   getStats(selector: string | Member): Promise<WebRTCStats> {
@@ -638,6 +696,25 @@ export const normalizeEncodings = (
     ...e,
     id: e.id ?? i.toString(),
   }));
+
+export const sortEncodingParameters = (
+  encodings: EncodingParameters[]
+): EncodingParameters[] => {
+  const [encode] = encodings;
+  if (encode.maxBitrate) {
+    // 小から大
+    return encodings.sort((a, b) => a.maxBitrate! - b.maxBitrate!);
+  } else if (encode.scaleResolutionDownBy) {
+    //大から小
+    return encodings.sort(
+      (a, b) => b.scaleResolutionDownBy! - a.scaleResolutionDownBy!
+    );
+  } else if (encode.maxFramerate) {
+    // 小から大
+    return encodings.sort((a, b) => a.maxFramerate! - b.maxFramerate!);
+  }
+  return encodings;
+};
 
 export type ReplaceStreamOptions = {
   /**@description [japanese] 入れ替え前のstreamを開放する。デフォルトで有効 */

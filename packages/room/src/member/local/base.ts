@@ -1,4 +1,5 @@
 import { Event, SkyWayError } from '@skyway-sdk/common';
+
 import {
   LocalPerson,
   LocalPersonAdapter,
@@ -9,7 +10,6 @@ import {
   SubscriptionImpl,
   SubscriptionOptions,
 } from '../../imports/core';
-
 import { RoomMember, RoomMemberImpl } from '../../member';
 import { RoomPublication } from '../../publication';
 import { Room, RoomImpl } from '../../room/base';

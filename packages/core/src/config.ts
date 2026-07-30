@@ -1,6 +1,7 @@
 import { LogFormat, LogLevel } from '@skyway-sdk/common';
-import { RtcApiConfig, RtcRpcApiConfig } from './imports/rtcApi';
 import deepmerge from 'deepmerge';
+
+import { RtcApiConfig, RtcRpcApiConfig } from './imports/rtcApi';
 import { Codec } from './media';
 
 export { RtcApiConfig, RtcRpcApiConfig };
@@ -12,6 +13,8 @@ export type SkyWayConfigOptions = {
   iceParamServer: { domain?: string; version?: number; secure?: boolean };
   /**@internal */
   signalingService: { domain?: string; secure?: boolean };
+  /**@internal */
+  analyticsService: { domain?: string; secure?: boolean };
   rtcConfig: {
     encodedInsertableStreams?: boolean;
     /**
@@ -32,11 +35,12 @@ export type SkyWayConfigOptions = {
   log: Partial<{ level: LogLevel; format: LogFormat }>;
   /**@internal */
   internal: { disableDPlane?: boolean };
-  member: Partial<MemberKeepAliveConfig>;
   codecCapabilities: Codec[];
+  member: Partial<LocalMemberConfig>;
 };
 
 /**
+ * @deprecated [japanese] LocalMemberConfigを使用してください
  * @description [japanese] MemberのChannelとのKeepAliveに関する設定
  * @description [japanese]
  * Memberはブラウザのタブを閉じるとChannelから削除される。
@@ -51,10 +55,19 @@ export type MemberKeepAliveConfig = {
   keepaliveIntervalGapSec: number;
 };
 
+/**
+ * @description [japanese] LocalMemberに関する設定
+ */
+export type LocalMemberConfig = MemberKeepAliveConfig & {
+  /**@description [japanese] trueの場合、beforeunloadイベントで自動的にleaveしない。デフォルトはfalse */
+  preventAutoLeaveOnBeforeUnload: boolean;
+};
+
 /**@internal */
 export type MemberInternalConfig = {
   /**@internal */
   disableSignaling?: boolean;
+  disableAnalytics?: boolean;
 };
 
 export type TurnPolicy = 'enable' | 'disable' | 'turnOnly';
@@ -80,13 +93,18 @@ export class ContextConfig implements SkyWayConfigOptions {
     domain: 'signaling.skyway.ntt.com',
     secure: true,
   };
+  /**@internal */
+  analyticsService: Required<SkyWayConfigOptions['analyticsService']> = {
+    domain: 'analytics-logging.skyway.ntt.com',
+    secure: true,
+  };
   rtcConfig: Required<SkyWayConfigOptions['rtcConfig']> = {
     timeout: 30_000,
     turnPolicy: 'enable',
     turnProtocol: 'all',
     encodedInsertableStreams: false,
     iceDisconnectBufferTimeout: 5000,
-    iceUseLinkLocalAddress: false,
+    iceUseLinkLocalAddress: true,
   };
   token: Required<SkyWayConfigOptions['token']> = {
     updateReminderSec: 30,
@@ -102,6 +120,7 @@ export class ContextConfig implements SkyWayConfigOptions {
   member: Required<SkyWayConfigOptions['member']> = {
     keepaliveIntervalGapSec: 30,
     keepaliveIntervalSec: 30,
+    preventAutoLeaveOnBeforeUnload: false,
   };
   codecCapabilities: Codec[];
 

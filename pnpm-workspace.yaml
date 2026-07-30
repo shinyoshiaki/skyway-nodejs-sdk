@@ -1,0 +1,7 @@
+packages:
+  - 'packages/*'
+  - 'examples/playground'
+  - 'examples/playground-room'
+  - 'examples/sendrecv'
+  - 'examples/sfu-room-for-hosting'
+  - 'tests'

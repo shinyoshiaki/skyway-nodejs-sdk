@@ -1,11 +1,11 @@
 import { Event } from '@skyway-sdk/common';
 import { uuidV4 } from '@skyway-sdk/token';
 
+import { RTCPeerConnection } from '../../../imports/mediasoup';
 import { Member } from '../../../member';
 import { RemoteMember } from '../../../member/remoteMember';
 import { Transport, TransportConnectionState } from '../../../plugin/interface';
 import { ContentType, Stream, WebRTCStats } from '../base';
-import { RTCPeerConnection } from '../../../imports/mediasoup';
 
 export abstract class LocalStreamBase implements Stream {
   readonly side = 'local';

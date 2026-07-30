@@ -1,4 +1,6 @@
+import { randomUUID } from 'crypto';
 import { describe, expect, it } from 'vitest';
+
 import {
   LocalAudioStream,
   LocalVideoStream,
@@ -7,7 +9,6 @@ import {
   SkyWayRoom,
 } from '../src';
 import { testTokenString } from './fixture';
-import { randomUUID } from 'crypto';
 
 const join = async (roomName: string) => {
   const context = await SkyWayContext.Create(testTokenString, {

@@ -1,13 +1,13 @@
 import { Logger, PromiseQueue } from '@skyway-sdk/common';
 
 import { errors } from '../../../errors';
+import { MediaStreamTrack } from '../../../imports/mediasoup';
 import { createError } from '../../../util';
 import {
   DisplayMediaTrackConstraints,
   VideoMediaTrackConstraints,
 } from '../../factory';
 import { LocalMediaStreamBase, LocalMediaStreamOptions } from './media';
-import { MediaStreamTrack } from '../../../imports/mediasoup';
 
 const log = new Logger('packages/core/src/media/stream/local/video.ts');
 
@@ -66,6 +66,10 @@ export class LocalVideoStream extends LocalMediaStreamBase {
     });
   }
 
+  /**
+   * @deprecated
+   * @use {@link Publication.state}
+   */
   get isEnabled() {
     return this._isEnabled;
   }

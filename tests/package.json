@@ -10,5 +10,13 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "@girs/node-gst-1.0": "^1.23.0-3.3.0",
+    "node-gtk": "1.0.0",
+    "npm-run-all2": "^6.2.0",
+    "playwright": "^1.52.0",
+    "vitest": "^3.0.5",
+    "werift": "^0.19.1"
+  }
 }

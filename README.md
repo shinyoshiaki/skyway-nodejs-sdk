@@ -33,6 +33,8 @@ JS-SDK と API はほとんど同じですが、一部機能に対応してい�
 
 # SDK のインストール方法
 
+ユーザアプリケーションで利用する際は NPM と CDN の 2 通りのインストール方法があります
+
 ## NPM を利用する場合
 
 npm がインストールされている環境下で以下のコマンドを実行します
@@ -57,9 +59,9 @@ npm install @shinyoshiaki/skyway-nodejs-sdk
 
 - [Room ライブラリ](https://javascript-sdk.api-reference.skyway.ntt.com/room)
 
-# 環境構築
+# このリポジトリのセットアップ方法(環境構築)
 
-このリポジトリのサンプルアプリを起動したり、SDK をビルドするために必要な手順。
+このリポジトリのサンプルアプリを起動したり、SDK を利用者自身でビルドするために必要な手順。
 
 ## 初期設定時
 
@@ -74,7 +76,8 @@ sudo apt-get -y install build-essential git gobject-introspection libgirepositor
   - `sudo corepack enable npm`
 - ルートディレクトリで次のコマンドを実行する
   - `git submodule update --init --recursive`
-  - `npm run first`
+- ルートディレクトリで次のコマンドを実行する
+  - `pnpm run first`
 - `env.ts.template`を`env.ts`にリネームし、ファイル中の appId と secret にダッシュボードで発行した appId と secret を入力する
   - appId と secret の発行方法は[こちら](https://skyway.ntt.com/ja/docs/user-guide/javascript-sdk/quickstart/#199)
 
@@ -83,22 +86,22 @@ sudo apt-get -y install build-essential git gobject-introspection libgirepositor
 git で更新を同期した時や packages ディレクトリ以下のソースコードを編集した際にはルートディレクトリで以下のコマンドを実行する必要がある。
 
 ```sh
-npm run compile
+pnpm run compile
 ```
 
 # サンプルアプリの起動方法
 
-- 環境構築のセクションの作業を実施する
 - examples ディレクトリ以下の任意のサンプルアプリのディレクトリに移動する
 - そのディレクトリで以下のコマンドを実行する
 
+  - `npm i`
   - `npm run dev`
 
 # SDK のビルド方法
 
 - 環境構築のセクションの作業を実施する
 - ルートディレクトリで次のコマンドを実行する
-  - `npm run build`
+  - `pnpm run build`
 
 # License
 

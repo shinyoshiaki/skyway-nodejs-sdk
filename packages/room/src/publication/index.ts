@@ -1,5 +1,7 @@
 import { EventDisposer, Logger } from '@skyway-sdk/common';
 import { Event, Events } from '@skyway-sdk/common';
+
+import { errors } from '../errors';
 import {
   Codec,
   ContentType,
@@ -14,15 +16,14 @@ import {
   TransportConnectionState,
   WebRTCStats,
 } from '../imports/core';
+import { RTCPeerConnection } from '../imports/mediasoup';
 import { SfuBotMember } from '../imports/sfu';
-
-import { errors } from '../errors';
 import { RoomMember, RoomMemberImpl } from '../member';
+import { Encoding } from '@skyway-sdk/model';
 import { RoomImpl } from '../room/base';
 import { StreamSubscribedEvent, StreamUnsubscribedEvent } from '../room/event';
 import { RoomSubscription } from '../subscription';
 import { createError } from '../util';
-import { RTCPeerConnection } from '../imports/mediasoup';
 
 const path = 'packages/room/src/publication/index.ts';
 const logger = new Logger(path);
@@ -54,7 +55,11 @@ export interface RoomPublication<T extends LocalStream = LocalStream> {
    * ローカルで作られたPublicationでなければundefinedとなる
    */
   readonly stream?: T;
-  /**@description [japanese] このPublicationがUnPublishされたときに発火するイベント */
+  /**
+   * @deprecated
+   * @use {@link LocalPerson.onStreamUnpublished} or {@link Channel.onStreamUnpublished}
+   * @description [japanese] このPublicationがUnPublishされたときに発火するイベント
+   */
   readonly onCanceled: Event<void>;
   /**@description [japanese] このPublicationがSubscribeされたときに発火するイベント */
   readonly onSubscribed: Event<StreamSubscribedEvent>;
@@ -85,6 +90,8 @@ export interface RoomPublication<T extends LocalStream = LocalStream> {
    */
   updateMetadata: (metadata: string) => Promise<void>;
   /**
+   * @deprecated
+   * @use {@link LocalPerson.unpublish}
    * @description [japanese] unpublishする
    */
   cancel: () => Promise<void>;
@@ -226,7 +233,7 @@ export class RoomPublicationImpl<StreamType extends LocalStream = LocalStream>
     return this._preferredPublication.codecCapabilities;
   }
 
-  get encodings() {
+  get encodings(): Encoding[] {
     return this._preferredPublication.encodings;
   }
 
@@ -242,6 +249,11 @@ export class RoomPublicationImpl<StreamType extends LocalStream = LocalStream>
     return this._preferredPublication.metadata;
   }
 
+  /**
+   * @deprecated
+   * @use {@link LocalPerson.unpublish}
+   * @description [japanese] unpublishする
+   */
   async cancel() {
     await Promise.all([
       this._preferredPublication.cancel(),
@@ -259,6 +271,12 @@ export class RoomPublicationImpl<StreamType extends LocalStream = LocalStream>
 
   readonly enable = () =>
     new Promise<void>((r, f) => {
+      // すでに enabled の場合は何もしない
+      if (this.state === 'enabled') {
+        r();
+        return;
+      }
+
       if (this._origin) {
         Promise.all([
           this._origin.enable(),
@@ -273,6 +291,12 @@ export class RoomPublicationImpl<StreamType extends LocalStream = LocalStream>
 
   readonly disable = () =>
     new Promise<void>((r, f) => {
+      // すでに disabled の場合は何もしない
+      if (this.state === 'disabled') {
+        r();
+        return;
+      }
+
       if (this._origin) {
         Promise.all([
           this._origin.disable(),

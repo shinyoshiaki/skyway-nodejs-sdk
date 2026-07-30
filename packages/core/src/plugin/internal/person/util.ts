@@ -1,6 +1,6 @@
 import { Logger } from '@skyway-sdk/common';
-import { RTCRtpTransceiver } from '../../../imports/mediasoup';
 
+import { RTCRtpTransceiver } from '../../../imports/mediasoup';
 import { detectDevice } from '../../../util';
 import { TransportConnectionState } from '../../interface';
 
@@ -11,17 +11,20 @@ export const setEncodingParams = async (
   sender: RTCRtpTransceiver['sender'],
   newEncodings: RTCRtpEncodingParameters[]
 ) => {
-  // const info = log.createBlock({ label: 'setEncodingParams' });
-  // const params = sender.getParameters();
-  // info.debug('getParameters', { params, newEncodings });
-  // if (params.encodings == undefined) {
-  //   params.encodings = [];
-  // }
-  // params.encodings = newEncodings.map((encoding, i) => ({
-  //   ...(params.encodings[i] || {}),
-  //   ...encoding,
-  // }));
-  // await sender.setParameters(params);
+  const info = log.createBlock({ label: 'setEncodingParams' });
+
+  const params = sender.getParameters();
+  info.debug('getParameters', { params, newEncodings });
+
+  if (params.encodings == undefined) {
+    params.encodings = [];
+  }
+  params.encodings = newEncodings.map((encoding, i) => ({
+    ...(params.encodings[i] || {}),
+    ...encoding,
+  }));
+
+  await sender.setParameters(params);
 };
 
 /**@internal */

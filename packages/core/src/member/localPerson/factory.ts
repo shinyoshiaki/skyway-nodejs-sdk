@@ -1,5 +1,6 @@
 import { Logger } from '@skyway-sdk/common';
 import model from '@skyway-sdk/model';
+import { SkyWayAuthToken } from '@skyway-sdk/token';
 
 import { PersonInit, SkyWayChannelImpl } from '../../channel';
 import { MaxIceParamServerTTL } from '../../const';
@@ -20,6 +21,7 @@ export async function createLocalPerson(
   {
     keepaliveIntervalSec,
     keepaliveIntervalGapSec,
+    preventAutoLeaveOnBeforeUnload,
     disableSignaling,
   }: PersonInit = {}
 ) {
@@ -28,6 +30,7 @@ export async function createLocalPerson(
     memberDto,
     keepaliveIntervalSec,
     keepaliveIntervalGapSec,
+    preventAutoLeaveOnBeforeUnload,
   });
 
   const { iceParamServer } = context.config;
@@ -60,11 +63,13 @@ export async function createLocalPerson(
     iceManager,
     channel,
     signaling: signalingSession,
+    analytics: context.analyticsSession,
     metadata: memberDto.metadata,
     name: memberDto.name,
     id: memberDto.id,
     keepaliveIntervalSec,
     keepaliveIntervalGapSec,
+    preventAutoLeaveOnBeforeUnload,
     context,
   });
 

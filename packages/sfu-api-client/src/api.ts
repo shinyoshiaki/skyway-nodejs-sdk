@@ -6,10 +6,10 @@ import {
   Logger,
   LogLevel,
 } from '@skyway-sdk/common';
-import { types } from './imports/mediasoup';
 
 import { defaultSfuApiOptions } from './const';
 import { errors } from './errors';
+import { types } from './imports/mediasoup';
 import { createError, createWarnPayload } from './util';
 
 const log = new Logger('packages/sfu-api-client/src/api.ts');

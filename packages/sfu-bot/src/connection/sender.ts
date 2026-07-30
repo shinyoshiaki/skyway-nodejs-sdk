@@ -1,4 +1,8 @@
 import { Event, EventDisposer, Logger } from '@skyway-sdk/common';
+import isEqual from 'lodash/isEqual';
+
+import { errors } from '../errors';
+import { Forwarding, ForwardingConfigure } from '../forwarding';
 import {
   createError,
   createLogPayload,
@@ -16,13 +20,10 @@ import {
   SubscriptionImpl,
   TransportConnectionState,
   uuidV4,
+  waitForLocalStats,
 } from '../imports/core';
-import { SfuRestApiClient } from '../imports/sfu';
-import isEqual from 'lodash/isEqual';
 import { MediaStreamTrack, types } from '../imports/mediasoup';
-
-import { errors } from '../errors';
-import { Forwarding, ForwardingConfigure } from '../forwarding';
+import { SfuRestApiClient } from '../imports/sfu';
 import { SfuBotMember } from '../member';
 import { createWarnPayload } from '../util';
 import { SfuTransport } from './transport/transport';
@@ -43,6 +44,10 @@ export class Sender {
   private readonly onConnectionStateChanged =
     new Event<TransportConnectionState>();
   closed = false;
+  private sendSubscriptionStatsReportTimer: ReturnType<
+    typeof setInterval
+  > | null = null;
+  private _waitingSendSubscriptionStatsReports: string[] = [];
 
   constructor(
     readonly publication: PublicationImpl<
@@ -55,7 +60,25 @@ export class Sender {
     private _bot: SfuBotMember,
     private _iceManager: IceManager,
     private _context: SkyWayContext
-  ) {}
+  ) {
+    const analyticsSession = this._localPerson._analytics;
+    if (analyticsSession) {
+      // AnalyticsServerに初回接続できなかった場合のタイマー再セット処理
+      analyticsSession.onConnectionStateChanged.add((state) => {
+        if (
+          state === 'connected' &&
+          this._waitingSendSubscriptionStatsReports.length > 0
+        ) {
+          for (const producerId of this._waitingSendSubscriptionStatsReports) {
+            if (this._producer && this._producer.id === producerId) {
+              this.startSendSubscriptionStatsReportTimer();
+            }
+          }
+          this._waitingSendSubscriptionStatsReports = [];
+        }
+      });
+    }
+  }
 
   private _setConnectionState(state: TransportConnectionState) {
     if (this._connectionState === state) {
@@ -144,7 +167,8 @@ export class Sender {
         this._bot,
         broadcasterTransportOptions,
         'send',
-        this._iceManager
+        this._iceManager,
+        this._localPerson._analytics
       );
     }
 
@@ -176,6 +200,16 @@ export class Sender {
       this._broadcasterTransport,
       producer
     );
+
+    const analyticsSession = this._localPerson._analytics;
+    if (analyticsSession && !analyticsSession.isClosed()) {
+      if (analyticsSession.client.isConnectionEstablished()) {
+        this.startSendSubscriptionStatsReportTimer();
+      } else {
+        // AnalyticsServerに初回接続できなかった場合はキューに入れる
+        this._waitingSendSubscriptionStatsReports.push(producer.id);
+      }
+    }
 
     log.debug('[end] Sender startForwarding', {
       forwardingId,
@@ -220,6 +254,66 @@ export class Sender {
     ) as SubscriptionImpl;
     const [codec] = producer.rtpParameters.codecs;
     botSubscribing.codec = codec;
+
+    if (
+      this._localPerson._analytics &&
+      this._localPerson._analytics.client.connectionState !== 'closed'
+    ) {
+      // 再送時に他の処理をブロックしないためにawaitしない
+      void this._localPerson._analytics.client.sendBindingRtcPeerConnectionToSubscription(
+        {
+          subscriptionId: botSubscribing.id,
+          role: 'sender',
+          rtcPeerConnectionId: this._broadcasterTransport.id,
+        }
+      );
+    }
+
+    if (isSafari()) {
+      waitForLocalStats({
+        stream,
+        remoteMember: this._bot.id,
+        end: (stats) => {
+          const outbound = stats.find(
+            (s) =>
+              s.id.includes('RTCOutboundRTP') || s.type.includes('outbound-rtp')
+          );
+          if (outbound?.keyFramesEncoded > 0) return true;
+          return false;
+        },
+        interval: 10,
+      })
+        .then(async () => {
+          const encodings = this.publication.encodings;
+
+          if (encodings?.length > 0) {
+            await setEncodingParams(producer.rtpSender!, encodings).catch(
+              (e) => {
+                log.error('_onEncodingsChanged failed', e, this);
+              }
+            );
+          }
+        })
+        .catch((err) => {
+          log.error('setEncodingParams waitForLocalStats failed', err, this);
+        });
+    }
+
+    waitForLocalStats({
+      stream,
+      remoteMember: this._bot.id,
+      end: (stats) => !!stats.find((s) => s.type.includes('local-candidate')),
+    })
+      .then(async () => {
+        const payload = await createLogPayload({
+          operationName: 'startForwarding/waitForLocalStats',
+          channel: this.channel,
+        });
+        log.debug(payload, 'forwarding connection connected', {
+          broadcasterTransportId,
+        });
+      })
+      .catch(() => {});
 
     return forwarding;
   }
@@ -516,6 +610,10 @@ export class Sender {
 
     this._producer.close();
     this._producer = undefined;
+
+    if (this.sendSubscriptionStatsReportTimer) {
+      clearInterval(this.sendSubscriptionStatsReportTimer);
+    }
   }
 
   private async _replaceTrack(track: MediaStreamTrack | null) {
@@ -543,5 +641,36 @@ export class Sender {
 
   get pc() {
     return this._broadcasterTransport?.pc;
+  }
+
+  private startSendSubscriptionStatsReportTimer() {
+    const analyticsSession = this._localPerson._analytics;
+    const subscription = this._bot.subscriptions.find(
+      (s) => s.publication.id === this.publication.id
+    );
+    if (subscription && analyticsSession) {
+      const intervalSec = analyticsSession.client.getIntervalSec();
+      this.sendSubscriptionStatsReportTimer = setInterval(async () => {
+        // AnalyticsSessionがcloseされていたらタイマーを止める
+        if (!analyticsSession || analyticsSession.isClosed()) {
+          if (this.sendSubscriptionStatsReportTimer) {
+            clearInterval(this.sendSubscriptionStatsReportTimer);
+          }
+          return;
+        }
+        if (this._producer) {
+          const stats = await this._producer.getStats();
+          if (stats) {
+            // 再送時に他の処理をブロックしないためにawaitしない
+            void analyticsSession.client.sendSubscriptionStatsReport(stats, {
+              subscriptionId: subscription.id,
+              role: 'sender',
+              contentType: this.publication.contentType,
+              createdAt: Date.now(),
+            });
+          }
+        }
+      }, intervalSec * 1000);
+    }
   }
 }

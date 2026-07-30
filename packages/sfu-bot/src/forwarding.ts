@@ -1,4 +1,6 @@
 import { Event, Logger } from '@skyway-sdk/common';
+
+import { errors } from './errors';
 import {
   createError,
   Publication,
@@ -6,8 +8,6 @@ import {
   Subscription,
 } from './imports/core';
 import { SfuRestApiClient } from './imports/sfu';
-
-import { errors } from './errors';
 
 const log = new Logger('packages/sfu-bot/src/connection/sender.ts');
 
@@ -63,6 +63,9 @@ export class Forwarding {
     };
   }
 
+  /**
+   * @deprecated
+   */
   async confirmSubscription(subscription: Subscription) {
     log.debug('[start] Forwarding confirmSubscription');
     const { message } = await this._api

@@ -5,20 +5,20 @@ import model, {
   Publication,
   Subscription,
 } from '@skyway-sdk/model';
-import {
-  PublicationDisabledEvent,
-  PublicationEnabledEvent,
-  PublicationSummary,
-  StreamSubscribedEvent,
-  StreamUnsubscribedEvent,
-  SubscriptionSummary,
-  PublicationMetadataUpdatedEvent,
-  StreamPublishedEvent,
-  StreamUnpublishedEvent,
-} from '../imports/rpc';
 
 import { Config } from '../config';
 import { errors } from '../errors';
+import {
+  PublicationDisabledEvent,
+  PublicationEnabledEvent,
+  PublicationMetadataUpdatedEvent,
+  PublicationSummary,
+  StreamPublishedEvent,
+  StreamSubscribedEvent,
+  StreamUnpublishedEvent,
+  StreamUnsubscribedEvent,
+  SubscriptionSummary,
+} from '../imports/rpc';
 import * as event from '../model/event';
 import { createError } from '../util';
 import { MemberInit, PublicationInit, RtcApi, SubscriptionInit } from './api';
@@ -532,20 +532,33 @@ export class ChannelImpl implements model.Channel {
   /**@throws {SkyWayError} */
   async publish(init: Omit<PublicationInit, 'channel'>): Promise<Publication> {
     const ts = log.debug('[start] apiClient.publish', { init });
-    const publicationDto = await this.apiClient.publish(this.appId, {
+    const channelId = this.id;
+    const publicationId = await this.apiClient.publish(this.appId, {
       ...init,
-      channel: this.id,
+      channel: channelId,
     });
+
+    const publicationDto: Publication = {
+      id: publicationId,
+      channelId,
+      publisherId: init.publisher,
+      origin: init.origin,
+      contentType: init.contentType,
+      metadata: init.metadata,
+      codecCapabilities: init.codecCapabilities ?? [],
+      encodings: init.encodings ?? [],
+      isEnabled: init.isEnabled ?? true,
+    };
     log.elapsed(ts, '[ongoing] apiClient.publish', { publicationDto });
 
-    const exist = this.getPublication(publicationDto.id);
+    const exist = this.getPublication(publicationId);
     if (exist) {
       return exist;
     }
 
     const { publication } = await this.onStreamPublished
       .watch(
-        (e) => e.publication.id === publicationDto.id,
+        (e) => e.publication.id === publicationId,
         this.config.rtcApi.timeout
       )
       .catch((error) => {
@@ -691,13 +704,22 @@ export class ChannelImpl implements model.Channel {
     init: Omit<SubscriptionInit, 'channel'>
   ): Promise<model.Subscription> {
     const ts = log.debug('[start] apiClient.subscribe', { init });
-    const subscriptionDto = await this.apiClient.subscribe(this.appId, {
+    const subscriptionId = await this.apiClient.subscribe(this.appId, {
       ...init,
       channel: this,
     });
+
+    const subscriptionDto: Subscription = {
+      id: subscriptionId,
+      publicationId: init.publication.id,
+      channelId: this.id,
+      publisherId: init.publication.publisherId,
+      subscriberId: init.subscriber.id,
+      contentType: init.publication.contentType,
+    };
     log.elapsed(ts, '[ongoing] apiClient.subscribe', { subscriptionDto });
 
-    const exist = this.getSubscription(subscriptionDto.id);
+    const exist = this.getSubscription(subscriptionId);
     if (exist) {
       log.elapsed(ts, '[end] apiClient.subscribe', { subscriptionDto });
       return exist;
@@ -705,7 +727,7 @@ export class ChannelImpl implements model.Channel {
 
     const { subscription } = await this.onPublicationSubscribed
       .watch(
-        (e) => e.subscription.id === subscriptionDto.id,
+        (e) => e.subscription.id === subscriptionId,
         this.config.rtcApi.timeout
       )
       .catch((error) => {

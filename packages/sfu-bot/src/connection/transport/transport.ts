@@ -1,5 +1,8 @@
 import { BackOff, Event, SkyWayError } from '@skyway-sdk/common';
+
+import { errors } from '../../errors';
 import {
+  AnalyticsSession,
   createError,
   createLogPayload,
   IceManager,
@@ -7,14 +10,12 @@ import {
   SkyWayContext,
   TransportConnectionState,
 } from '../../imports/core';
-import { SfuRestApiClient } from '../../imports/sfu';
 import {
   ConnectionState,
   RTCPeerConnection,
   types,
 } from '../../imports/mediasoup';
-
-import { errors } from '../../errors';
+import { SfuRestApiClient } from '../../imports/sfu';
 import { SfuBotMember } from '../../member';
 import { SfuBotPluginOptions } from '../../option';
 import { SfuBotPlugin } from '../../plugin';
@@ -26,7 +27,7 @@ const log = new Logger(
 
 export class SfuTransport {
   private _backoffIceRestart = new BackOff({
-    times: 10,
+    times: 8,
     interval: 100,
     jitter: 100,
   });
@@ -67,14 +68,15 @@ export class SfuTransport {
     private _bot: SfuBotMember,
     private _iceManager: IceManager,
     private _sfuApi: SfuRestApiClient,
-    private _context: SkyWayContext
+    private _context: SkyWayContext,
+    private _analyticsSession?: AnalyticsSession
   ) {
     const sfuPlugin = _context.plugins.find(
       (p) => p.subtype === SfuBotPlugin.subtype
     ) as SfuBotPlugin;
     this._options = sfuPlugin.options;
 
-    // log.debug('peerConfig', this.pc?.getConfiguration?.() ?? {});
+    log.debug('peerConfig', this.pc?.getConfiguration?.() ?? {});
 
     msTransport.on('connect', (params, callback, errback) =>
       this._onConnect(msTransport.id)(
@@ -85,9 +87,22 @@ export class SfuTransport {
         errback!
       )
     );
-    msTransport.on('connectionstatechange', (e) =>
-      this.onMediasoupConnectionStateChanged.emit(e)
-    );
+    msTransport.on('connectionstatechange', (e) => {
+      this.onMediasoupConnectionStateChanged.emit(e);
+
+      if (this._analyticsSession && !this._analyticsSession.isClosed()) {
+        // 再送時に他の処理をブロックしないためにawaitしない
+        void this._analyticsSession.client.sendRtcPeerConnectionEventReport({
+          rtcPeerConnectionId: this.id,
+          type: 'connectionStateChange',
+          data: {
+            connectionState: e,
+          },
+          createdAt: Date.now(),
+        });
+      }
+    });
+
     msTransport.on('produce', (producerOptions, callback, errback) => {
       this.onProduce.emit({
         producerOptions,
@@ -173,6 +188,16 @@ export class SfuTransport {
     log.debug('onConnectionStateChanged', this._connectionState, state, this);
     this._connectionState = state;
     this.onConnectionStateChanged.emit(state);
+    if (this._analyticsSession && !this._analyticsSession.isClosed()) {
+      void this._analyticsSession.client.sendRtcPeerConnectionEventReport({
+        rtcPeerConnectionId: this.id,
+        type: 'skywayConnectionStateChange',
+        data: {
+          skywayConnectionState: state,
+        },
+        createdAt: Date.now(),
+      });
+    }
   }
 
   readonly restartIce = async () => {
@@ -229,6 +254,16 @@ export class SfuTransport {
             payload: { count: this._backoffIceRestart.count, transport: this },
           })
         );
+
+        if (this._analyticsSession && !this._analyticsSession.isClosed()) {
+          // 再送時に他の処理をブロックしないためにawaitしない
+          void this._analyticsSession.client.sendRtcPeerConnectionEventReport({
+            rtcPeerConnectionId: this.id,
+            type: 'restartIce',
+            data: undefined,
+            createdAt: Date.now(),
+          });
+        }
         return true;
       }
     };

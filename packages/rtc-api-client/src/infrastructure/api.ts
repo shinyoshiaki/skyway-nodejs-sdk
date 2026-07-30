@@ -1,6 +1,5 @@
 import { Event, Logger, SkyWayError } from '@skyway-sdk/common';
 import { Channel, Member, Publication, Subscription } from '@skyway-sdk/model';
-import { errors as rpcErrors, RtcRpcApiClient } from '../imports/rpc';
 import { SkyWayAuthToken } from '@skyway-sdk/token';
 
 import {
@@ -12,6 +11,7 @@ import {
   SubscriptionInit,
 } from '../domain/api';
 import { errors } from '../errors';
+import { errors as rpcErrors, RtcRpcApiClient } from '../imports/rpc';
 import { createError } from '../util';
 
 const log = new Logger('packages/rtc-api-client/src/infrastructure/api.ts');
@@ -28,7 +28,7 @@ export class RtcApiImpl implements RtcApi {
     _client.onClose.once(() => {
       this.close();
     });
-    _client.onFatalError.add((e) => {
+    _client.onFatalError.add((e: any) => {
       this.onFatalError.emit(e);
     });
   }
@@ -40,7 +40,41 @@ export class RtcApiImpl implements RtcApi {
 
   async updateAuthToken(token: string) {
     this._token = SkyWayAuthToken.Decode(token);
-    await this._client.updateToken(token);
+    await this._client.updateToken(token).catch((e) => {
+      const { info } = e as { info: typeof rpcErrors.rpcResponseError };
+      if (info?.error?.data?.code === 429001) {
+        throw createError({
+          operationName: 'RtcApiImpl.updateAuthToken',
+          path: log.prefix,
+          info: errors.projectUsageLimitExceeded,
+          error: e,
+        });
+      }
+      const error = this._commonError(
+        'RtcApiImpl.updateAuthToken',
+        info?.error?.code ?? -1,
+        e
+      );
+      if (error) {
+        throw error;
+      }
+      switch (info?.error?.code) {
+        case 401:
+          throw createError({
+            operationName: 'RtcApiImpl.updateAuthToken',
+            path: log.prefix,
+            info: errors.invalidAuthToken,
+            error: e,
+          });
+        default:
+          throw createError({
+            operationName: 'RtcApiImpl.updateAuthToken',
+            path: log.prefix,
+            info: errors.internalError,
+            error: e,
+          });
+      }
+    });
   }
 
   close(): void {
@@ -78,6 +112,13 @@ export class RtcApiImpl implements RtcApi {
         return createError({
           operationName: method,
           info: errors.insufficientPermissions,
+          path: log.prefix,
+          error: detail,
+        });
+      case 429:
+        return createError({
+          operationName: method,
+          info: errors.rateLimitExceeded,
           path: log.prefix,
           error: detail,
         });
@@ -522,7 +563,7 @@ export class RtcApiImpl implements RtcApi {
   }
 
   /**@throws {@link SkyWayError} */
-  async publish(appId: string, init: PublicationInit): Promise<Publication> {
+  async publish(appId: string, init: PublicationInit): Promise<string> {
     const { publicationId } = await this._client
       .publishStream({
         channelId: init.channel,
@@ -532,6 +573,7 @@ export class RtcApiImpl implements RtcApi {
         origin: init.origin,
         codecCapabilities: init.codecCapabilities,
         encodings: init.encodings,
+        isEnabled: init.isEnabled,
         appId,
       })
       .catch((e) => {
@@ -554,19 +596,7 @@ export class RtcApiImpl implements RtcApi {
             });
         }
       });
-
-    const publication: Publication = {
-      id: publicationId,
-      channelId: init.channel,
-      publisherId: init.publisher,
-      origin: init.origin,
-      contentType: init.contentType,
-      metadata: init.metadata,
-      codecCapabilities: init.codecCapabilities ?? [],
-      encodings: init.encodings ?? [],
-      isEnabled: true,
-    };
-    return publication;
+    return publicationId;
   }
 
   async updatePublicationMetadata(
@@ -728,10 +758,7 @@ export class RtcApiImpl implements RtcApi {
   }
 
   /**@throws {@link SkyWayError} */
-  async subscribe(
-    appId: string,
-    init: SubscriptionInit
-  ): Promise<Subscription> {
+  async subscribe(appId: string, init: SubscriptionInit): Promise<string> {
     const { subscriptionId } = await this._client
       .subscribeStream({
         channelId: init.channel.id,
@@ -773,16 +800,7 @@ export class RtcApiImpl implements RtcApi {
             });
         }
       });
-
-    const subscription: Subscription = {
-      id: subscriptionId,
-      publicationId: init.publication.id,
-      channelId: init.channel.id,
-      publisherId: init.publication.publisherId,
-      subscriberId: init.subscriber.id,
-      contentType: init.publication.contentType,
-    };
-    return subscription;
+    return subscriptionId;
   }
 
   async unsubscribe(

@@ -1,4 +1,6 @@
 import { Event, Logger, PromiseQueue } from '@skyway-sdk/common';
+
+import { errors } from '../errors';
 import {
   createError,
   LocalAudioStream,
@@ -14,8 +16,6 @@ import {
   SubscriptionImpl,
 } from '../imports/core';
 import { SfuRestApiClient } from '../imports/sfu';
-
-import { errors } from '../errors';
 import { SfuBotMember } from '../member';
 import { getLayerFromEncodings } from '../util';
 import { Receiver } from './receiver';
@@ -111,8 +111,29 @@ export class SFUConnection implements SkyWayConnection {
     });
     log.elapsed(ts, '[end] _startSubscribing consume');
 
+    stream.setIsEnabled(subscription.publication.state === 'enabled');
     subscription.codec = codec;
     subscription._setStream(stream);
+
+    if (
+      this.localPerson._analytics &&
+      !this.localPerson._analytics.isClosed()
+    ) {
+      const preferredEncoding = subscription.preferredEncoding;
+      const encodings = subscription.publication.origin?.encodings;
+      if (!preferredEncoding || !encodings || encodings.length === 0) {
+        return;
+      }
+      const layer = getLayerFromEncodings(preferredEncoding, encodings);
+      // 再送時に他の処理をブロックしないためにawaitしない
+      void this.localPerson._analytics.client.sendSubscriptionUpdatePreferredEncodingReport(
+        {
+          subscriptionId: subscription.id,
+          preferredEncodingIndex: layer,
+          updatedAt: Date.now(),
+        }
+      );
+    }
   }
 
   /**@internal */
@@ -231,5 +252,19 @@ export class SFUConnection implements SkyWayConnection {
       publicationId: subscription.publication.id,
       spatialLayer: layer,
     });
+
+    if (
+      this.localPerson._analytics &&
+      !this.localPerson._analytics.isClosed()
+    ) {
+      // 再送時に他の処理をブロックしないためにawaitしない
+      void this.localPerson._analytics.client.sendSubscriptionUpdatePreferredEncodingReport(
+        {
+          subscriptionId: subscription.id,
+          preferredEncodingIndex: layer,
+          updatedAt: Date.now(),
+        }
+      );
+    }
   }
 }

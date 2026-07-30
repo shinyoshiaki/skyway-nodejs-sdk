@@ -1,8 +1,8 @@
 import { Event } from '@skyway-sdk/common';
 
+import { RTCDataChannel } from '../../../imports/mediasoup';
 import { DataStreamMessageType, objectFlag } from '../local/data';
 import { RemoteStreamBase } from './base';
-import { RTCDataChannel } from '../../../imports/mediasoup';
 
 export class RemoteDataStream extends RemoteStreamBase {
   private _isEnabled = true;

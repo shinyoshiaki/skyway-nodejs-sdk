@@ -1,6 +1,6 @@
 import { Event } from '@skyway-sdk/common';
-import { Member, MemberState } from '../imports/core';
 
+import { Member, MemberState } from '../imports/core';
 import { RoomPublication } from '../publication';
 import { RoomType } from '../room';
 import { RoomImpl } from '../room/base';

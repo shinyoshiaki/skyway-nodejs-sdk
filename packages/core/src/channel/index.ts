@@ -2,6 +2,10 @@ import { Event, SkyWayError } from '@skyway-sdk/common';
 import { Logger } from '@skyway-sdk/common';
 import { Events } from '@skyway-sdk/common';
 import model from '@skyway-sdk/model';
+
+import { LocalMemberConfig, MemberInternalConfig, MemberKeepAliveConfig } from '../config';
+import { SkyWayContext } from '../context';
+import { errors } from '../errors';
 import {
   ChannelImpl,
   ChannelInit,
@@ -9,10 +13,6 @@ import {
   MemberInit,
   PublicationInit,
 } from '../imports/rtcApi';
-
-import { MemberInternalConfig, MemberKeepAliveConfig } from '../config';
-import { SkyWayContext } from '../context';
-import { errors } from '../errors';
 import { Member } from '../member';
 import {
   createLocalPerson,
@@ -142,7 +142,7 @@ export interface Channel {
     memberInit?: {
       name?: MemberInit['name'];
       metadata?: MemberInit['metadata'];
-    } & Partial<MemberKeepAliveConfig>
+    } & Partial<LocalMemberConfig>
   ) => Promise<LocalPerson>;
 
   /**
@@ -151,6 +151,7 @@ export interface Channel {
   leave: (member: Member) => Promise<void>;
 
   /**
+   * @deprecated
    * @description [japanese] 別のChannelのMemberを移動させる
    */
   moveChannel: (adapter: LocalPerson) => Promise<void>;
@@ -369,8 +370,9 @@ export class SkyWayChannelImpl implements Channel {
       async ({ publication }) =>
         await this._handleOnPublicationEnabled(publication)
     );
-    this._channelImpl.onPublicationDisabled.add(({ publication }) =>
-      this._handleOnPublicationDisabled(publication)
+    this._channelImpl.onPublicationDisabled.add(
+      async ({ publication }) =>
+        await this._handleOnPublicationDisabled(publication)
     );
     this._channelImpl.onPublicationSubscribed.add(({ subscription }) => {
       this._handleOnStreamSubscribe(subscription);
@@ -458,9 +460,11 @@ export class SkyWayChannelImpl implements Channel {
     this.onPublicationEnabled.emit({ publication });
   }
 
-  private _handleOnPublicationDisabled(publicationDto: model.Publication) {
+  private async _handleOnPublicationDisabled(
+    publicationDto: model.Publication
+  ) {
     const publication = this._getPublication(publicationDto.id);
-    publication._disable();
+    await publication._disable();
 
     this.onPublicationDisabled.emit({ publication });
   }
@@ -521,6 +525,8 @@ export class SkyWayChannelImpl implements Channel {
     options.keepaliveIntervalSec ??= this.config.member.keepaliveIntervalSec;
     options.keepaliveIntervalGapSec ??=
       this.config.member.keepaliveIntervalGapSec;
+    options.preventAutoLeaveOnBeforeUnload ??=
+      this.config.member.preventAutoLeaveOnBeforeUnload;
 
     const init: MemberInit = {
       ...options,
@@ -600,6 +606,7 @@ export class SkyWayChannelImpl implements Channel {
       keepaliveIntervalSec: adapter.keepaliveIntervalSec,
       keepaliveIntervalGapSec: adapter.keepaliveIntervalGapSec,
       disableSignaling: adapter.disableSignaling,
+      disableAnalytics: adapter.disableAnalytics,
     });
     adapter.apply(person);
   }
@@ -847,5 +854,5 @@ export type ChannelState = 'opened' | 'closed';
 export type PersonInit = {
   name?: MemberInit['name'];
   metadata?: MemberInit['metadata'];
-} & Partial<MemberKeepAliveConfig> &
+} & Partial<LocalMemberConfig> &
   MemberInternalConfig;

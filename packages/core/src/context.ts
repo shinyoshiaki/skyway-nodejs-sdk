@@ -1,37 +1,29 @@
 import { Events, Logger, RuntimeInfo, SkyWayError } from '@skyway-sdk/common';
 import model, { MemberType } from '@skyway-sdk/model';
-import { RtcApiClient } from './imports/rtcApi';
 import { SkyWayAuthToken } from '@skyway-sdk/token';
+import { v4 as uuidV4 } from 'uuid';
 
 import { SkyWayChannelImpl } from './channel';
 import { ContextConfig, SkyWayConfigOptions } from './config';
 import { errors } from './errors';
+import { RtcApiClient } from './imports/rtcApi';
+import { Codec } from './media';
 import { RemoteMemberImplInterface } from './member/remoteMember';
 import { SkyWayPlugin } from './plugin/interface/plugin';
 import { registerPersonPlugin } from './plugin/internal/person/plugin';
 import { UnknownPlugin } from './plugin/internal/unknown/plugin';
 import { createError, getRuntimeInfo } from './util';
 import { PACKAGE_VERSION } from './version';
-import { Codec } from './media';
+import { AnalyticsSession } from './external/analytics';
 
 const log = new Logger('packages/core/src/context.ts');
-
-/**
- * appId は token の version によって位置が違う。
- * v1 / v2 は `scope.app.id`、v3 は `scope.appId` に入っている。
- * @internal
- */
-type AppIdScope = { app?: { id: string }; appId?: string };
-
-/**@internal */
-export const getAppIdFromAuthToken = (token: SkyWayAuthToken): string => {
-  const scope = token.scope as AppIdScope;
-  return scope.app ? scope.app.id : scope.appId!;
-};
 
 export class SkyWayContext {
   /**@internal */
   static version = PACKAGE_VERSION;
+
+  /**@internal */
+  static id = uuidV4();
 
   /**
    * @description [japanese] Contextの作成
@@ -79,8 +71,9 @@ export class SkyWayContext {
     });
 
     try {
+      const appId = token.getAppId();
       const api = await RtcApiClient.Create({
-        appId: getAppIdFromAuthToken(token),
+        appId,
         token: authTokenString,
         log: config.log,
         rtcApi: config.rtcApi,
@@ -89,7 +82,13 @@ export class SkyWayContext {
         endpoint,
         runtime,
       });
+
       await context._setTokenExpireTimer();
+
+      if (token.getAnalyticsEnabled()) {
+        // context.analyticsSession = await setupAnalyticsSession(context);
+      }
+
       return context;
     } catch (error: any) {
       throw createError({
@@ -107,6 +106,10 @@ export class SkyWayContext {
   /**@internal */
   public plugins: SkyWayPlugin[] = [];
   private _unknownPlugin = new UnknownPlugin();
+
+  /**@internal */
+  public analyticsSession: AnalyticsSession | undefined;
+
   /**@private */
   readonly _api: RtcApiClient;
   private _authTokenString: string;
@@ -147,7 +150,7 @@ export class SkyWayContext {
     readonly info: { endpoint: EndpointInfo; runtime: RuntimeInfo }
   ) {
     this._authTokenString = authToken.tokenString!;
-    this.appId = getAppIdFromAuthToken(this.authToken);
+    this.appId = this.authToken.getAppId();
 
     registerPersonPlugin(this);
 
@@ -224,21 +227,19 @@ export class SkyWayContext {
    */
   async updateAuthToken(token: string) {
     const newToken = SkyWayAuthToken.Decode(token);
+    const newAppId = newToken.getAppId();
     log.info(
       { operationName: 'SkyWayContext.updateAuthToken' },
       { oldToken: this.authToken, newToken }
     );
 
-    if (getAppIdFromAuthToken(newToken) !== this.appId) {
+    if (newAppId !== this.appId) {
       throw createError({
         operationName: 'SkyWayContext.updateAuthToken',
         context: this,
         info: errors.invalidTokenAppId,
         path: log.prefix,
-        payload: {
-          invalid: getAppIdFromAuthToken(this.authToken),
-          expect: this.appId,
-        },
+        payload: { invalid: newAppId, expect: this.appId },
       });
     }
 
@@ -248,7 +249,19 @@ export class SkyWayContext {
     this._onTokenUpdated.emit(token);
     await this._setTokenExpireTimer();
 
-    await this._api.updateAuthToken(token);
+    await this._api.updateAuthToken(token).catch((e) => {
+      log.warn('[failed] SkyWayContext.updateAuthToken', { detail: e });
+
+      if (
+        e instanceof SkyWayError &&
+        e.info?.name === 'projectUsageLimitExceeded'
+      ) {
+        this.dispose();
+        clearTimeout(this.tokenExpiredTimer);
+      }
+
+      throw e;
+    });
   }
 
   /**
@@ -305,6 +318,8 @@ export class SkyWayContext {
     this._events.dispose();
 
     this._api.close();
+
+    // Logger._onLogForAnalytics = () => {};
   }
 }
 
