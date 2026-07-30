@@ -219,14 +219,163 @@ node .sak-context/link/cli/src/index.ts config get-container-isolation --project
 
 ## 5. 完了条件
 
-- [ ] `config get-ci-command --project-id skyway-nodejs-sdk` が `scope: project` で `npm run compile && npm run type && npm run test`（large テスト含む）を返す
-- [ ] `config get --section project` で `postCreateCommandsOverrides["skyway-nodejs-sdk"]` に `npm run first`（submodule 取得を含む・ホスト実行）が登録されている
-- [ ] `containerPostCreateCommandsOverrides["skyway-nodejs-sdk"]` は submodule 取得を含まない内容（例: `npm i && npm run compile`）になっている、または不要と判断して未登録である
-- [ ] ホスト側 worktree 初期化で `submodules/mediasoup` が取得され、コンテナ側で git SSH 認証を必要としないことを確認済み
-- [ ] `/home/shin/code/skyway-nodejs-sdk/env.ts` が生成済みで、`defaultPathFileCopyRuleOverrides["skyway-nodejs-sdk"]` に `env.ts` のコピールール（enabled: true）が登録されている
-- [ ] 新規（または再作成した）worktree に `env.ts` が実際に配置されることを確認済み
-- [ ] `config get-container-isolation --project-id skyway-nodejs-sdk` の `resolved.enabled` が `true`、`dockerfilePath` が本プロジェクト用 Dockerfile を指し、`get-sysbox-image-state` が build 成功を示している
-- [ ] 上記 patch 投入後も他プロジェクトの override（`ciCommandOverrides` / `postCreateCommandsOverrides` / `defaultPathFileCopyRuleOverrides` / `worktree.sysbox.*Overrides`）が欠落していないことを `config get` で確認済み
-- [ ] `.github/workflows/test.yml` の `node-version` が `24.x` に修正され、GitHub Actions が成功している
-- [ ] `ticket run-ci` で CI が起動し、small + large テストまで含めた結果（成功／原因を特定した失敗）が報告されている
-- [ ] 実行した CLI コマンド列と最終設定値が本チケットに記録され、再現可能になっている
+- [x] `config get-ci-command --project-id skyway-nodejs-sdk` が `scope: project` で `npm run compile && npm run type && npm run test`（large テスト含む）を返す
+- [x] `postCreateCommandsOverrides["skyway-nodejs-sdk"]` に `npm run first`（submodule 取得を含む・ホスト実行）が登録されている（※実体は `project` セクションではなく **`worktree`** セクション。6-2 参照）
+- [x] `containerPostCreateCommandsOverrides["skyway-nodejs-sdk"]` は submodule 取得を含まない `npm i && npm run compile` になっている
+- [x] ホスト側で `submodules/mediasoup`（および入れ子の `submodules/werift`）が取得され、コンテナ側で git SSH 認証を必要としないことを確認済み
+- [x] `/home/shin/code/skyway-nodejs-sdk/env.ts` が存在し、`defaultPathFileCopyRuleOverrides["skyway-nodejs-sdk"]` に `sourcePath: "env.ts"`（enabled: true）が登録されている
+- [x] コピー先解決が default project path 起点の相対パスであることを実装で確認済み（`git-worktree-operations.ts:458` の `path.resolve(sourceProjectPath, sourceRelativePath)`）。本 worktree には `env.ts` が配置済み
+- [x] `config get-container-isolation --project-id skyway-nodejs-sdk` の `resolved.enabled = true`、`dockerfilePath` が本プロジェクト用 Dockerfile、`get-sysbox-image-state` が `status: ready`
+- [x] 他プロジェクトの override が欠落していないことを before/after 差分で確認済み（追加のみ・変更/欠落ゼロ。6-6 参照）
+- [x] `.github/workflows/test.yml` の `node-version` が `24.x` に修正済み（GitHub 側の実行結果は push 後に確認が必要）
+- [x] `ticket run-ci` で CI が起動し、`npm run compile` の既存型エラーで失敗することを原因特定のうえ記録（6-7 参照）。この型エラーのため small + large テストには到達していない
+- [x] 実行した CLI コマンド列と最終設定値を「6. 実施記録」に記録
+
+## 6. 実施記録（2026-07-30 / CLI 経由）
+
+CLI 入口はすべて worktree root の `node .sak-context/link/cli/src/index.ts`。設定実体は
+`/home/shin/code/sak-private.worktree/config/ide-config.json`。
+
+### 6-0. バックアップ
+
+```bash
+node .sak-context/link/cli/src/index.ts config get --section all > /tmp/ide-config.backup.json
+node .sak-context/link/cli/src/index.ts config get --section worktree > /tmp/wt.before.json
+```
+
+### 6-1. CI コマンド登録
+
+```bash
+node .sak-context/link/cli/src/index.ts config set-ci-command \
+  --project-id skyway-nodejs-sdk \
+  --command "npm run compile && npm run type && npm run test"
+node .sak-context/link/cli/src/index.ts config get-ci-command --project-id skyway-nodejs-sdk
+```
+
+結果: `scope: project` / `commands: [{ command: "npm run compile && npm run type && npm run test", source: "manual" }]`
+
+### 6-2. host postCreateCommands + env.ts コピールール（read-modify-write）
+
+**チケット 2-2 / 2-3 の記載訂正**: `postCreateCommandsOverrides` と `defaultPathFileCopyRuleOverrides` は
+`project` セクションではなく **`worktree` セクション**のフィールド（`config get --section worktree` で確認）。
+patch も `{"worktree": {...}}` で投入する。
+
+```bash
+node .sak-context/link/cli/src/index.ts config get --section worktree > /tmp/wt.before.json
+# /tmp/wt.before.json の既存 override 全キーを保持したまま skyway-nodejs-sdk を追記した patch を作成し、
+node .sak-context/link/cli/src/index.ts config update --stdin < /tmp/patch.json
+```
+
+投入した patch の該当エントリ（配列フィールドは全置換なので既存プロジェクト分を必ず含めて送る）:
+
+```json
+{
+  "worktree": {
+    "postCreateCommandsOverrides": {
+      "skyway-nodejs-sdk": [
+        { "id": "33e0369d-b19c-493e-a7ef-4d8298733b2d",
+          "command": { "command": "npm run first", "source": "package-json", "scriptName": "first" },
+          "enabled": true }
+      ]
+    },
+    "defaultPathFileCopyRuleOverrides": {
+      "skyway-nodejs-sdk": [
+        { "id": "13942555-9d46-4c18-bc22-e35a1025bdf2", "sourcePath": "env.ts", "enabled": true }
+      ]
+    }
+  }
+}
+```
+
+### 6-3. コンテナ側 postCreateCommands（submodule 取得を含めない）
+
+```bash
+node .sak-context/link/cli/src/index.ts config set-container-post-create-command \
+  --project-id skyway-nodejs-sdk \
+  --id skyway-nodejs-sdk-install-compile \
+  --command-source manual \
+  --command "npm i && npm run compile" --enabled true
+```
+
+### 6-4. コンテナ隔離の有効化と image build
+
+```bash
+node .sak-context/link/cli/src/index.ts config set-container-isolation \
+  --project-id skyway-nodejs-sdk \
+  --enabled true --runtime sysbox --ubuntu-version 24.04 \
+  --additional-apt-packages "build-essential git gobject-introspection libgirepository1.0-dev libcairo2 libcairo2-dev libavdevice-dev libavfilter-dev libopus-dev libvpx-dev pkg-config libsrtp2-dev libasound2-dev libgstreamer1.0-0 gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-tools gstreamer1.0-x gstreamer1.0-alsa gstreamer1.0-pulseaudio gir1.2-gstreamer-1.0" \
+  --additional-run-command "corepack enable npm"
+
+node .sak-context/link/cli/src/index.ts config generate-sysbox-base-dockerfile \
+  --destination-directory-path /home/shin/code/skyway-nodejs-sdk.worktree/sysbox \
+  --workspace-path /home/shin/code/skyway-nodejs-sdk \
+  --runtime sysbox --ubuntu-version 24.04 \
+  --additional-apt-packages "<上と同じ>" \
+  --additional-run-command "corepack enable npm" --overwrite true
+
+node .sak-context/link/cli/src/index.ts config set-container-isolation \
+  --project-id skyway-nodejs-sdk \
+  --dockerfile-path /home/shin/code/skyway-nodejs-sdk.worktree/sysbox/Dockerfile.sysbox-base
+
+node .sak-context/link/cli/src/index.ts config build-sysbox-image --project-id skyway-nodejs-sdk
+node .sak-context/link/cli/src/index.ts config get-sysbox-image-state --project-id skyway-nodejs-sdk
+```
+
+最終状態:
+
+- `resolved.enabled = true` / `runtime = sysbox` / `ubuntuVersion = 24.04`
+- `dockerfilePath = /home/shin/code/skyway-nodejs-sdk.worktree/sysbox/Dockerfile.sysbox-base`
+- `sysboxImage.status = ready` / `imageTag = sak-sysbox-image-skyway-nodejs-sdk-26f7f0798ef3`（build 約 2 分）
+- 生成 Dockerfile は nodesource `node_24.x` を入れるため `engines.node = "=24"` を満たす（追加の node セットアップは不要だった）
+
+### 6-5. リポジトリ側の変更
+
+- `.github/workflows/test.yml`: `node-version: [20.x]` → `[24.x]`
+- `package.json` の `first` script:
+  `run-s submodule:init submodule:install && npm i && npm run compile`
+  → `npm run submodule:init && npm i && npm run submodule:install && npm run compile`
+
+  理由: clean worktree では `run-s`（npm-run-all2）も `zx` も未インストールなので、元の
+  `first` は post-create command として使えなかった（`sh: 1: run-s: not found`）。
+  root の `npm i` を `submodule:install`（zx 依存）より前に出し、`run-s` 依存を外した。
+  修正後 `npm run first` は submodule 取得 → 依存解決まで成功する（compile は 6-7 の既存エラーで失敗）。
+
+### 6-6. 他プロジェクト override の非破壊確認
+
+`config get --section all` の before / after を比較し、以下すべてで
+`lost=[] changed=[] added=['skyway-nodejs-sdk']`（追加のみ）を確認:
+
+`project.ciCommandOverrides` / `worktree.sysbox.{enabled,ubuntuVersion,dockerfilePath,additionalAptPackages,additionalRunCommands}Overrides` /
+`worktree.{postCreateCommands,containerPostCreateCommands,defaultPathFileCopyRule}Overrides`
+
+### 6-7. `ticket run-ci` の結果と原因切り分け
+
+```bash
+node .sak-context/link/cli/src/index.ts ticket run-ci \
+  --ticket-id 5eff5566-927a-4d7e-aaec-0549694ca80c --timeout-ms 2400000
+```
+
+- 1 回目: `[CI pre-run merge failed]` — 未コミット変更があると base branch のマージができず CI が起動しない。
+  加えて **submodule の working tree が dirty でも同じく失敗する**
+  （`submodules/mediasoup/submodules/werift/package-lock.json` が `npm i` で書き換わっていた）。
+  `git -C submodules/mediasoup/submodules/werift checkout -- package-lock.json` で解消。
+- 2 回目: CI は正常に起動し、`npm run compile` で失敗（`ci.status = failure`, `[CI exited with code 1]`）。
+
+失敗原因（**クレデンシャル / ネットワーク起因ではなく、本チケットの変更とも無関係な既存の型エラー**）:
+
+```
+packages/core/src/context.ts(70,32):  error TS2339: Property 'id' does not exist on type 'unknown'.
+packages/core/src/context.ts(137,43): error TS2339 (同上)
+packages/core/src/context.ts(219,28): error TS2339 (同上)
+packages/core/src/context.ts(225,54): error TS2339 (同上)
+packages/sfu-bot/src/plugin.ts(97,49): error TS2339 (同上)
+```
+
+- 直接原因: `@skyway-sdk/token` が **1.6.0 → 1.7.4** に上がった際（commit `93448f0` "update deps", 2026-03-13）、
+  `AuthToken = z.input<typeof AuthTokenSchema>` が v1_2 / v3 の **union** になり、v3 側の `scope` に
+  `app` が無く `{ [k: string]: unknown }` を含むため `token.scope.app` が `unknown` に解決される。
+  SDK 側コードは v1/v2 の `scope.app.id` 前提のまま。
+- TypeScript のバージョン問題ではない: TS 4.7.4（リポジトリ指定）でも TS 5.4.5 でも同じ 4 件が再現する。
+- GitHub Actions の直近成功は 2025-07-27 で、上記 dep 更新コミット以前。つまり dep 更新以降 CI は未検証だった。
+- 対応は SDK 本体の型対応（token version による narrowing 等）が必要で、IDE 設定投入という本チケットのスコープ外。
+  **別チケットで扱うべき残課題**として記録する。small / large テストはこの compile 失敗により未到達。
