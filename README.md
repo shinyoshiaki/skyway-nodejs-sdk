@@ -41,14 +41,17 @@ v2 は破壊的変更を含むメジャーアップデートであり、本 SDK 
   - vp8
   - h264
 - 対応機能（ブラウザ版と同様に利用できるもの）
-  - `getStats`（`Publication.getStats` / `Subscription.getStats`、および内部の統計収集）
+  - `Publication.getStats` / `Subscription.getStats` / `getRTCPeerConnection`
   - `restartIce`
   - `rtcConfig.stunPorts`（`[443]` / `[3478]` / `[443, 3478]` のいずれも利用可能）
 - 非対応機能
   - simulcast
-  - `LocalAudioStream.getAudioLevel` / `RemoteAudioStream.getAudioLevel`（Web Audio API に依存するため。呼び出すと `notSupportedInNodejs` エラーになります）
-  - `SkyWayStreamFactory` のうちブラウザのデバイス列挙・`getUserMedia` に依存する API
-    （`createCameraVideoStream` などの代わりに `registerAudioTestSrc` / `registerVideoTestSrc` / `registerMediaDevices` を利用します）
+  - `LocalAudioStream.getAudioLevel` / `RemoteAudioStream.getAudioLevel`
+    （Web Audio API に依存するため。呼び出すと `notSupportedInNodejs` エラーになります）
+  - `SkyWayStreamFactory.enumerateDevices` などのデバイス列挙 API と `createDisplayStreams`
+    （ブラウザのデバイス列挙・`getDisplayMedia` に依存するため）。
+    Stream のソースは `registerMediaDevices` / `registerAudioTestSrc` / `registerVideoTestSrc`
+    で登録してから `createMicrophoneAudioStream` / `createCameraVideoStream` を使います。
   - Analytics（統計情報の SkyWay サーバへの自動送信）。
     SkyWay の AnalyticsServer が Node.js からの WebSocket 接続を受け付けないため、
     トークンで `analytics: true` を指定しても Analytics セッションは作成されません。
