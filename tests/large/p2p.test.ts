@@ -79,7 +79,10 @@ describe('p2p', () => {
 
     disposer();
     await room.close();
-  }, 15_000);
+    // タイムアウトは vitest.config.ts の testTimeout (30s) に従う。
+    // 初回の chromium 起動と CDN からの SDK 取得は他のテストファイルと
+    // 並列実行されるため、15s では足りずに flaky になる。
+  });
 
   it('browser-to-node', async () => {
     const context = await SkyWayContext.Create(testTokenString, {
