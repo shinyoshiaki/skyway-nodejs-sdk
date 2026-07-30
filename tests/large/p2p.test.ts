@@ -54,7 +54,7 @@ describe('p2p', () => {
     );
 
     const stats = await browserExec(
-      async ({ testTokenString, roomId, publicationId }) => {
+      async ({ testTokenString, roomId, publicationId, minBytesReceived }) => {
         // vite用のハック
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const __vite_ssr_import_3__ = (...args) => {};
@@ -67,11 +67,28 @@ describe('p2p', () => {
           await skyway.SkyWayRoom.Find(context, { id: roomId }, 'p2p')
         ).join();
         const { subscription } = await receiver.subscribe(publicationId);
-        await new Promise((r) => setTimeout(r, 1_500));
-        const stats = await subscription.getStats();
+
+        // 固定時間だけ待って getStats するとバイト数が接続確立の速さに
+        // 依存してしまう（並列実行やCIの負荷で ICE/DTLS が遅れると、
+        // 待機時間の大半をハンドシェイクに使い切って受信量が閾値に届かない）。
+        // 受信量が閾値を超えるまでポーリングして判定を安定させる。
+        const deadline = Date.now() + 20_000;
+        let stats = await subscription.getStats();
+        for (;;) {
+          stats = await subscription.getStats();
+          const inbound = stats.find((s) => s.type === 'inbound-rtp');
+          if (inbound && inbound.bytesReceived > minBytesReceived) break;
+          if (Date.now() > deadline) break;
+          await new Promise((r) => setTimeout(r, 250));
+        }
         return stats;
       },
-      { testTokenString, roomId: room.id, publicationId: publication.id }
+      {
+        testTokenString,
+        roomId: room.id,
+        publicationId: publication.id,
+        minBytesReceived: 2500,
+      }
     );
 
     const inboundRtp = stats.find((s) => s.type === 'inbound-rtp');
@@ -79,10 +96,9 @@ describe('p2p', () => {
 
     disposer();
     await room.close();
-    // タイムアウトは vitest.config.ts の testTimeout (30s) に従う。
-    // 初回の chromium 起動と CDN からの SDK 取得は他のテストファイルと
-    // 並列実行されるため、15s では足りずに flaky になる。
-  });
+    // chromium の初回起動 + CDN からの SDK 取得 + 上記のポーリングを
+    // 他のテストファイルと並列に行うため、元の 15s では足りない。
+  }, 60_000);
 
   it('browser-to-node', async () => {
     const context = await SkyWayContext.Create(testTokenString, {
