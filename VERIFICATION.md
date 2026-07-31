@@ -80,6 +80,15 @@ exit code: 0
 
 - `--dangerouslyIgnoreUnhandledErrors` は外してあり、unhandled rejection は 0 件です。
 - skip されている `loopback > video_vp8` は本追従作業以前から `it.skip` の既存テストです。
+- **`retry: 2` を `tests/large/vitest.config.ts` に設定しています**（チケット §4 の
+  「integrate 系は flaky 傾向があるためリトライを考慮」に対応）。large は実 SkyWay 接続
+  （signaling / SFU / TURN）に依存するため、ネットワーク側の都合でごく稀に接続が確立せず
+  timeout します。実際に `turn > force_turn` が、**コードが 1 行も変わっていない状態**
+  （最後に成功した CI `97ba6bc9` との差分は VERIFICATION.md の 10 行だけ）で通常 2.6s の
+  実行から 60s timeout に転びました。各テストは毎回自分で context / room / UDP ポート /
+  デバイス登録を作り、`pool: 'forks'` でファイルごとにプロセスが分かれるので、retry でも
+  状態は持ち越しません。retry が実際に効くことは、1 回目だけ失敗するテストを一時的に
+  置いて全体が pass することで確認しました（確認後に削除済み）。
 - `p2p > node-to-browser` / `browser-to-node` はブラウザ側で CDN の `@skyway-sdk/room@2.5.1`
   （本家 v2）を読み込んでおり、Node 版と本家 v2 の相互接続を確認しています。
 
@@ -89,7 +98,7 @@ exit code: 0
 
 ```
 ci.status: success
-durationMs: 51622
+durationMs: 54217
  Lerna (powered by Nx)   Successfully ran target compile for 7 projects
  Lerna (powered by Nx)   Successfully ran target type for 7 projects
  Test Files  1 passed (1)
