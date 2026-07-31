@@ -109,8 +109,8 @@ durationMs: 54217
 ```
 
 これは §2.6 の方針変更（patch 運用 → submodule 自体の修正）後の実行結果です。CI の
-前段で走る auto-commit の後も submodule は clean（werift `58d4c23c` / mediasoup
-`01d8acd`）で、gitlink と一致したままです。
+前段で走る auto-commit の後も submodule は clean（werift `7c2a3ab9` / mediasoup
+`a866ee8`）で、gitlink と一致したままです。
 
 なお **GitHub Actions の Node CI workflow は、gitlink が push されるまでは
 submodule checkout の段階で失敗します**（「submodule の扱い」の「push が必要」を参照）。
@@ -208,14 +208,37 @@ werift の ICE restart には 3 つの不具合があり、いずれも修正し
    ICE が new / disconnected / failed のときは start まで進めるようにした
    （ICE start 後の既存ガードにより DTLS の再ハンドシェイクは発生しない）。
 
-SDK 側では、werift の `connectionState` だけを再接続完了の判定に使わないようにしました
-（`Sender._isMediaPathRestored()`。`connectionState === 'connected'` かつ全 ICE transport に
-`nominated` があることを確認します）。また ICE restart 直後に相手の新しい
-usernameFragment を持つ candidate が古い remoteDescription しか無い状態で届くと
-werift が `OperationError` にするため、`Peer.resolveCandidates` では破棄せず
-次の `setRemoteDescription` 後に再試行します。
+当初はこれに加えて SDK 側で 2 つの回避策を持っていましたが、**どちらも werift 側の
+問題だったので werift を直し、SDK からは削除しました**（§2.4 の「まず werift 側の
+実装可否を調査する」方針に沿った対応）。
 
-werift のテストは ice 113 件 / webrtc 187 件すべて通っています。
+4. `addIceCandidate()` が、candidate の `usernameFragment` が適用済み remote description に
+   一致しないとき `OperationError` で reject していた。ICE restart では相手が新しい ufrag の
+   candidate を、対応する description の適用前に trickle してくるため、呼び出し側はその
+   candidate を失い restart 後の pair が作られなかった。**remote description が未適用のときに
+   既に行っている buffering と同じ扱いにし**、次の `setRemoteDescription` で反映するように
+   した（ufrag 以外の不整合 — 存在しない `sdpMid` など — は従来どおり reject）。保持数には
+   上限を設けている。
+   - SDK 側で削除したもの: `Peer.resolveCandidates()` が werift の**エラーメッセージ文字列**
+     （`/No media section matched the ICE usernameFragment/`）を正規表現で判定して candidate を
+     再キューしていた処理と `maxPendingCandidates`。
+5. `PeerConnection.connectionState` が **nominated pair が無いまま `connected`** になっていた。
+   `connect()` は DTLS が既に connected なら早期 return するため、ICE がまだ connectivity
+   check 中でも完了扱いになる。加えて `RTCIceTransport.state` は gather 完了時点で
+   `completed` になる（werift の既存セマンティクス）ので、transport の state だけでは
+   「経路があるか」を判断できない。**全 ICE transport に `nominated` があり DTLS が
+   connected のときだけ `connected` へ引き上げ**、ICE が後から connected になった時点で
+   再評価するようにした（`promoteConnectionStateIfReady()`）。
+   - SDK 側で削除したもの: `Sender._isMediaPathRestored()`（全 ICE transport の `nominated` を
+     自前で確認していた）。今は `connectionState === 'connected'` を見るだけで足り、
+     非標準の `pc.iceTransports` への依存もこの箇所から無くなった。
+
+4 の regression テストとして `packages/webrtc/tests/integrate/iceCandidateBuffering.test.ts`
+を追加しました。修正前は `OperationError` で落ちることを確認済みです（buffer 判定を
+一時的に無効化して確認）。
+
+werift のテストは ice 113 件 / webrtc 189 件すべて通っています
+（webrtc は上記の追加 2 件を含む）。
 
 ## submodule の扱い
 
@@ -226,11 +249,19 @@ werift のテストは ice 113 件 / webrtc 187 件すべて通っています�
 
 | gitlink | SHA | 内容 |
 | --- | --- | --- |
-| `submodules/mediasoup` | `01d8acd` | `1d96eb8`（`origin/develop` 先端）+ werift gitlink の更新 |
-| `submodules/mediasoup/submodules/werift` | `58d4c23c` | `d782a543`（タグ `v0.24.2`）+ 下記の修正コミット 1 本 |
+| `submodules/mediasoup` | `a866ee8` | `1d96eb8`（`origin/develop` 先端）+ 2 コミット（werift gitlink の更新） |
+| `submodules/mediasoup/submodules/werift` | `7c2a3ab9` | `d782a543`（タグ `v0.24.2`）+ 下記の修正コミット 2 本 |
 
-werift の修正コミット `58d4c23c`「fix(ice): re-establish a nominated pair on ICE restart,
-support multiple STUN servers」の内容:
+werift 側の 2 コミット:
+
+```
+$ git -C submodules/mediasoup/submodules/werift log --oneline d782a543..HEAD
+7c2a3ab9 fix(webrtc): keep ICE-restart candidates and stop reporting connected without a pair
+58d4c23c fix(ice): re-establish a nominated pair on ICE restart, support multiple STUN servers
+```
+
+`58d4c23c`（ICE restart の修正 3 点 + 複数 STUN サーバー対応 + DataChannel の
+`onbufferedamountlow`）:
 
 ```
  packages/ice/src/ice.ts               | 65 ++++++++++++++++++++++++++++-------
@@ -245,12 +276,20 @@ support multiple STUN servers」の内容:
  9 files changed, 173 insertions(+), 15 deletions(-)
 ```
 
-コードの中身は patch 運用時と同一です。tree hash が一致することで確認しています:
+`7c2a3ab9`（SDK 側の回避策 2 件を werift 側の修正に置き換えたもの。
+「成立させるために必要だった修正」の 4 と 5）:
 
 ```
-$ git -C submodules/mediasoup/submodules/werift rev-parse HEAD^{tree}
-813c60136551195f2f6b8fb02a6045ee67c87f69   # patch 運用時の tree と同じ
+ packages/ice/src/ice.ts                            |  3 +-
+ packages/webrtc/src/peerConnection.ts              | 66 +++++++++++++++-
+ packages/webrtc/src/secureTransportManager.ts      | 36 +++++++++
+ .../tests/integrate/iceCandidateBuffering.test.ts  | 92 ++++++++++++++++++++++
+ 4 files changed, 193 insertions(+), 4 deletions(-)
 ```
+
+（`ice.ts` の 3 行はコメントのみの変更で、挙動は変えていません。）
+
+`58d4c23c` の時点の tree hash は patch 運用時と同一（`813c6013…`）であることを確認済みです。
 
 ### push が必要（未実施 / 許可待ち）
 
@@ -263,8 +302,8 @@ Node CI からは submodule を取得できません。** チケット §4 が�
 
 | リポジトリ | push するコミット |
 | --- | --- |
-| `shinyoshiaki/werift-webrtc` | `58d4c23c`（`d782a543` = v0.24.2 の上に 1 コミット） |
-| `shinyoshiaki/mediasoup-client-node` | `01d8acd`（`1d96eb8` = develop 先端の上に 1 コミット） |
+| `shinyoshiaki/werift-webrtc` | `7c2a3ab9`（`d782a543` = v0.24.2 の上に 2 コミット） |
+| `shinyoshiaki/mediasoup-client-node` | `a866ee8`（`1d96eb8` = develop 先端の上に 2 コミット） |
 
 push 前は、fresh clone での `submodule:init` が該当 SHA を取得できず失敗します。
 CI（Node CI workflow）も同じ理由で submodule checkout の段階で失敗します。これは
@@ -302,20 +341,20 @@ clone から CI workflow と同じ手順を実行して large test まで通る�
 **submodule の fetch 元はローカルミラーに向けています。** この環境に `ssh` も外部
 ネットワークも無いためですが、今回の方針では gitlink が未 push のコミットを指すので、
 これは同時に**「push 後の状態」のシミュレーション**でもあります（ミラーには
-`58d4c23c` / `01d8acd` が含まれています）。
+`7c2a3ab9` / `a866ee8` が含まれています）。
 
 ```
 $ git clone <repo> /tmp/fresh4/repo
 $ git -C /tmp/fresh4/repo checkout ticket/c4324925-7666-46c8-befa-593e59efce84
 
 $ pnpm run submodule:init
-Submodule path 'submodules/mediasoup': checked out '01d8acd…'
-Submodule path 'submodules/mediasoup/submodules/werift': checked out '58d4c23c…'
+Submodule path 'submodules/mediasoup': checked out 'a866ee8…'
+Submodule path 'submodules/mediasoup/submodules/werift': checked out '7c2a3ab9…'
 Skipping submodule 'submodules/mediasoup/submodules/werift/third_party/wpt'
 
 $ git submodule status --recursive
- 01d8acdfeb84cbd8c4864a668b37639c8ed47c5e submodules/mediasoup
- 58d4c23c2673d15ccc6aa2946e3b8672c53eb985 submodules/mediasoup/submodules/werift
+ a866ee85ee8fdb1fe3cca39690446c2e3e203de8 submodules/mediasoup
+ 7c2a3ab9c544dffdfadf4d8e4fcd8f0713fcc69d submodules/mediasoup/submodules/werift
 -121babb3c1d6a78dd0f638593c82d6cdcd0bcd18 submodules/mediasoup/submodules/werift/third_party/wpt
 
 # patch 適用ステップは無い。checkout した時点で修正が入っている
@@ -342,8 +381,8 @@ $ CI=true pnpm run test
 
 # 全工程を通したあとも gitlink は同じ
 $ git submodule status --recursive
- 01d8acdfeb84cbd8c4864a668b37639c8ed47c5e submodules/mediasoup (v0.0.3-86-g01d8acd)
- 58d4c23c2673d15ccc6aa2946e3b8672c53eb985 submodules/mediasoup/submodules/werift (v0.24.1-7-g58d4c23c)
+ a866ee85ee8fdb1fe3cca39690446c2e3e203de8 submodules/mediasoup (v0.0.3-86-g01d8acd)
+ 7c2a3ab9c544dffdfadf4d8e4fcd8f0713fcc69d submodules/mediasoup/submodules/werift (v0.24.1-7-g58d4c23c)
 -121babb3c1d6a78dd0f638593c82d6cdcd0bcd18 submodules/mediasoup/submodules/werift/third_party/wpt
 ```
 
