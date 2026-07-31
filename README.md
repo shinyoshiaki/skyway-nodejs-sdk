@@ -40,12 +40,6 @@ v2 は破壊的変更を含むメジャーアップデートであり、本 SDK 
   - opus
   - vp8
   - h264
-- 対応機能（ブラウザ版と同様に利用できるもの）
-  - `Publication.getStats` / `Subscription.getStats` / `getRTCPeerConnection`
-  - `restartIce`（ICE 切断時の再接続。切断検知 → ICE restart → メディア再開まで
-    実接続テストで確認しています）
-  - `rtcConfig.stunPorts`（`[443]` / `[3478]` / `[443, 3478]` のいずれも指定どおりに動作。
-    複数指定時は全てのポートに問い合わせます）
 - 非対応機能
   - simulcast
   - `LocalAudioStream.getAudioLevel` / `RemoteAudioStream.getAudioLevel`
@@ -141,10 +135,6 @@ pnpm run first
 
 `pnpm run first` は `submodule:init`（werift の `third_party/wpt` は除外）→ `pnpm i`
 → `submodule:install` → `compile` を順に実行します。
-
-werift への fork 独自の修正（ICE restart / 複数 STUN サーバー対応）は **submodule
-（`submodules/mediasoup/submodules/werift`）本体のコミット**として持ち、gitlink がそれを
-参照します。submodule を直接編集してコミットし、親側で gitlink を更新してください。
 
 - `env.ts.template`を`env.ts`にリネームし、ファイル中の appId と secret にダッシュボードで発行した appId と secret を入力する
   - appId と secret の発行方法は[こちら](https://skyway.ntt.com/ja/docs/user-guide/javascript-sdk/quickstart/#199)
