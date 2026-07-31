@@ -248,31 +248,53 @@ commit   tree:  813c60136551195f2f6b8fb02a6045ee67c87f69
 ローカルのミラーに差し替えています。SHA は公開済みのものと同一です）。
 
 ```
-$ git clone <repo> /tmp/fresh/repo && git -C /tmp/fresh/repo checkout <this branch>
-$ git -C /tmp/fresh/repo submodule status --recursive
- 1d96eb8a40c0861d99ff2d676c9270f2b164652a submodules/mediasoup
- d782a54395552e594a6c36cd06430c8224b3096e submodules/mediasoup/submodules/werift
+$ git clone <repo> /tmp/fresh3/repo
+$ git -C /tmp/fresh3/repo checkout ticket/c4324925-7666-46c8-befa-593e59efce84
+HEAD: 841e4a1a Restore published submodule gitlinks and keep the werift fix patch-only
+
+$ pnpm run submodule:init
+Submodule path 'submodules/mediasoup': checked out '1d96eb8a…'
+Submodule path 'submodules/mediasoup/submodules/werift': checked out 'd782a543…'
+Skipping submodule 'submodules/mediasoup/submodules/werift/third_party/wpt'
+
+$ git submodule status --recursive
+ 1d96eb8a40c0861d99ff2d676c9270f2b164652a submodules/mediasoup (v0.0.3-85-g1d96eb8)
+ d782a54395552e594a6c36cd06430c8224b3096e submodules/mediasoup/submodules/werift (v0.24.1-6-gd782a543)
+-121babb3c1d6a78dd0f638593c82d6cdcd0bcd18 submodules/mediasoup/submodules/werift/third_party/wpt
 
 $ pnpm run submodule:patch
 ✓ applied: patches/submodules/werift-ice-restart-and-multiple-stun.patch
 
-$ pnpm install --frozen-lockfile        # exit 0
+$ pnpm install --frozen-lockfile        # exit 0（node_modules/.pnpm に 1119 パッケージ）
 $ pnpm run submodule:install            # exit 0
 $ pnpm exec playwright install chromium # exit 0
-$ pnpm run compile                      # exit 0
-$ pnpm run test
+$ pnpm run compile                      # exit 0 (Successfully ran target compile for 7 projects)
+$ pnpm run type                         # exit 0 (Successfully ran target type for 7 projects)
+$ CI=true pnpm run test
+ ✓ small/stream.test.ts (1 test) 4ms
  Test Files  1 passed (1)
       Tests  1 passed (1)
- ✓ large/turn.test.ts (1 test) 2925ms
- ✓ large/getStats.test.ts (2 tests) 3399ms
- ✓ large/stunPorts.test.ts (3 tests) 3626ms
- ✓ large/p2p.test.ts (3 tests) 5409ms
- ✓ large/loopback.test.ts (4 tests | 1 skipped) 6272ms
- ✓ large/restartIce.test.ts (1 test) 32322ms
+ ✓ large/getStats.test.ts (2 tests) 2463ms
+ ✓ large/stunPorts.test.ts (3 tests) 2476ms
+ ✓ large/turn.test.ts (1 test) 2644ms
+ ✓ large/p2p.test.ts (3 tests) 5087ms
+ ✓ large/loopback.test.ts (4 tests | 1 skipped) 5420ms
+ ✓ large/restartIce.test.ts (1 test) 31961ms
  Test Files  6 passed (6)
       Tests  13 passed | 1 skipped (14)
                                         # exit 0
+
+# 全工程を通したあとも gitlink は公開済み SHA のまま（drift しない）
+$ git submodule status --recursive
+ 1d96eb8a40c0861d99ff2d676c9270f2b164652a submodules/mediasoup (v0.0.3-85-g1d96eb8)
+ d782a54395552e594a6c36cd06430c8224b3096e submodules/mediasoup/submodules/werift (v0.24.1-6-gd782a543)
+-121babb3c1d6a78dd0f638593c82d6cdcd0bcd18 submodules/mediasoup/submodules/werift/third_party/wpt
 ```
+
+（submodule の fetch 先だけはローカルミラーに向けています。この環境に `ssh` も外部
+ネットワークも無いためで、SHA は公開済みのものと同一です。ミラーを `file` transport で
+submodule として clone するのに `protocol.file.allow=always` も検証側の一時 global
+config に入れています — いずれも検証環境の都合で、リポジトリ側の設定ではありません。）
 
 この確認の過程で、fresh checkout では `pnpm run submodule:install` が失敗することが
 分かったので直しました。mediasoup submodule（パッケージ名 `msc-node`）の `prepare` が
