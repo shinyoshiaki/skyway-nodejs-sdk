@@ -200,27 +200,6 @@ export class Sender extends Peer {
     this.onConnectionStateChanged.emit(state);
   }
 
-  /**
-   * 再接続が本当に完了したかどうか。
-   *
-   * werift の connectionState は candidate pair が未選出でも connected/completed に
-   * なることがあり、それだけを見ると「経路が無いのに再接続成功」と誤判定して
-   * restartIce を打ち切ってしまう。採用された candidate pair の有無も併せて確認する。
-   */
-  private _isMediaPathRestored() {
-    if ((this.pc.connectionState as RTCPeerConnectionState) !== 'connected') {
-      return false;
-    }
-    const iceTransports = this.pc.iceTransports ?? [];
-    if (iceTransports.length === 0) {
-      // iceTransports を持たない実装では従来どおり connectionState を信頼する
-      return true;
-    }
-    return iceTransports.every(
-      (iceTransport) => iceTransport.connection.nominated != undefined,
-    );
-  }
-
   /**@throws */
   readonly restartIce = async () => {
     if (this._backoffIceRestarted.exceeded) {
@@ -261,7 +240,7 @@ export class Sender extends Peer {
         return true;
       }
 
-      if (this._isMediaPathRestored()) {
+      if ((this.pc.connectionState as RTCPeerConnectionState) === 'connected') {
         this._log.warn(
           '[end] restartIce',
           createWarnPayload({

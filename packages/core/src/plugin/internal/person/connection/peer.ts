@@ -23,17 +23,6 @@ const log = new Logger(
   'packages/core/src/plugin/internal/person/connection/peer.ts',
 );
 
-// 再試行待ちの candidate を無制限に積まないための上限
-const maxPendingCandidates = 200;
-
-/**
- * werift が「この candidate の usernameFragment に一致する media section が無い」と
- * 判断したかどうか。ICE restart の offer/answer と candidate の到着順で普通に起きる。
- */
-const isUsernameFragmentMismatch = (err: unknown) =>
-  err instanceof Error &&
-  /No media section matched the ICE usernameFragment/.test(err.message);
-
 export abstract class Peer {
   private _pendingCandidates: RTCIceCandidate[] = [];
   readonly pc: RTCPeerConnection = new RTCPeerConnection({
@@ -269,22 +258,6 @@ export abstract class Peer {
         if (this.pc.signalingState === 'closed') return Promise.resolve();
 
         return this.pc.addIceCandidate(candidate).catch((err) => {
-          // ICE restart 直後は、相手の新しい usernameFragment を持つ candidate が
-          // こちらに新しい remoteDescription が入る前に届くことがある。werift は
-          // 一致する media section が無いと OperationError にするため、ここで捨てると
-          // restart 後の candidate pair が作られず再接続後にメディアが復帰しない。
-          // 破棄せずに次の setRemoteDescription 後の再試行へ回す。
-          if (
-            isUsernameFragmentMismatch(err) &&
-            this._pendingCandidates.length < maxPendingCandidates
-          ) {
-            this._pendingCandidates.push(candidate);
-            log.debug('requeue ice candidate for the next remote description', {
-              endpointId: this.endpoint.id,
-            });
-            return;
-          }
-
           log.warn(
             '[failed] add ice candidate',
             createWarnPayload({
