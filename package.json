@@ -17,6 +17,7 @@
     "playground-room": "cd examples/playground-room && pnpm run dev",
     "submodule:init": "git -c submodule.third_party/wpt.update=none submodule update --init --recursive",
     "submodule:patch": "zx scripts/apply_submodule_patches.mjs",
+    "submodule:unpatch": "zx scripts/unapply_submodule_patches.mjs",
     "submodule:install": "zx scripts/install_submodules.mjs",
     "test": "cd tests && pnpm test",
     "watch": "lerna run watch",

@@ -2,28 +2,8 @@ import 'zx';
 import { $, fs, path } from 'zx';
 
 // submodule（werift）に対する fork 独自の修正を patch として当てる。
-//
-// Why: これらの修正は werift / mediasoup-client-node の remote に push していない。
-// gitlink を未公開のローカルコミットに向けると fresh checkout / CI で取得できないため、
-// gitlink は remote から取得できる SHA のままにし、差分は本リポジトリの patches/ で
-// 管理する。これで clone 直後でも `submodule:init` → `submodule:patch` で同じ状態になる。
-const patches = [
-  {
-    patch: 'patches/submodules/werift-ice-restart-and-multiple-stun.patch',
-    cwd: 'submodules/mediasoup/submodules/werift',
-    // この patch が前提とする submodule の SHA（remote から取得できるもの）
-    base: 'd782a54395552e594a6c36cd06430c8224b3096e',
-    // patch を当てた werift は常に dirty になる。親（mediasoup）側で dirty を
-    // 無視させないと、submodule を再帰的に commit する類のツールが patch を
-    // werift のローカルコミットに変えてしまい、mediasoup の gitlink が
-    // 未公開 SHA を指して fresh checkout / CI で取得できなくなる。
-    // 親の .gitmodules は upstream 管理なので clone ローカルの config に書く。
-    ignoreDirtyIn: {
-      repo: 'submodules/mediasoup',
-      submodule: 'submodules/werift',
-    },
-  },
-];
+// 一覧と Why は submodule_patches.mjs を参照。
+import { patches } from './submodule_patches.mjs';
 
 // submodule の git dir はホスト/コンテナで解決が異なるため、親から継承した
 // GIT_DIR / GIT_WORK_TREE が混ざると別リポジトリを触ってしまう。明示的に外す。
@@ -41,12 +21,33 @@ $.verbose = false;
 const repoRoot = process.cwd();
 let failed = false;
 
-// patch 由来の dirty を親 submodule 側で無視させる（理由は patches の定義を参照）。
-async function ignoreDirty(ignoreDirtyIn) {
-  if (!ignoreDirtyIn) return;
-  const { repo, submodule } = ignoreDirtyIn;
-  await $({ cwd: path.join(repoRoot, repo), nothrow: true, quiet: true })`
-    git config submodule.${submodule}.ignore dirty`;
+// patch を当てた submodule は常に dirty になる。これを放置すると、submodule を再帰的に
+// commit する類のツール（CI 前の auto-commit など）が patch を submodule のローカル
+// コミットに変えてしまい、push していない SHA が HEAD / gitlink に残って
+// fresh checkout や CI から同じ状態を取得できなくなる。実際に 2 回踏んだ。
+//
+// そこで patch が触るファイルを skip-worktree にして、submodule 自身の `git status` を
+// clean に見せる。ファイルの中身は patch 適用後のまま残る。`git commit -a` は
+// 「何も commit するものが無い」で no-op になり、HEAD は gitlink と一致し続ける。
+//
+// patch を作り直すときはこの印を外す必要がある（`pnpm run submodule:unpatch`）。
+async function guardAgainstAccidentalCommits(target, patchPath, ignoreDirtyIn) {
+  const numstat = await $({ cwd: target, nothrow: true, quiet: true })`
+    git apply --numstat ${patchPath}`;
+  const files = numstat.stdout
+    .split('\n')
+    .map((line) => line.split('\t')[2])
+    .filter(Boolean);
+  if (files.length > 0) {
+    await $({ cwd: target, nothrow: true, quiet: true })`
+      git update-index --skip-worktree ${files}`;
+  }
+
+  if (ignoreDirtyIn) {
+    const { repo, submodule } = ignoreDirtyIn;
+    await $({ cwd: path.join(repoRoot, repo), nothrow: true, quiet: true })`
+      git config submodule.${submodule}.ignore dirty`;
+  }
 }
 
 for (const { patch, cwd, base, ignoreDirtyIn } of patches) {
@@ -74,7 +75,7 @@ for (const { patch, cwd, base, ignoreDirtyIn } of patches) {
     quiet: true,
   })`git apply --reverse --check ${patchPath}`;
   if (alreadyApplied.exitCode === 0) {
-    await ignoreDirty(ignoreDirtyIn);
+    await guardAgainstAccidentalCommits(target, patchPath, ignoreDirtyIn);
     console.log(`- already applied: ${patch}`);
     continue;
   }
@@ -104,7 +105,7 @@ for (const { patch, cwd, base, ignoreDirtyIn } of patches) {
     failed = true;
     continue;
   }
-  await ignoreDirty(ignoreDirtyIn);
+  await guardAgainstAccidentalCommits(target, patchPath, ignoreDirtyIn);
   console.log(`✓ applied: ${patch}`);
 }
 
