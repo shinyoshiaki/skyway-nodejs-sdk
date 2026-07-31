@@ -13,6 +13,15 @@ const patches = [
     cwd: 'submodules/mediasoup/submodules/werift',
     // この patch が前提とする submodule の SHA（remote から取得できるもの）
     base: 'd782a54395552e594a6c36cd06430c8224b3096e',
+    // patch を当てた werift は常に dirty になる。親（mediasoup）側で dirty を
+    // 無視させないと、submodule を再帰的に commit する類のツールが patch を
+    // werift のローカルコミットに変えてしまい、mediasoup の gitlink が
+    // 未公開 SHA を指して fresh checkout / CI で取得できなくなる。
+    // 親の .gitmodules は upstream 管理なので clone ローカルの config に書く。
+    ignoreDirtyIn: {
+      repo: 'submodules/mediasoup',
+      submodule: 'submodules/werift',
+    },
   },
 ];
 
@@ -32,7 +41,15 @@ $.verbose = false;
 const repoRoot = process.cwd();
 let failed = false;
 
-for (const { patch, cwd, base } of patches) {
+// patch 由来の dirty を親 submodule 側で無視させる（理由は patches の定義を参照）。
+async function ignoreDirty(ignoreDirtyIn) {
+  if (!ignoreDirtyIn) return;
+  const { repo, submodule } = ignoreDirtyIn;
+  await $({ cwd: path.join(repoRoot, repo), nothrow: true, quiet: true })`
+    git config submodule.${submodule}.ignore dirty`;
+}
+
+for (const { patch, cwd, base, ignoreDirtyIn } of patches) {
   const patchPath = path.join(repoRoot, patch);
   const target = path.join(repoRoot, cwd);
 
@@ -57,6 +74,7 @@ for (const { patch, cwd, base } of patches) {
     quiet: true,
   })`git apply --reverse --check ${patchPath}`;
   if (alreadyApplied.exitCode === 0) {
+    await ignoreDirty(ignoreDirtyIn);
     console.log(`- already applied: ${patch}`);
     continue;
   }
@@ -73,17 +91,20 @@ for (const { patch, cwd, base } of patches) {
     continue;
   }
 
+  // patch には末尾空白を残していない（空の context 行は空行のまま）。git apply は
+  // これを空の context 行として解釈できるが、環境依存の警告は黙らせる。
   const applied = await $({
     cwd: target,
     nothrow: true,
     quiet: true,
-  })`git apply ${patchPath}`;
+  })`git apply --whitespace=nowarn ${patchPath}`;
   if (applied.exitCode !== 0) {
     console.error(`✗ failed to apply ${patch} in ${cwd}`);
     console.error(applied.stderr);
     failed = true;
     continue;
   }
+  await ignoreDirty(ignoreDirtyIn);
   console.log(`✓ applied: ${patch}`);
 }
 

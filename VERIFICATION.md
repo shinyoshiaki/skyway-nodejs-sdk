@@ -289,6 +289,31 @@ patch を更新する場合は submodule 内で修正したうえで
 submodule 側でコミットして解消しないでください（コミットすると gitlink が remote から
 取得できない SHA を指すことになります）。
 
+実際にこれを一度踏んだため、規約だけに頼らない防止策を入れています。werift を再帰的に
+コミットするツールが動いた結果、werift に patch 内容のローカルコミットができ、
+mediasoup の gitlink が `1d96eb8` → `4d9f3329` に、werift が `d782a543` → `1f9626af` に
+動いてしまいました（内容は patch と同一でしたが、どちらの SHA も push していないため
+fresh checkout / CI からは取得できない状態）。復旧と対策:
+
+- 両 submodule を公開済み SHA へ戻した（`git reset --mixed` で HEAD だけ戻し、patch
+  内容は working tree に残す）
+- `submodule:patch` が patch 適用時に親（mediasoup）側へ
+  `submodule.submodules/werift.ignore=dirty` を設定するようにした。これで
+  `git status` を見て commit する類のツールから werift の dirty が見えなくなる
+  （mediasoup 自身の `.gitmodules` は upstream 管理なので clone ローカルの config に書く）
+- 親リポジトリ側は `.gitmodules` の `ignore = dirty` で従来どおり gitlink の変更だけを見る
+
+`.gitmodules` の `submodules/mediasoup` の url は SSH から HTTPS
+(`https://github.com/shinyoshiaki/mediasoup-client-node.git`) に変更しました。公開
+リポジトリなので、SSH 鍵を持たない fresh clone や CI の checkout からも取得できます
+（mediasoup 側が werift を参照する url も元から HTTPS です）。
+
+patch ファイルには末尾空白を残していません。unified diff では空行の context 行が
+「空白 1 文字だけの行」になりますが、末尾空白を除去するツールに壊されると patch が
+当たらなくなるため、空行のまま保存しています（`git apply` は空行を空の context 行として
+解釈します。適用は `--whitespace=nowarn` 付き）。除去後も同じ tree hash
+`813c6013…` になることを確認済みです。
+
 mediasoup-client-node の werift handler の getStats 空実装は submodule を変更せず、
 本リポジトリの `packages/core/src/imports/weriftHandlerStats.ts` が prototype に
 実装を注入して補っています。

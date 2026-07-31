@@ -39,7 +39,7 @@ index 48bee3df..0fe50e01 100644
      this.restart();
      log("new Connection", this.options);
    }
- 
+
 +  /**
 +   * 後方互換用。単数プロパティへの代入は「その 1 台だけを使う」意図として扱い、
 +   * undefined の代入は STUN サーバーを使わない指定になる。
@@ -58,7 +58,7 @@ index 48bee3df..0fe50e01 100644
 @@ -153,6 +175,15 @@ export class Connection implements IceConnection {
      this.earlyChecksDone = false;
      this.localCandidatesStart = false;
- 
+
 +    // close 済みの protocol は earlyCheck にも使えないうえ、残すと
 +    // getCandidatePromises の「同じアドレスを二重に追加しない」フィルタが
 +    // 効いてしまい、そのアドレスで新しいソケットを張り直せない。結果として
@@ -72,7 +72,7 @@ index 48bee3df..0fe50e01 100644
      for (const protocol of this.protocols) {
        if (protocol.localCandidate) {
 @@ -231,7 +262,15 @@ export class Connection implements IceConnection {
- 
+
        this.localCandidatesEnd = true;
      }
 -    this.setState("completed");
@@ -86,10 +86,10 @@ index 48bee3df..0fe50e01 100644
 +      this.setState("completed");
 +    }
    }
- 
+
    private appendLocalCandidate(candidate: Candidate) {
 @@ -324,7 +363,7 @@ export class Connection implements IceConnection {
- 
+
    private getCandidatePromises(addresses: string[], timeout = 5) {
      const candidatePromises: Promise<unknown>[] = [];
 -    const { stunServer, turnServer } = this;
@@ -100,7 +100,7 @@ index 48bee3df..0fe50e01 100644
 @@ -455,9 +494,11 @@ export class Connection implements IceConnection {
        candidatePromises.push(...tcpCandidatePromises);
      }
- 
+
 -    if (!gatherIceLite && !gatherRelayOnly && stunServer) {
 -      const stunCandidatePromises = localStunPromises.map(
 -        async (protocolPromise) => {
@@ -111,15 +111,15 @@ index 48bee3df..0fe50e01 100644
 +        localStunPromises.map(async (protocolPromise) => {
            const protocol = await protocolPromise;
            if (!protocol) return;
- 
+
 @@ -490,7 +531,7 @@ export class Connection implements IceConnection {
            });
- 
+
            return stunCandidatePromise;
 -        },
 +        }),
        );
- 
+
        candidatePromises.push(...stunCandidatePromises);
 diff --git a/packages/ice/src/iceBase.ts b/packages/ice/src/iceBase.ts
 index 6ce33684..066b94ae 100644
@@ -152,7 +152,7 @@ index c378cc3a..2994b99b 100644
 @@ -156,6 +156,10 @@ export class StunProtocol implements Protocol {
      }
    }
- 
+
 +  get closed() {
 +    return this.transport.closed;
 +  }
@@ -165,7 +165,7 @@ index a3b540ee..9118f891 100644
 --- a/packages/ice/src/types/model.ts
 +++ b/packages/ice/src/types/model.ts
 @@ -31,6 +31,11 @@ export interface TransactionRequestOptions {
- 
+
  export interface Protocol {
    type: string;
 +  /**
@@ -183,12 +183,12 @@ index 528dc587..653343bf 100644
 @@ -1,3 +1,4 @@
 +import { createSocket } from "node:dgram";
  import { setTimeout } from "timers/promises";
- 
+
  import { type Address, Event } from "../../../common/src";
 @@ -775,6 +776,53 @@ describe("ice", () => {
      }
    });
- 
+
 +  testWithLocalStun(
 +    "test_gather_queries_every_stun_server_in_stun_servers",
 +    async () => {
@@ -266,7 +266,7 @@ index 995c4d8e..6d2a798b 100644
 @@ -880,7 +880,18 @@ export class RTCPeerConnection extends EventTarget {
          }
          const checkDtlsConnected = () => dtlsTransport.state === "connected";
- 
+
 -        if (checkDtlsConnected()) {
 +        // ICE restart 後は ICE の connectivity check を再実行する必要がある。
 +        // DTLS は ICE restart をまたいで維持される仕様なので、「DTLS が connected
@@ -282,7 +282,7 @@ index 995c4d8e..6d2a798b 100644
 +        if (checkDtlsConnected() && !iceNeedsRestart) {
            return;
          }
- 
+
 diff --git a/packages/webrtc/src/utils.ts b/packages/webrtc/src/utils.ts
 index 18c50b09..7c344c12 100644
 --- a/packages/webrtc/src/utils.ts
@@ -297,7 +297,7 @@ index 18c50b09..7c344c12 100644
      turnPassword?: string;
      turnTransport?: "udp" | "tcp" | "tls";
    } = {};
- 
+
 +  // 同一ホストの別ポート(例: SkyWay の stunPorts=[443, 3478])を使えるように
 +  // STUN サーバーは全て収集する。stunServer は後方互換のため先頭を入れておく。
 +  const stunServers: Address[] = [];
@@ -309,7 +309,7 @@ index 18c50b09..7c344c12 100644
 @@ -129,8 +135,12 @@ export function parseIceServers(iceServers: RTCIceServer[]) {
          continue;
        }
- 
+
 -      if (!options.stunServer && parsed.kind === "stun") {
 -        options.stunServer = parsed.address;
 +      if (parsed.kind === "stun") {
@@ -319,12 +319,12 @@ index 18c50b09..7c344c12 100644
 +          stunServers.push(parsed.address);
 +        }
        }
- 
+
        if (!options.turnServer && parsed.kind === "turn") {
 @@ -142,6 +152,11 @@ export function parseIceServers(iceServers: RTCIceServer[]) {
      }
    }
- 
+
 +  if (stunServers.length > 0) {
 +    options.stunServer = stunServers[0];
 +    options.stunServers = stunServers;
@@ -340,7 +340,7 @@ index 34e48ef3..fa69af9b 100644
 @@ -13,6 +13,32 @@ describe("utils", () => {
        expect(turnUsername).toBeFalsy();
      });
- 
+
 +    test("multiple stun servers on the same host with different ports", () => {
 +      // SkyWay の rtcConfig.stunPorts に 443 と 3478 を両方指定した場合の形
 +      const iceServers = [
