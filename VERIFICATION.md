@@ -89,13 +89,23 @@ exit code: 0
 
 ```
 ci.status: success
+durationMs: 51622
  Lerna (powered by Nx)   Successfully ran target compile for 7 projects
  Lerna (powered by Nx)   Successfully ran target type for 7 projects
  Test Files  1 passed (1)
       Tests  1 passed (1)
  Test Files  6 passed (6)
       Tests  13 passed | 1 skipped (14)
+[CI exited with code 0]
 ```
+
+これは §2.6 の方針変更（patch 運用 → submodule 自体の修正）後の実行結果です。CI の
+前段で走る auto-commit の後も submodule は clean（werift `58d4c23c` / mediasoup
+`01d8acd`）で、gitlink と一致したままです。
+
+なお **GitHub Actions の Node CI workflow は、gitlink が push されるまでは
+submodule checkout の段階で失敗します**（「submodule の扱い」の「push が必要」を参照）。
+上記はローカルの worktree に対する CI 確認コマンドの結果です。
 
 ## 6. v2 主要 API の examples レベル動作確認
 
