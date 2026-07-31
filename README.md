@@ -175,12 +175,6 @@ pnpm run compile
 pnpm run build
 ```
 
-# 検証記録
-
-v2.5.1 追従時の完了条件に対する検証結果（compile / tests/small / tests/large の実接続結果、
-CI、examples での v2 API 動作確認、stunPorts の制限、submodule の扱い）は
-[VERIFICATION.md](./VERIFICATION.md) にまとめています。
-
 # License
 
 - [LICENSE](/LICENSE)
