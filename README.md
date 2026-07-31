@@ -146,15 +146,6 @@ werift への fork 独自の修正（ICE restart / 複数 STUN サーバー対�
 （`submodules/mediasoup/submodules/werift`）本体のコミット**として持ち、gitlink がそれを
 参照します。submodule を直接編集してコミットし、親側で gitlink を更新してください。
 
-なお、この環境のシェルは `GIT_DIR` を export しているため `git -C <submodule>` でも
-親リポジトリを操作してしまいます（エラーにならないので気づきにくい）。submodule に対する
-git は次の形で実行してください。
-
-```sh
-env -u GIT_DIR -u GIT_COMMON_DIR -u GIT_WORK_TREE \
-  git -C submodules/mediasoup/submodules/werift status
-```
-
 - `env.ts.template`を`env.ts`にリネームし、ファイル中の appId と secret にダッシュボードで発行した appId と secret を入力する
   - appId と secret の発行方法は[こちら](https://skyway.ntt.com/ja/docs/user-guide/javascript-sdk/quickstart/#199)
 
