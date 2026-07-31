@@ -29,8 +29,6 @@ import { waitForRtp } from './util';
  * 3. 再接続後に新しい `nominated`（採用された candidate pair）が選出されていること
  * 4. RTP が実際に届くこと（`inbound-rtp.packetsReceived` の増加）
  *
- * 3 / 4 は werift 側の ICE restart 修正が必要だった。詳細は VERIFICATION.md の
- * restartIce の節を参照。
  */
 describe('restartIce', () => {
   it(
