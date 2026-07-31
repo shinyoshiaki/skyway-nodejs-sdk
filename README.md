@@ -139,18 +139,13 @@ sudo apt-get -y install build-essential git gobject-introspection libgirepositor
 pnpm run first
 ```
 
-`pnpm run first` は `submodule:init`（werift の `third_party/wpt` は除外）→
-`submodule:patch` → `pnpm i` → `submodule:install` → `compile` を順に実行します。
+`pnpm run first` は `submodule:init`（werift の `third_party/wpt` は除外）→ `pnpm i`
+→ `submodule:install` → `compile` を順に実行します。
 
-`submodule:patch` は werift への fork 独自の修正（ICE restart / 複数 STUN サーバー対応）を
-`patches/submodules/` から submodule の working tree に当てます。これらの修正は werift の
-remote に push していないため、gitlink は remote から取得できる SHA のままにして、差分は
-patch として本リポジトリで管理しています。冪等なので何度実行しても構いません。
-
-patch を当てたファイルは `skip-worktree` が付いて submodule の `git status` に出なくなります
-（うっかりコミットして gitlink を未公開 SHA に向けてしまうのを防ぐため）。patch を作り直す
-ときは先に `pnpm run submodule:unpatch` で元に戻してください。詳細は `VERIFICATION.md` の
-「submodule の扱い」を参照。
+werift への fork 独自の修正（ICE restart / 複数 STUN サーバー対応）は **submodule
+（`submodules/mediasoup/submodules/werift`）本体のコミット**として持ち、gitlink がそれを
+参照します。submodule を直接編集してコミットし、親側で gitlink を更新してください。
+詳細は `VERIFICATION.md` の「submodule の扱い」を参照。
 
 - `env.ts.template`を`env.ts`にリネームし、ファイル中の appId と secret にダッシュボードで発行した appId と secret を入力する
   - appId と secret の発行方法は[こちら](https://skyway.ntt.com/ja/docs/user-guide/javascript-sdk/quickstart/#199)
