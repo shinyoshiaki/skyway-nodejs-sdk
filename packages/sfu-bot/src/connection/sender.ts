@@ -6,28 +6,29 @@ import { Forwarding, ForwardingConfigure } from '../forwarding';
 import {
   createError,
   createLogPayload,
-  IceManager,
+  type IceManager,
   isSafari,
-  LocalAudioStream,
-  LocalCustomVideoStream,
-  LocalPersonImpl,
-  LocalStream,
-  LocalVideoStream,
-  PublicationImpl,
+  type LocalAudioStream,
+  type LocalCustomVideoStream,
+  type LocalPersonImpl,
+  type LocalStream,
+  type LocalVideoStream,
+  type PublicationImpl,
+  type SkyWayChannelImpl,
+  type SkyWayContext,
+  type SubscriptionImpl,
   setEncodingParams,
-  SkyWayChannelImpl,
-  SkyWayContext,
-  SubscriptionImpl,
-  TransportConnectionState,
+  statsToArray,
+  type TransportConnectionState,
   uuidV4,
   waitForLocalStats,
 } from '../imports/core';
 import { MediaStreamTrack, types } from '../imports/mediasoup';
-import { SfuRestApiClient } from '../imports/sfu';
-import { SfuBotMember } from '../member';
+import { SFURestApiClient } from '../imports/sfu';
+import { SFUBotMember } from '../member';
 import { createWarnPayload } from '../util';
-import { SfuTransport } from './transport/transport';
-import { TransportRepository } from './transport/transportRepository';
+import type { SFUTransport } from './transport/transport';
+import type { TransportRepository } from './transport/transportRepository';
 
 const log = new Logger('packages/sfu-bot/src/connection/sender.ts');
 
@@ -36,7 +37,7 @@ export class Sender {
   forwardingId?: string;
   private _producer?: types.Producer;
   /**@private */
-  _broadcasterTransport?: SfuTransport;
+  _broadcasterTransport?: SFUTransport;
   private _disposer = new EventDisposer();
   private _unsubscribeStreamEnableChange?: () => void;
   private _cleanupStreamCallbacks?: () => void;
@@ -54,12 +55,12 @@ export class Sender {
       LocalAudioStream | LocalVideoStream | LocalCustomVideoStream
     >,
     readonly channel: SkyWayChannelImpl,
-    private readonly _api: SfuRestApiClient,
+    private readonly _api: SFURestApiClient,
     private _transportRepository: TransportRepository,
     private _localPerson: LocalPersonImpl,
-    private _bot: SfuBotMember,
+    private _bot: SFUBotMember,
     private _iceManager: IceManager,
-    private _context: SkyWayContext
+    private _context: SkyWayContext,
   ) {
     const analyticsSession = this._localPerson._analytics;
     if (analyticsSession) {
@@ -127,7 +128,7 @@ export class Sender {
         log.debug(
           'transport connection state changed',
           this._broadcasterTransport?.id,
-          state
+          state,
         );
         stream._setConnectionState(this._bot, state);
       })
@@ -139,6 +140,8 @@ export class Sender {
       contentType: this.publication.contentType,
       maxSubscribers: configure.maxSubscribers,
     });
+
+    const { forceTCP } = this._bot.options;
 
     const {
       forwardingId,
@@ -153,6 +156,7 @@ export class Sender {
       contentType: this.publication.contentType,
       maxSubscribers: configure.maxSubscribers,
       publisherId: this.publication.publisher.id,
+      forceTCP,
     });
     this.forwardingId = forwardingId;
 
@@ -168,13 +172,13 @@ export class Sender {
         broadcasterTransportOptions,
         'send',
         this._iceManager,
-        this._localPerson._analytics
+        this._localPerson._analytics,
       );
     }
 
     this._broadcasterTransport = this._transportRepository.getTransport(
       this._localPerson.id,
-      broadcasterTransportId
+      broadcasterTransportId,
     );
     if (!this._broadcasterTransport) {
       throw createError({
@@ -198,7 +202,7 @@ export class Sender {
     this._cleanupStreamCallbacks = this._setupTransportAccessForStream(
       stream,
       this._broadcasterTransport,
-      producer
+      producer,
     );
 
     const analyticsSession = this._localPerson._analytics;
@@ -221,7 +225,7 @@ export class Sender {
         await this.channel.onStreamPublished
           .watch(
             (e) => e.publication.id === forwardingId,
-            this._context.config.rtcApi.timeout
+            this._context.config.rtcApi.timeout,
           )
           .catch(() => {
             throw createError({
@@ -229,7 +233,7 @@ export class Sender {
               context: this._context,
               info: {
                 ...errors.timeout,
-                detail: 'SfuBotMember onStreamPublished',
+                detail: 'SFUBotMember onStreamPublished',
               },
               path: log.prefix,
               channel: this.channel,
@@ -250,7 +254,7 @@ export class Sender {
     this.forwarding = forwarding;
 
     const botSubscribing = this.channel.subscriptions.find(
-      (s) => s.publication.id === this.publication.id
+      (s) => s.publication.id === this.publication.id,
     ) as SubscriptionImpl;
     const [codec] = producer.rtpParameters.codecs;
     botSubscribing.codec = codec;
@@ -265,7 +269,7 @@ export class Sender {
           subscriptionId: botSubscribing.id,
           role: 'sender',
           rtcPeerConnectionId: this._broadcasterTransport.id,
-        }
+        },
       );
     }
 
@@ -276,7 +280,8 @@ export class Sender {
         end: (stats) => {
           const outbound = stats.find(
             (s) =>
-              s.id.includes('RTCOutboundRTP') || s.type.includes('outbound-rtp')
+              s.id.includes('RTCOutboundRTP') ||
+              s.type.includes('outbound-rtp'),
           );
           if (outbound?.keyFramesEncoded > 0) return true;
           return false;
@@ -290,7 +295,7 @@ export class Sender {
             await setEncodingParams(producer.rtpSender!, encodings).catch(
               (e) => {
                 log.error('_onEncodingsChanged failed', e, this);
-              }
+              },
             );
           }
         })
@@ -319,7 +324,7 @@ export class Sender {
   }
 
   private _listenStreamEnableChange(
-    stream: LocalAudioStream | LocalVideoStream | LocalCustomVideoStream
+    stream: LocalAudioStream | LocalVideoStream | LocalCustomVideoStream,
   ) {
     if (this._unsubscribeStreamEnableChange) {
       this._unsubscribeStreamEnableChange();
@@ -332,7 +337,7 @@ export class Sender {
             operationName: 'Sender._listenStreamEnableChange',
             bot: this._bot,
             payload: e,
-          })
+          }),
         );
       });
     });
@@ -341,7 +346,7 @@ export class Sender {
 
   private async _produce(
     stream: LocalAudioStream | LocalVideoStream | LocalCustomVideoStream,
-    transport: SfuTransport
+    transport: SFUTransport,
   ) {
     this.publication._onReplaceStream
       .add(async ({ newStream }) => {
@@ -364,7 +369,7 @@ export class Sender {
         this._cleanupStreamCallbacks = this._setupTransportAccessForStream(
           newStream as LocalStream,
           this._broadcasterTransport,
-          producer
+          producer,
         );
         await this._replaceTrack(newStream.track);
       })
@@ -416,7 +421,7 @@ export class Sender {
     if (stream.contentType === 'audio') {
       // apply opusDtx
       const opusDtx = codecCapabilities.find(
-        (c) => c.mimeType.toLowerCase() === 'audio/opus'
+        (c) => c.mimeType.toLowerCase() === 'audio/opus',
       )?.parameters?.usedtx;
       if (opusDtx !== false) {
         producerOptions.codecOptions = {
@@ -427,7 +432,7 @@ export class Sender {
 
       // apply opusStereo
       const opusStereo = codecCapabilities.find(
-        (c) => c.mimeType.toLowerCase() === 'audio/opus'
+        (c) => c.mimeType.toLowerCase() === 'audio/opus',
       )?.parameters?.stereo;
       if (opusStereo) {
         producerOptions.codecOptions = {
@@ -438,7 +443,7 @@ export class Sender {
 
       // apply opusFec
       const opusFec = codecCapabilities.find(
-        (c) => c.mimeType.toLowerCase() === 'audio/opus'
+        (c) => c.mimeType.toLowerCase() === 'audio/opus',
       )?.parameters?.useinbandfec;
       if (opusFec) {
         producerOptions.codecOptions = {
@@ -451,7 +456,7 @@ export class Sender {
     transport.onProduce
       .watch(
         (p) => p.producerOptions.appData?.transactionId === transactionId,
-        this._context.config.rtcConfig.timeout
+        this._context.config.rtcConfig.timeout,
       )
       .then(async (producer) => {
         try {
@@ -568,7 +573,7 @@ export class Sender {
 
   private _setupTransportAccessForStream(
     stream: LocalStream,
-    transport: SfuTransport,
+    transport: SFUTransport,
     producer: types.Producer
   ) {
     stream._getTransportCallbacks[this._bot.id] = () => ({
@@ -576,19 +581,19 @@ export class Sender {
       connectionState: transport.connectionState,
       info: this,
     });
-    // stream._getStatsCallbacks[this._bot.id] = async () => {
-    //   if (producer.closed) {
-    //     delete stream._getStatsCallbacks[this._bot.id];
-    //     return [];
-    //   }
-    //   const stats = await producer.getStats();
-    //   let arr = statsToArray(stats);
-    //   arr = arr.map((stats) => {
-    //     stats['sfuTransportId'] = transport.id;
-    //     return stats;
-    //   });
-    //   return arr;
-    // };
+    stream._getStatsCallbacks[this._bot.id] = async () => {
+      if (producer.closed) {
+        delete stream._getStatsCallbacks[this._bot.id];
+        return [];
+      }
+      const stats = await producer.getStats();
+      let arr = statsToArray(stats);
+      arr = arr.map((stats) => {
+        stats.sfuTransportId = transport.id;
+        return stats;
+      });
+      return arr;
+    };
 
     // replaceStream時に古いstreamに紐づくcallbackを削除するため、戻り値としてcallback削除用の関数を返し、replaceStream時に呼び出す
     const cleanupCallbacks = () => {
@@ -646,7 +651,7 @@ export class Sender {
   private startSendSubscriptionStatsReportTimer() {
     const analyticsSession = this._localPerson._analytics;
     const subscription = this._bot.subscriptions.find(
-      (s) => s.publication.id === this.publication.id
+      (s) => s.publication.id === this.publication.id,
     );
     if (subscription && analyticsSession) {
       const intervalSec = analyticsSession.client.getIntervalSec();

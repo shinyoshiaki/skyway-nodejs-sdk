@@ -1,30 +1,29 @@
-import { EventDisposer, Events, Logger } from '@skyway-sdk/common';
-import { Event } from '@skyway-sdk/common';
-import { Encoding } from '@skyway-sdk/model';
+import { Event, EventDisposer, Events, Logger } from '@skyway-sdk/common';
+import type { Encoding } from '@skyway-sdk/model';
 
-import { SkyWayChannelImpl } from '../channel';
-import {
+import type { SkyWayChannelImpl } from '../channel';
+import type {
   StreamSubscribedEvent,
   StreamUnsubscribedEvent,
 } from '../channel/event';
-import { SkyWayContext } from '../context';
+import type { SkyWayContext } from '../context';
 import { errors } from '../errors';
-import { AnalyticsSession } from '../external/analytics';
-import { RTCPeerConnection } from '../imports/mediasoup';
-import { Codec, EncodingParameters } from '../media';
-import { ContentType, WebRTCStats } from '../media/stream';
-import { LocalMediaStreamBase, LocalStream } from '../media/stream/local';
-import { LocalAudioStream } from '../media/stream/local/audio';
-import { LocalCustomVideoStream } from '../media/stream/local/customVideo';
+import type { AnalyticsSession } from '../external/analytics';
+import type { RTCPeerConnection } from '../imports/mediasoup';
+import type { Codec, EncodingParameters } from '../media';
+import type { ContentType, WebRTCStats } from '../media/stream';
+import type { LocalMediaStreamBase, LocalStream } from '../media/stream/local';
+import type { LocalAudioStream } from '../media/stream/local/audio';
+import type { LocalCustomVideoStream } from '../media/stream/local/customVideo';
 import { LocalDataStream } from '../media/stream/local/data';
-import { LocalVideoStream } from '../media/stream/local/video';
-import { Member } from '../member';
-import {
+import type { LocalVideoStream } from '../media/stream/local/video';
+import type { Member } from '../member';
+import type {
   RemoteMember,
   RemoteMemberImplInterface,
 } from '../member/remoteMember';
-import { TransportConnectionState } from '../plugin/interface';
-import { Subscription } from '../subscription';
+import type { TransportConnectionState } from '../plugin/interface';
+import type { Subscription } from '../subscription';
 import { createError, createLogPayload, createWarnPayload } from '../util';
 
 export * from './factory';
@@ -40,6 +39,7 @@ export interface Publication<T extends LocalStream = LocalStream> {
   readonly origin?: Publication;
   readonly codecCapabilities: Codec[];
   readonly encodings: Encoding[];
+  readonly type: PublicationType;
   /**
    * @description [japanese] publishしたstreamの実体。
    * ローカルで作られたPublicationでなければundefinedとなる
@@ -49,12 +49,6 @@ export interface Publication<T extends LocalStream = LocalStream> {
 
   //--------------------
 
-  /**
-   * @deprecated
-   * @use {@link LocalPerson.onStreamUnpublished} or {@link Channel.onStreamUnpublished}
-   * @description [japanese] Unpublishされた時に発火するイベント
-   */
-  onCanceled: Event<void>;
   /** @description [japanese] Subscribeされた時に発火するイベント */
   onSubscribed: Event<StreamSubscribedEvent>;
   /** @description [japanese] このPublicationをSubscribeしたSubscriptionがUnsubscribeされた時に発火するイベント */
@@ -70,7 +64,9 @@ export interface Publication<T extends LocalStream = LocalStream> {
   /** @description [japanese] stateが変化した時に発火するイベント */
   onStateChanged: Event<void>;
   /**
-   * @description [japanese] メディア通信の状態が変化した時に発火するイベント
+   * @description [japanese] メディア通信の状態が変化した時に発火するイベント。
+   * 状態の現在値を参照する場合はgetConnectionStateメソッドを利用してください。
+   * DataStreamを利用している場合、書き込み可能になったことはLocalDataStream.onWritableイベントで別途通知されます。
    */
   onConnectionStateChanged: Event<{
     remoteMember: RemoteMember;
@@ -83,12 +79,6 @@ export interface Publication<T extends LocalStream = LocalStream> {
    * @description [japanese] Metadataの更新
    */
   updateMetadata: (metadata: string) => Promise<void>;
-  /**
-   * @deprecated
-   * @use {@link LocalPerson.unpublish}
-   * @description [japanese] unpublishする
-   */
-  cancel: () => Promise<void>;
   /**
    * @description [japanese] Video|Audio Streamの場合、encoding設定を更新する
    */
@@ -105,24 +95,27 @@ export interface Publication<T extends LocalStream = LocalStream> {
    */
   replaceStream: (
     stream: LocalAudioStream | LocalVideoStream | LocalCustomVideoStream,
-    options?: ReplaceStreamOptions
+    options?: ReplaceStreamOptions,
   ) => void;
   /**
    * @experimental
    * @description [japanese] 試験的なAPIです。今後インターフェースや仕様が変更される可能性があります
    * @description [japanese] StreamをSubscribeしているMemberとの通信の統計情報を取得する
+   * @param selector [japanese] 接続相手
    */
   getStats(selector: Member | string): Promise<WebRTCStats>;
   /**
    * @experimental
    * @description [japanese] 試験的なAPIです。今後インターフェースや仕様が変更される可能性があります
    * @description [japanese] 対象のMemberとのRTCPeerConnectionを取得する。RTCPeerConnectionを直接操作すると SDK は正しく動作しなくなる可能性があります。
+   * @param selector [japanese] 接続相手
    */
   getRTCPeerConnection(
-    selector: Member | string
+    selector: Member | string,
   ): RTCPeerConnection | undefined;
   /**
-   * @description [japanese] メディア通信の状態を取得する
+   * @description [japanese] メディア通信の状態を取得する。
+   * 状態が変化したことはonConnectionStateChangedイベントで通知されます。
    * @param selector [japanese] 接続相手
    */
   getConnectionState(selector: Member | string): TransportConnectionState;
@@ -193,7 +186,6 @@ export class PublicationImpl<T extends LocalStream = LocalStream>
   }
 
   private readonly _events = new Events();
-  readonly onCanceled = this._events.make<void>();
   readonly onSubscribed = this._events.make<StreamSubscribedEvent>();
   readonly onUnsubscribed = this._events.make<StreamUnsubscribedEvent>();
   readonly onSubscriptionListChanged = this._events.make<void>();
@@ -216,6 +208,7 @@ export class PublicationImpl<T extends LocalStream = LocalStream>
   private streamEventDisposer = new EventDisposer();
   /**@private */
   readonly _analytics?: AnalyticsSession;
+  readonly type: PublicationType;
 
   private _context: SkyWayContext;
 
@@ -230,6 +223,7 @@ export class PublicationImpl<T extends LocalStream = LocalStream>
     encodings?: EncodingParameters[];
     stream?: T;
     isEnabled: boolean;
+    type: PublicationType;
   }) {
     this.id = args.id;
     this._channel = args.channel;
@@ -245,13 +239,14 @@ export class PublicationImpl<T extends LocalStream = LocalStream>
       this._setStream(args.stream);
     }
     this._analytics = this._channel.localPerson?._analytics;
+    this.type = args.type;
 
     log.debug('publication spawned', this.toJSON());
   }
 
   get subscriptions(): Subscription[] {
     return this._channel.subscriptions.filter(
-      (s) => s.publication.id === this.id
+      (s) => s.publication.id === this.id,
     );
   }
 
@@ -288,7 +283,6 @@ export class PublicationImpl<T extends LocalStream = LocalStream>
       this.stream._unpublished();
     }
 
-    this.onCanceled.emit();
     this.onStateChanged.emit();
 
     this._dispose();
@@ -306,76 +300,60 @@ export class PublicationImpl<T extends LocalStream = LocalStream>
     this.onSubscriptionListChanged.emit();
   }
 
-  /**
-   * @deprecated
-   * @use {@link LocalPerson.unpublish}
-   */
-  cancel = () =>
-    new Promise<void>((r, f) => {
-      let failed = false;
-      this._channel._unpublish(this.id).catch((e) => {
-        failed = true;
-        f(e);
-      });
-      this._setStream(undefined);
-      this.onCanceled
-        .asPromise(this._context.config.rtcApi.timeout)
-        .then(() => r())
-        .catch((e) => {
-          if (!failed) {
-            f(e);
-          }
-        });
-    });
-
   updateMetadata = (metadata: string) =>
-    new Promise<void>(async (r, f) => {
-      const timestamp = log.info(
-        '[start] updateMetadata',
-        await createLogPayload({
-          operationName: 'Publication.updateMetadata',
-          channel: this._channel,
-        }),
-        this
-      );
+    new Promise<void>((r, f) => {
+      const executeUpdate = async () => {
+        const timestamp = log.info(
+          '[start] updateMetadata',
+          await createLogPayload({
+            operationName: 'Publication.updateMetadata',
+            channel: this._channel,
+          }),
+          this,
+        );
 
-      let failed = false;
-      this._channel._updatePublicationMetadata(this.id, metadata).catch((e) => {
-        failed = true;
-        f(e);
-      });
-      this.onMetadataUpdated
-        .watch(
-          (e) => e.metadata === metadata,
-          this._context.config.rtcApi.timeout
-        )
-        .then(async () => {
-          r();
-          log.elapsed(
-            timestamp,
-            '[end] updateMetadata',
-            await createLogPayload({
-              operationName: 'Publication.updateMetadata',
-              channel: this._channel,
-            }),
-            this
-          );
-        })
-        .catch((error) => {
-          if (!failed) {
-            throw createError({
-              operationName: 'PublicationImpl.updateMetadata',
-              info: {
-                ...errors.timeout,
-                detail: 'publication onMetadataUpdated',
-              },
-              path: log.prefix,
-              context: this._context,
-              channel: this._channel,
-              error,
-            });
-          }
-        });
+        let failed = false;
+        this._channel
+          ._updatePublicationMetadata(this.id, metadata)
+          .catch((e) => {
+            failed = true;
+            f(e);
+          });
+        this.onMetadataUpdated
+          .watch(
+            (e) => e.metadata === metadata,
+            this._context.config.rtcApi.timeout,
+          )
+          .then(async () => {
+            r();
+            log.elapsed(
+              timestamp,
+              '[end] updateMetadata',
+              await createLogPayload({
+                operationName: 'Publication.updateMetadata',
+                channel: this._channel,
+              }),
+              this,
+            );
+          })
+          .catch((error) => {
+            if (!failed) {
+              throw createError({
+                operationName: 'PublicationImpl.updateMetadata',
+                info: {
+                  ...errors.timeout,
+                  detail: 'publication onMetadataUpdated',
+                },
+                path: log.prefix,
+                context: this._context,
+                channel: this._channel,
+                error,
+              });
+            }
+          });
+      };
+
+      executeUpdate().catch(f);
     });
 
   updateEncodings(encodings: EncodingParameters[]) {
@@ -394,48 +372,52 @@ export class PublicationImpl<T extends LocalStream = LocalStream>
   }
 
   disable = () =>
-    new Promise<void>(async (r, f) => {
+    new Promise<void>((r, f) => {
       // すでに disabled の場合は何もしない
       if (this.state === 'disabled') {
         r();
         return;
       }
 
-      const timestamp = log.info(
-        '[start] disable',
-        await createLogPayload({
-          operationName: 'Publication.disable',
-          channel: this._channel,
-        }),
-        this
-      );
+      const executeDisable = async () => {
+        const timestamp = log.info(
+          '[start] disable',
+          await createLogPayload({
+            operationName: 'Publication.disable',
+            channel: this._channel,
+          }),
+          this,
+        );
 
-      await this._disableStream();
+        await this._disableStream();
 
-      let failed = false;
-      this._channel._disablePublication(this.id).catch((e) => {
-        failed = true;
-        f(e);
-      });
-      this.onDisabled
-        .asPromise(this._context.config.rtcApi.timeout)
-        .then(async () => {
-          r();
-          log.elapsed(
-            timestamp,
-            '[end] disable',
-            await createLogPayload({
-              operationName: 'Publication.disable',
-              channel: this._channel,
-            }),
-            this
-          );
-        })
-        .catch((e) => {
-          if (!failed) {
-            f(e);
-          }
+        let failed = false;
+        this._channel._disablePublication(this.id).catch((e) => {
+          failed = true;
+          f(e);
         });
+        this.onDisabled
+          .asPromise(this._context.config.rtcApi.timeout)
+          .then(async () => {
+            r();
+            log.elapsed(
+              timestamp,
+              '[end] disable',
+              await createLogPayload({
+                operationName: 'Publication.disable',
+                channel: this._channel,
+              }),
+              this,
+            );
+          })
+          .catch((e) => {
+            if (!failed) {
+              f(e);
+            }
+          });
+      };
+
+      executeDisable().catch(f);
     });
 
   private async _disableStream() {
@@ -457,7 +439,7 @@ export class PublicationImpl<T extends LocalStream = LocalStream>
             operationName: 'Publication._disableStream',
             payload: e,
             detail: 'setEnabled failed',
-          })
+          }),
         );
       });
     }
@@ -467,21 +449,21 @@ export class PublicationImpl<T extends LocalStream = LocalStream>
       channel: this._channel,
     })
       .then((p) =>
-        log.info('publication _disableStream', p, { publication: this })
+        log.info('publication _disableStream', p, { publication: this }),
       )
       .catch(() => {});
   }
 
   enable = () =>
-    new Promise<void>(async (r, f) => {
-      if (this.stream == undefined) {
+    new Promise<void>((r, f) => {
+      if (this.stream === undefined) {
         f(
           createError({
             operationName: 'Publication.enable',
             context: this._context,
             info: errors.canNotEnableRemotePublication,
             path: log.prefix,
-          })
+          }),
         );
         return;
       }
@@ -492,45 +474,49 @@ export class PublicationImpl<T extends LocalStream = LocalStream>
         return;
       }
 
-      const timestamp = log.info(
-        '[start] enable',
-        await createLogPayload({
-          operationName: 'Publication.enable',
-          channel: this._channel,
-        }),
-        this
-      );
+      const executeEnable = async () => {
+        const timestamp = log.info(
+          '[start] enable',
+          await createLogPayload({
+            operationName: 'Publication.enable',
+            channel: this._channel,
+          }),
+          this,
+        );
 
-      let failed = false;
-      this._channel._enablePublication(this.id).catch((e) => {
-        failed = true;
-        f(e);
-      });
-      this._onEnabled
-        .asPromise(this._context.config.rtcApi.timeout)
-        .then(async () => {
-          await this._enableStream();
-
-          this.onEnabled.emit();
-          this.onStateChanged.emit();
-
-          log.elapsed(
-            timestamp,
-            '[end] enable',
-            await createLogPayload({
-              operationName: 'Publication.enable',
-              channel: this._channel,
-            }),
-            this
-          );
-
-          r();
-        })
-        .catch((e) => {
-          if (!failed) {
-            f(e);
-          }
+        let failed = false;
+        this._channel._enablePublication(this.id).catch((e) => {
+          failed = true;
+          f(e);
         });
+        this._onEnabled
+          .asPromise(this._context.config.rtcApi.timeout)
+          .then(async () => {
+            await this._enableStream();
+
+            this.onEnabled.emit();
+            this.onStateChanged.emit();
+
+            log.elapsed(
+              timestamp,
+              '[end] enable',
+              await createLogPayload({
+                operationName: 'Publication.enable',
+                channel: this._channel,
+              }),
+              this,
+            );
+
+            r();
+          })
+          .catch((e) => {
+            if (!failed) {
+              f(e);
+            }
+          });
+      };
+
+      executeEnable().catch(f);
     });
 
   private async _enableStream() {
@@ -547,7 +533,7 @@ export class PublicationImpl<T extends LocalStream = LocalStream>
       channel: this._channel,
     })
       .then((p) =>
-        log.info('publication _enableStream', p, { publication: this })
+        log.info('publication _enableStream', p, { publication: this }),
       )
       .catch(() => {});
 
@@ -561,7 +547,7 @@ export class PublicationImpl<T extends LocalStream = LocalStream>
             operationName: 'Publication._disableStream',
             payload: e,
             detail: 'setEnabled failed',
-          })
+          }),
         );
       });
     }
@@ -569,7 +555,7 @@ export class PublicationImpl<T extends LocalStream = LocalStream>
 
   replaceStream(
     stream: LocalAudioStream | LocalVideoStream | LocalCustomVideoStream,
-    options: ReplaceStreamOptions = {}
+    options: ReplaceStreamOptions = {},
   ) {
     log.info('replaceStream', { stream, options }, this);
 
@@ -602,13 +588,16 @@ export class PublicationImpl<T extends LocalStream = LocalStream>
       .then((res) => log.debug(res, { old: this.stream, new: stream }))
       .catch((e) => e);
 
-    stream.setEnabled(this.stream.isEnabled).catch((e) => {
+    stream.setEnabled(this._state === 'enabled').catch((e) => {
       log.error('replaceStream stream.setEnabled', e, this.toJSON());
     });
     const oldStream = this._stream as LocalMediaStreamBase;
     this._setStream(stream as T);
 
     this._onReplaceStream.emit({ newStream: stream, oldStream });
+
+    // replaceStream 実行後に旧 LocalStream の _unpublished() を呼び明示的に行う
+    oldStream._unpublished();
 
     if (this._analytics && !this._analytics.isClosed()) {
       // 再送時に他の処理をブロックしないためにawaitしない
@@ -634,7 +623,7 @@ export class PublicationImpl<T extends LocalStream = LocalStream>
   }
 
   getRTCPeerConnection(
-    selector: string | Member
+    selector: string | Member,
   ): RTCPeerConnection | undefined {
     if (!this.stream) {
       throw createError({
@@ -672,6 +661,7 @@ export class PublicationImpl<T extends LocalStream = LocalStream>
       encodings: this.encodings,
       state: this.state,
       stream: this.stream,
+      type: this.type,
     };
   }
 
@@ -690,7 +680,7 @@ export type PublicationState = 'enabled' | 'disabled' | 'canceled';
 
 /**@internal */
 export const normalizeEncodings = (
-  encodings: EncodingParameters[]
+  encodings: EncodingParameters[],
 ): Encoding[] =>
   encodings.map((e, i) => ({
     ...e,
@@ -698,20 +688,22 @@ export const normalizeEncodings = (
   }));
 
 export const sortEncodingParameters = (
-  encodings: EncodingParameters[]
+  encodings: EncodingParameters[],
 ): EncodingParameters[] => {
   const [encode] = encodings;
   if (encode.maxBitrate) {
     // 小から大
-    return encodings.sort((a, b) => a.maxBitrate! - b.maxBitrate!);
+    return encodings.sort((a, b) => (a.maxBitrate ?? 0) - (b.maxBitrate ?? 0));
   } else if (encode.scaleResolutionDownBy) {
     //大から小
     return encodings.sort(
-      (a, b) => b.scaleResolutionDownBy! - a.scaleResolutionDownBy!
+      (a, b) => (b.scaleResolutionDownBy ?? 0) - (a.scaleResolutionDownBy ?? 0),
     );
   } else if (encode.maxFramerate) {
     // 小から大
-    return encodings.sort((a, b) => a.maxFramerate! - b.maxFramerate!);
+    return encodings.sort(
+      (a, b) => (a.maxFramerate ?? 0) - (b.maxFramerate ?? 0),
+    );
   }
   return encodings;
 };
@@ -720,3 +712,5 @@ export type ReplaceStreamOptions = {
   /**@description [japanese] 入れ替え前のstreamを開放する。デフォルトで有効 */
   releaseOldStream?: boolean;
 };
+
+export type PublicationType = 'p2p' | 'sfu';

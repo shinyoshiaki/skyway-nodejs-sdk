@@ -1,5 +1,58 @@
 import { chromium } from 'playwright';
 
+import type { RtpPacket } from '../../packages/room/src';
+
+type RtpEvent = {
+  subscribe: (cb: (rtp: RtpPacket) => void) => { unSubscribe: () => void };
+};
+
+/**
+ * RTP を受信して条件を満たすまで待つ。
+ *
+ * Why: `onReceiveRtp.subscribe(async (rtp) => { ... await room.close() ... })` のように
+ * 同期イベントに async コールバックを渡すと、(1) 条件成立後もコールバックが呼ばれ続けて
+ * close/dispose が多重に走り、(2) その中の reject を誰も受け取らないため
+ * unhandled rejection になる。条件成立時点で必ず unsubscribe し、エラーは待ち側へ
+ * 伝播させることで、後片付けをテスト本体の直線的な流れに戻す。
+ */
+export const waitForRtp = (
+  track: { onReceiveRtp: RtpEvent },
+  predicate: (rtp: RtpPacket) => boolean,
+  { timeoutMs = 30_000 }: { timeoutMs?: number } = {}
+) =>
+  new Promise<RtpPacket>((resolve, reject) => {
+    let settled = false;
+    const { unSubscribe } = track.onReceiveRtp.subscribe((rtp) => {
+      if (settled) {
+        return;
+      }
+      try {
+        if (!predicate(rtp)) {
+          return;
+        }
+      } catch (error) {
+        settled = true;
+        unSubscribe();
+        clearTimeout(timer);
+        reject(error);
+        return;
+      }
+      settled = true;
+      unSubscribe();
+      clearTimeout(timer);
+      resolve(rtp);
+    });
+
+    const timer = setTimeout(() => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      unSubscribe();
+      reject(new Error(`waitForRtp timeout: ${timeoutMs}ms`));
+    }, timeoutMs);
+  });
+
 export const browserExec = async <T>(
   func: (...args: any) => Promise<T>,
   arg: any

@@ -42,7 +42,7 @@ gst.init([]);
     await SkyWayStreamFactory.createCameraVideoStream()
   );
 
-  const receiver = await (await SkyWayRoom.Find(context, room, 'p2p')).join();
+  const receiver = await (await SkyWayRoom.Find(context, room, { type: 'p2p' })).join();
   const { stream: remoteStream } = await receiver.subscribe<RemoteVideoStream>(
     publication
   );

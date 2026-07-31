@@ -5,6 +5,8 @@ lib
 build
 .parcel-cache
 .cache
+.nx
+lerna-debug.log
 packages/**/reports
 packages/**/coverage
 *.tgz
@@ -25,3 +27,5 @@ packages/signaling-client/examples
 packages/analytics-client/examples
 jest
 test-*.json
+AGENTS.md
+CLAUDE.md

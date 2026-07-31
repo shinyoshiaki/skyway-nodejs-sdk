@@ -11,7 +11,7 @@ npm i @skyway-sdk/core
 
 # 概要
 
-クライアントアプリケーションは通信を開始するまでに以下のフローをたどります。
+アプリケーションは通信を開始するまでに以下のフローをたどります。
 
 **1. SkyWay Auth Token を取得（生成）する**
 
@@ -22,7 +22,7 @@ npm i @skyway-sdk/core
 メディア通信を行うグループの単位を Channel と呼びます。
 メディア通信を開始するにはまず Channel を作る権限を持った SkyWay Auth Token を用いて Channel を作成する必要があります。
 
-**3. クライアントが Channel に Join して Channel の Member となる**
+**3. Member として Channel に Join する**
 
 **4. Stream を Channel 内に Publish および Subscribe する**
 
@@ -48,13 +48,13 @@ ID は Channel 作成時に自動的に払い出される値であり、Name は
 
 ## Member
 
-Member は他のクライアントとの通信を管理するエージェントです。
+Member は他の端末との通信を管理するエージェントです。
 
 映像や音声を送信したり、受信したりすることが出来ます。
 
 Member は 一意な識別子である ID と、オプショナルな値である Name を持ちます。
 
-ID は Member 作成時に自動的に払い出される値であり、Name はクライアントが Channel に Join する際に指定することができる任意の値です。
+ID は Member 作成時に自動的に払い出される値であり、Name は Member が Channel に Join する際に指定することができる任意の値です。
 
 Channel 内で重複した Name を指定することはできません。
 
@@ -80,7 +80,7 @@ Channel 内で Member が通信するメディアのことを Stream と呼び�
 
 ## Publication
 
-あるクライアントが用意した Stream を他の Member が受信可能にするために Channel 内に公開する操作のことを Publish と呼びます。Stream を Publish すると Channel 内に Publication というリソースが生成されます。
+ある Member が用意した Stream を他の Member が受信可能にするために Channel 内に公開する操作のことを Publish と呼びます。Stream を Publish すると Channel 内に Publication というリソースが生成されます。
 
 他の Member は Publication を Subscribe することで Subscription というリソースを得られて、Stream の受信が開始されます。
 
@@ -88,11 +88,11 @@ Publication を Unpublish すると SkyWay サービス側で関連する Subscr
 
 ## Subscription
 
-あるクライアントが Channel に存在する Publication を Subscribe した時に得られるリソースです。Subscription には Stream が含まれており、メディアの受信が可能です。
+ある Member が Channel に存在する Publication を Subscribe した時に得られるリソースです。Subscription には Stream が含まれており、メディアの受信が可能です。
 
 Channel 内の Subscription を見ることでどの Member がどの Publication を Subscribe しているかを把握することができます。
 
-クライアントの Member が Subscribe していない Subscription の Stream を参照することはできません。Member が Stream を受信するためには必ずその Member が Publication を Subscribe して Subscription を作る必要があります。
+自身の Member が Subscribe していない Subscription の Stream を参照することはできません。Member が Stream を受信するためには必ずその Member が Publication を Subscribe して Subscription を作る必要があります。
 
 Subscription と紐ついている Publication が Unpublish されると Subscription は自動的に Unsubscribe されます。
 
@@ -100,7 +100,7 @@ Subscription と紐ついている Publication が Unpublish されると Subscr
 
 SkyWay の Core SDK では SFU や録音録画機能を Bot という形で提供しています。
 
-Plugin はこの Sfu Bot や Recording Bot などの Bot を利用するための仕組みです。
+Plugin はこの SFU Bot や Recording Bot などの Bot を利用するための仕組みです。
 
 各 Plugin の使い方は各 Plugin のドキュメントに記載されています。
 
@@ -124,6 +124,32 @@ const context = await SkyWayContext.Create(tokenString);
 ```
 
 事前にトークンの取得が必要になります。
+
+### 開発用途向けの Context 作成
+
+開発用途では、`appId` と `secretKey` を SDK に渡し、SDK 内部で JWT を自動生成して `SkyWayContext` を作成できる `SkyWayContext.CreateForDevelopment` を利用できます。
+
+**注意**: `secretKey` をクライアントアプリに埋め込むことは認証情報漏えいに直結します。
+この API は **開発用途限定** であり、本番環境での利用は避けてください。
+
+```ts
+import { SkyWayContext } from '@skyway-sdk/core';
+
+// ※開発用途限定。本番では secretKey をアプリに埋め込まないでください。
+const context = await SkyWayContext.CreateForDevelopment(appId, secretKey);
+```
+
+このメソッドが呼ばれるたびに警告ログが出力されます。
+このメソッドが内部で生成するトークンの有効期限は **24時間** です。
+このメソッドで作成した Context は、トークン期限の `config.token.updateRemindSec` 秒前（デフォルト `30` 秒）にトークンを自動的に更新します。
+自動更新タイミングを変更したい場合は `updateRemindSec` を指定してください。
+
+```ts
+const context = await SkyWayContext.CreateForDevelopment(appId, secretKey, {
+  token: { updateRemindSec: 60 },
+});
+```
+手動でトークンを更新したい場合は、`SkyWayContext.Create` を利用してください。
 
 ### トークンの取得方法
 
@@ -290,10 +316,10 @@ await person.publish(audio, {
 ```
 
 codecCapabilities 配列の先頭のコーデックを優先して利用します。
-デバイスが先頭のコーデックに対応していない場合は後ろのコーデックを利用します。
-どのコーデックにも対応していない場合はデバイスが対応している他のコーデックを自動的に利用します。
+端末が先頭のコーデックに対応していない場合は後ろのコーデックを利用します。
+どのコーデックにも対応していない場合は端末が対応している他のコーデックを自動的に利用します。
 
-SFU-Bot を利用する際にコーデックを指定する場合はアプリケーションがサポートする対象のデバイスすべてで使えるコーデックを指定する必要があります。
+SFU-Bot を利用する際にコーデックを指定する場合はアプリケーションがサポートする対象の端末すべてで使えるコーデックを指定する必要があります。
 
 ### Stream の Unpublish
 

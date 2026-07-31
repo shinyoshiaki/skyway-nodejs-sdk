@@ -1,10 +1,16 @@
 import { Event, EventDisposer, Logger } from '@skyway-sdk/common';
+import {
+  type Member,
+  type RemoteAudioStream,
+  type RemoteDataStream,
+  RemotePersonImpl,
+  type RemoteVideoStream,
+} from '../../imports/core';
 
 import { errors } from '../../errors';
-import { Member, RemotePersonImpl } from '../../imports/core';
-import { RoomMember, RoomMemberImpl } from '../../member';
-import { RoomImpl } from '../../room/base';
-import { RoomSubscription } from '../../subscription';
+import { type RoomMember, RoomMemberImpl } from '../../member';
+import type { Room } from '../../room/default';
+import type { RoomSubscription } from '../../subscription';
 import { createError } from '../../util';
 
 const log = new Logger('packages/room/src/member/remote/base.ts');
@@ -21,7 +27,7 @@ export interface RemoteRoomMember extends RoomMember {
   readonly onPublicationListChanged: Event<void>;
   /**@description [japanese] この RemoteRoomMember にPublicationをSubscribeさせる */
   subscribe: (
-    publicationId: string
+    publicationId: string,
   ) => Promise<{ subscription: RoomSubscription }>;
   /**@description [japanese] この RemoteRoomMember にPublicationをUnsubscribeさせる */
   unsubscribe: (subscriptionId: string) => Promise<void>;
@@ -45,7 +51,7 @@ export class RemoteRoomMemberImpl
 
   private _disposer = new EventDisposer();
 
-  constructor(member: Member, room: RoomImpl) {
+  constructor(member: Member, room: Room) {
     super(member, room);
 
     room.onPublicationSubscribed
@@ -79,8 +85,12 @@ export class RemoteRoomMemberImpl
     }
   }
 
-  subscribe = (publicationId: string) =>
-    new Promise<{ subscription: RoomSubscription }>((r, f) => {
+  subscribe = <
+    T extends RemoteVideoStream | RemoteAudioStream | RemoteDataStream,
+  >(
+    publicationId: string,
+  ) =>
+    new Promise<{ subscription: RoomSubscription<T> }>((r, f) => {
       if (!(this.member instanceof RemotePersonImpl)) {
         f(
           createError({
@@ -89,7 +99,7 @@ export class RemoteRoomMemberImpl
             room: this.room,
             info: errors.subscribeOtherMemberType,
             path: log.prefix,
-          })
+          }),
         );
         return;
       }
@@ -102,7 +112,7 @@ export class RemoteRoomMemberImpl
 
       this.onPublicationSubscribed
         .watch((e) => e.subscription.publication.id === publicationId)
-        .then((e) => r(e))
+        .then((e) => r(e as { subscription: RoomSubscription<T> }))
         .catch((e) => {
           if (!failed) f(e);
         });
@@ -118,7 +128,7 @@ export class RemoteRoomMemberImpl
             room: this.room,
             info: errors.subscribeOtherMemberType,
             path: log.prefix,
-          })
+          }),
         );
         return;
       }

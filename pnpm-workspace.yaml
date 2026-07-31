@@ -5,3 +5,23 @@ packages:
   - 'examples/sendrecv'
   - 'examples/sfu-room-for-hosting'
   - 'tests'
+
+# pnpm 11 は package.json の pnpm フィールドではなくこのファイルを設定源とする。
+# node-gtk は Node の ABI 向け binding を postinstall(node-pre-gyp)で取得する必要があるため必須。
+onlyBuiltDependencies:
+  - esbuild
+  - node-gtk
+  - nx
+allowBuilds:
+  esbuild: true
+  node-gtk: true
+  nx: true
+
+# upstream v2.5.1 のセキュリティ向け上書きのうち、fork の依存ツリーで動くものを踏襲する。
+# brace-expansion >=5 は CJS の default export を廃止しており、fork がまだ使っている
+# lerna 8 / nx 20 の minimatch@9 が `(0, brace_expansion_1.default) is not a function` で
+# 落ちるため採用しない（upstream は lerna 9 系なので影響を受けない）。
+overrides:
+  axios: 1.16.0
+  tmp: '>=0.2.6'
+  ip-address: '>=10.1.1'

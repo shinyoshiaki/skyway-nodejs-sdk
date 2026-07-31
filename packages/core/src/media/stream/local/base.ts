@@ -1,23 +1,23 @@
 import { Event } from '@skyway-sdk/common';
 import { uuidV4 } from '@skyway-sdk/token';
 
-import { RTCPeerConnection } from '../../../imports/mediasoup';
-import { Member } from '../../../member';
-import { RemoteMember } from '../../../member/remoteMember';
-import { Transport, TransportConnectionState } from '../../../plugin/interface';
-import { ContentType, Stream, WebRTCStats } from '../base';
+import type { RTCPeerConnection } from '../../../imports/mediasoup';
+import type { Member } from '../../../member';
+import type { RemoteMember } from '../../../member/remoteMember';
+import type {
+  Transport,
+  TransportConnectionState,
+} from '../../../plugin/interface';
+import type { ContentType, Stream, WebRTCStats } from '../base';
+
+export interface LocalStreamInterface extends Stream {
+  readonly side: 'local';
+  readonly id: string;
+  published: boolean;
+}
 
 export abstract class LocalStreamBase implements Stream {
   readonly side = 'local';
-  /**
-   * @deprecated
-   * @use Publication.onConnectionStateChanged
-   * @description [japanese] メディア通信の状態が変化した時に発火するイベント
-   */
-  readonly onConnectionStateChanged = new Event<{
-    remoteMember: RemoteMember;
-    state: TransportConnectionState;
-  }>();
   /**@internal */
   readonly _onConnectionStateChanged = new Event<{
     remoteMember: RemoteMember;
@@ -41,9 +41,7 @@ export abstract class LocalStreamBase implements Stream {
   } = {};
 
   /**@internal */
-  constructor(readonly contentType: ContentType) {
-    this._onConnectionStateChanged.pipe(this.onConnectionStateChanged);
-  }
+  constructor(readonly contentType: ContentType) {}
 
   /**@internal */
   _setLabel(label: string) {
@@ -66,19 +64,11 @@ export abstract class LocalStreamBase implements Stream {
   /**@internal */
   _setConnectionState(
     remoteMember: RemoteMember,
-    state: TransportConnectionState
+    state: TransportConnectionState,
   ) {
     if (this._connectionState[remoteMember.id] === state) return;
     this._connectionState[remoteMember.id] = state;
     this._onConnectionStateChanged.emit({ remoteMember, state });
-  }
-
-  /**
-   * @deprecated
-   * @use Publication.getStats
-   */
-  getStats(selector: Member | string): Promise<WebRTCStats> {
-    return this._getStats(selector);
   }
 
   /**@internal */
@@ -93,33 +83,15 @@ export abstract class LocalStreamBase implements Stream {
       Object.entries(this._getStatsCallbacks).map(async ([key, cb]) => ({
         memberId: key,
         stats: await cb().catch(() => []),
-      }))
+      })),
     );
-  }
-
-  /**
-   * @deprecated
-   * @use Publication.getRTCPeerConnection
-   */
-  getRTCPeerConnection(
-    selector: Member | string
-  ): RTCPeerConnection | undefined {
-    return this._getRTCPeerConnection(selector);
   }
 
   /**@internal */
   _getRTCPeerConnection(
-    selector: Member | string
+    selector: Member | string,
   ): RTCPeerConnection | undefined {
     return this._getTransport(selector)?.rtcPeerConnection;
-  }
-
-  /**
-   * @deprecated
-   * @use Publication.getConnectionState
-   */
-  getConnectionState(selector: Member | string): TransportConnectionState {
-    return this._getConnectionState(selector);
   }
 
   /**@internal */

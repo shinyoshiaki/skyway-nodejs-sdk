@@ -3,10 +3,27 @@
 SkyWay JS-SDK を Node.js に非公式に対応させた SDK です。
 JS-SDK と API はほとんど同じですが、一部機能に対応していません。
 
+本 SDK は [skyway-js-sdk](https://github.com/skyway/js-sdk) の **v2.5.1** に追従しています。
+v2 は破壊的変更を含むメジャーアップデートであり、本 SDK もブラウザ版 v2 の API をそのまま採用しています。
+
 # サンプルコード
 
 - https://github.com/shinyoshiaki/skyway-nodejs-sdk/tree/nodejs/examples
 - https://github.com/shinyoshiaki/skyway-nodejs-playground
+
+# v1 系からの移行
+
+ブラウザ版 v2.0.0 の破壊的変更がそのまま適用されます。主な変更点は次のとおりです。
+
+- P2P と SFU を同一 Room で同時に使える統合 `Room` 型が追加された（`SkyWayRoom.Create` / `Find` / `FindOrCreate` で `type` を省略、または `'default'` を指定すると統合 Room になる）。
+- `SkyWayRoom.Find` の第 3 引数が文字列からオブジェクトに変更された。
+  - v1: `SkyWayRoom.Find(context, { id }, 'sfu')`
+  - v2: `SkyWayRoom.Find(context, { id }, { type: 'sfu' })`
+- `SfuRoom` → `SFURoom`、`SfuBotMember` → `SFUBotMember` など `Sfu` を含む識別子が `SFU` にリネームされた。
+- `updateReminderSec` → `updateRemindSec` にリネームされた。
+- `P2PRoom.moveRoom` / `SFURoom.moveRoom` が削除された。
+- `cancel` / `onCanceled` / `LocalStream.isEnabled` などの deprecated なメンバーが削除された。
+- `Member` に `side` プロパティが追加された。
 
 # skyway-js-sdk との違い
 
@@ -15,21 +32,39 @@ JS-SDK と API はほとんど同じですが、一部機能に対応してい�
 - 提供パッケージ
   - room
 - 対応動作環境
-  - Node.js
+  - Node.js v22 以降
 - 対応通信方法
+  - P2P
   - SFU
 - 対応コーデック
   - opus
   - vp8
   - h264
+- 対応機能（ブラウザ版と同様に利用できるもの）
+  - `Publication.getStats` / `Subscription.getStats` / `getRTCPeerConnection`
+  - `restartIce`（ICE 切断時の再接続。切断検知 → ICE restart → メディア再開まで
+    実接続テストで確認しています）
+  - `rtcConfig.stunPorts`（`[443]` / `[3478]` / `[443, 3478]` のいずれも指定どおりに動作。
+    複数指定時は全てのポートに問い合わせます）
 - 非対応機能
-  - getStats
-  - restartIce
   - simulcast
+  - `LocalAudioStream.getAudioLevel` / `RemoteAudioStream.getAudioLevel`
+    （Web Audio API に依存するため。呼び出すと `notSupportedInNodejs` エラーになります）
+  - `SkyWayStreamFactory.enumerateDevices` などのデバイス列挙 API と `createDisplayStreams`
+    （ブラウザのデバイス列挙・`getDisplayMedia` に依存するため）。
+    Stream のソースは `registerMediaDevices` / `registerAudioTestSrc` / `registerVideoTestSrc`
+    で登録してから `createMicrophoneAudioStream` / `createCameraVideoStream` を使います。
+  - Analytics（統計情報の SkyWay サーバへの自動送信）。
+    SkyWay の AnalyticsServer が Node.js からの WebSocket 接続を受け付けないため、
+    トークンで `analytics: true` を指定しても Analytics セッションは作成されません。
+    統計情報そのものは `Publication.getStats` / `Subscription.getStats` で取得できます。
 
 ## 使い方
 
-[./examples/sendrecv/audio.ts](./examples/sendrecv/audio.ts)
+- SFU: [./examples/sendrecv/audio.ts](./examples/sendrecv/audio.ts)
+- P2P: [./examples/sendrecv/p2p.ts](./examples/sendrecv/p2p.ts)
+- 統合 Room（P2P と SFU の同時利用 / `Member.side` / `rtcConfig.stunPorts`）:
+  [./examples/sendrecv/unified_room.ts](./examples/sendrecv/unified_room.ts)
 
 # SDK のインストール方法
 
@@ -37,12 +72,20 @@ JS-SDK と API はほとんど同じですが、一部機能に対応してい�
 
 ## NPM を利用する場合
 
-npm がインストールされている環境下で以下のコマンドを実行します
-
-**Room ライブラリ**
+npm がインストールされている環境下で以下のコマンドを実行します。
 
 ```sh
 npm install @shinyoshiaki/skyway-nodejs-sdk
+```
+
+また SkyWay Auth Token 用モジュールは次の HTML 記述および グローバル変数 `skyway_token` より取得することができます。
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/@skyway-sdk/token/dist/skyway_token-latest.js"></script>
+```
+
+```js
+const { SkyWayAuthToken, nowInSec, uuidV4 } = skyway_token;
 ```
 
 # ドキュメント
@@ -58,14 +101,29 @@ npm install @shinyoshiaki/skyway-nodejs-sdk
 一部 API に対応していません。
 
 - [Room ライブラリ](https://javascript-sdk.api-reference.skyway.ntt.com/room)
+- [Token ライブラリ](https://javascript-sdk.api-reference.skyway.ntt.com/token)
 
-# このリポジトリのセットアップ方法(環境構築)
+# サンプルアプリの起動方法
 
-このリポジトリのサンプルアプリを起動したり、SDK を利用者自身でビルドするために必要な手順。
+examples 配下にサンプルアプリケーションを同梱しております。
+
+- examples ディレクトリ以下の任意のサンプルアプリのディレクトリに移動する
+- そのディレクトリで以下のコマンドを実行する
+
+```sh
+npm i
+npm run dev
+```
+
+- コマンドを実行するとローカルサーバが起動するので Web ブラウザでアクセスする
+
+# リポジトリのセットアップ方法(ビルドのための環境構築)
+
+以下はこのリポジトリを用いて利用者自身で SDK をビルドするために必要な手順です。なおこのリポジトリはモノリポジトリ構成であり、依存関係は pnpm の workspace によって管理されています。
 
 ## 初期設定時
 
-- Node.js をインストールする（バージョンは v16.17.1 以降）
+- Node.js をインストールする（バージョンは v22.0.0 以降。upstream の要求に合わせています）
 - examples の依存パッケージをインストール
 
 ```
@@ -73,17 +131,27 @@ sudo apt-get -y install build-essential git gobject-introspection libgirepositor
 ```
 
 - corepack を有効化するために次のコマンドを実行する
-  - `sudo corepack enable npm`
+  - `sudo corepack enable`
+  - パッケージマネージャは `package.json` の `packageManager`（pnpm 11 系）に従います
 - ルートディレクトリで次のコマンドを実行する
-  - `git submodule update --init --recursive`
-- ルートディレクトリで次のコマンドを実行する
-  - `pnpm run first`
+
+```sh
+pnpm run first
+```
+
+`pnpm run first` は `submodule:init`（werift の `third_party/wpt` は除外）→ `pnpm i`
+→ `submodule:install` → `compile` を順に実行します。
+
+werift への fork 独自の修正（ICE restart / 複数 STUN サーバー対応）は **submodule
+（`submodules/mediasoup/submodules/werift`）本体のコミット**として持ち、gitlink がそれを
+参照します。submodule を直接編集してコミットし、親側で gitlink を更新してください。
+
 - `env.ts.template`を`env.ts`にリネームし、ファイル中の appId と secret にダッシュボードで発行した appId と secret を入力する
   - appId と secret の発行方法は[こちら](https://skyway.ntt.com/ja/docs/user-guide/javascript-sdk/quickstart/#199)
 
 ## 更新時
 
-git で更新を同期した時や packages ディレクトリ以下のソースコードを編集した際にはルートディレクトリで以下のコマンドを実行する必要がある。
+git で更新を同期した時や packages ディレクトリ以下のソースコードを編集した際にはルートディレクトリで以下のコマンドを実行する必要があります。
 
 ```sh
 pnpm run compile
@@ -101,7 +169,10 @@ pnpm run compile
 
 - 環境構築のセクションの作業を実施する
 - ルートディレクトリで次のコマンドを実行する
-  - `pnpm run build`
+
+```sh
+pnpm run build
+```
 
 # License
 

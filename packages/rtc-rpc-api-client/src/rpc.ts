@@ -1,6 +1,10 @@
-import { Events, Logger, SkyWayError } from '@skyway-sdk/common';
+import {
+  EventDisposer,
+  Events,
+  Logger,
+  type SkyWayError,
+} from '@skyway-sdk/common';
 import WebSocket from 'isomorphic-ws';
-import { v4 as uuidV4 } from 'uuid';
 
 import { rpcTimeout } from './const';
 import { errors } from './errors';
@@ -11,7 +15,7 @@ const log = new Logger('packages/rtc-rpc-api-client/src/rpc.ts');
 const WS_CLOSE_CODE_USAGE_LIMIT_EXCEEDED = 4291;
 
 export class RPC {
-  private readonly _id = uuidV4();
+  private readonly _id = globalThis.crypto.randomUUID();
   /**@private */
   _ws!: WebSocket;
   closed = false;
@@ -24,6 +28,7 @@ export class RPC {
     return this._reconnecting;
   }
   private _pendingRequests: object[] = [];
+  private _disposerManager = new EventDisposer();
 
   private readonly _events = new Events();
   private readonly _onMessage = this._events.make<
@@ -31,22 +36,31 @@ export class RPC {
   >();
   readonly onNotify = this._events.make<{ method: string; params: object }>();
   readonly onFatalError = this._events.make<SkyWayError>();
-  readonly onDisconnected = this._events.make<void>();
+  readonly onDisconnected = this._events.make<{ code: number }>();
   readonly onClosed = this._events.make<void>();
 
   async connect({
     domain,
     token,
     secure,
+    contextId,
+    leaveWhenDisconnected,
   }: {
     domain: string;
     token: string;
     secure: boolean;
+    contextId: string;
+    leaveWhenDisconnected?: boolean;
   }) {
     const subProtocol = token;
+    const params = new URLSearchParams();
+    params.set('contextId', contextId);
+    if (leaveWhenDisconnected) {
+      params.set('leaveWhenDisconnected', 'true');
+    }
     this._ws = new WebSocket(
-      `${secure ? 'wss' : 'ws'}://${domain}/ws`,
-      subProtocol
+      `${secure ? 'wss' : 'ws'}://${domain}/ws?${params.toString()}`,
+      subProtocol,
     );
 
     this._ws.onmessage = (ev: any) => {
@@ -64,7 +78,7 @@ export class RPC {
         // USAGE_LIMIT_EXCEEDED_WS_CLOSE_CODEはProjectUsageLimitExceededエラーに起因してWebSocket接続が閉じられたことを示すSkyWay特有のカスタムコード
         this.close();
       } else {
-        this.onDisconnected.emit();
+        this.onDisconnected.emit({ code: e.code });
       }
     };
 
@@ -81,7 +95,7 @@ export class RPC {
             operationName: 'RPC.connect',
             info: { ...errors.timeout, detail: 'ws.open' },
             path: log.prefix,
-          })
+          }),
         );
       }, 10_000);
       this._ws.onerror = (e: any) => {
@@ -91,7 +105,7 @@ export class RPC {
             info: errors.websocketConnectionFailure,
             path: log.prefix,
             error: e,
-          })
+          }),
         );
       };
       this._ws.onopen = () => {
@@ -127,49 +141,68 @@ export class RPC {
   }
 
   private _send = (request: object) =>
-    new Promise<void>(async (r, f) => {
-      // 非同期化
-      await new Promise((r) => setTimeout(r, 0));
+    new Promise<void>((r, f) => {
+      const executeSend = async () => {
+        await new Promise((r) => setTimeout(r, 0));
 
-      if (this._ws.readyState !== this._ws.OPEN) {
-        f(
-          createError({
-            operationName: 'RPC._send',
-            info: { ...errors.internalError, detail: 'wrong state' },
-            path: log.prefix,
-            payload: {
-              request,
-              wsReadyState: wsStates[this._ws.readyState],
-            },
-          })
-        );
-        return;
-      }
-
-      this._ws.send(JSON.stringify(request), (error: any) => {
-        if (error) {
-          throw f(
+        if (this._ws.readyState !== this._ws.OPEN) {
+          f(
             createError({
               operationName: 'RPC._send',
-              info: {
-                ...errors.internalError,
-                detail: 'failed to send rpc message',
-              },
+              info: { ...errors.internalError, detail: 'wrong state' },
               path: log.prefix,
-              error,
-            })
+              payload: {
+                request,
+                wsReadyState: wsStates[this._ws.readyState],
+              },
+            }),
           );
+          return;
         }
-      });
-      r();
+
+        this._ws.send(JSON.stringify(request), (error: any) => {
+          if (error) {
+            throw f(
+              createError({
+                operationName: 'RPC._send',
+                info: {
+                  ...errors.internalError,
+                  detail: 'failed to send rpc message',
+                },
+                path: log.prefix,
+                error,
+              }),
+            );
+          }
+        });
+        r();
+      };
+
+      executeSend().catch(f);
     });
+
+  private _withEventDisposer<T>(
+    task: (disposer: EventDisposer, isDisposed: () => boolean) => Promise<T>,
+  ) {
+    const disposer = new EventDisposer();
+    let disposed = false;
+    const dispose = () => {
+      disposed = true;
+      disposer.dispose();
+    };
+    this._disposerManager.push(dispose);
+    return task(disposer, () => disposed).finally(() => {
+      this._disposerManager.remove(dispose);
+      dispose();
+    });
+  }
 
   /**
    * @throws {@link SkyWayError}
    */
   async request<Result extends object>(
     method: string,
-    params: { [key: string]: any; appId?: string; authToken: string }
+    params: { [key: string]: any; appId?: string; authToken: string },
   ) {
     if (this.closed) {
       throw createError({
@@ -186,18 +219,25 @@ export class RPC {
     let promiseResolved = false;
     try {
       const request = buildRequest(method, params);
+      const neverDone = <T>() => new Promise<T>(() => {});
+      const createClosedWhileRequestingError = () =>
+        createError({
+          operationName: 'RPC.request',
+          info: errors.onClosedWhileRequesting,
+          path: log.prefix,
+          payload: { method, params },
+        });
 
-      const handleMessage = async (): Promise<
+      const handleMessage = async (
+        disposer?: EventDisposer,
+      ): Promise<
         ResponseMessage & {
           result: Result;
         }
       > =>
         (await this._onMessage
-          .watch((msg) => msg.id === request.id, rpcTimeout)
+          .watch((msg) => msg.id === request.id, rpcTimeout, disposer)
           .catch(() => {
-            if (promiseResolved) {
-              return;
-            }
             throw createError({
               operationName: 'RPC.request',
               info: {
@@ -216,54 +256,66 @@ export class RPC {
           })) as ResponseMessage & { result: Result };
 
       const pendingRequest = async (): Promise<
-        ResponseMessage & {
-          result: Result;
-        }
-      > => {
-        log.warn(
-          '[start] reconnecting. pending request',
-          createWarnPayload({
-            operationName: 'RPC.request',
-            detail: '[start] reconnecting. pending request',
-            payload: { request, id: this._id },
-          })
-        );
-        // 再接続後に再送する
-        this._pendingRequests.push(request);
+        ResponseMessage & { result: Result }
+      > =>
+        this._withEventDisposer<ResponseMessage & { result: Result }>(
+          async (disposer, isDisposed) => {
+            log.warn(
+              '[start] reconnecting. pending request',
+              createWarnPayload({
+                operationName: 'RPC.request',
+                detail: '[start] reconnecting. pending request',
+                payload: { request, id: this._id },
+              }),
+            );
+            // 再接続後に再送する
+            this._pendingRequests.push(request);
 
-        const message = await Promise.race([
-          handleMessage(),
-          this.onFatalError.asPromise(rpcTimeout + 100).then((e) => {
-            if (!promiseResolved) {
-              log.error(
-                '[failed] reconnecting. pending request',
-                createError({
-                  operationName: 'RPC.request',
-                  info: {
-                    ...errors.internalError,
-                    detail: 'onFatalError while request',
-                  },
-                  path: log.prefix,
+            const message = await Promise.race([
+              handleMessage(disposer),
+              this.onClosed.asPromise(rpcTimeout + 100, disposer).then(() => {
+                if (isDisposed()) {
+                  return neverDone<ResponseMessage & { result: Result }>();
+                }
+                throw createClosedWhileRequestingError();
+              }),
+              this.onFatalError
+                .asPromise(rpcTimeout + 100, disposer)
+                .then((e) => {
+                  if (isDisposed()) {
+                    return neverDone<ResponseMessage & { result: Result }>();
+                  }
+                  if (!promiseResolved) {
+                    log.error(
+                      '[failed] reconnecting. pending request',
+                      createError({
+                        operationName: 'RPC.request',
+                        info: {
+                          ...errors.internalError,
+                          detail: 'onFatalError while request',
+                        },
+                        path: log.prefix,
+                      }),
+                      e,
+                    );
+                  }
+                  throw e;
                 }),
-                e
-              );
-            }
-            throw e;
-          }),
-        ]);
-        promiseResolved = true;
+            ]);
+            promiseResolved = true;
 
-        log.warn(
-          '[end] reconnecting. pending request',
-          createWarnPayload({
-            operationName: 'RPC.request',
-            detail: '[end] reconnecting. pending request',
-            payload: { request, id: this._id },
-          })
+            log.warn(
+              '[end] reconnecting. pending request',
+              createWarnPayload({
+                operationName: 'RPC.request',
+                detail: '[end] reconnecting. pending request',
+                payload: { request, id: this._id },
+              }),
+            );
+
+            return message;
+          },
         );
-
-        return message;
-      };
 
       let message: ResponseMessage & { result: Result };
 
@@ -272,75 +324,60 @@ export class RPC {
           log.error('send error', e);
         });
 
-        message = await Promise.race([
-          handleMessage(),
-          // 返信待ち中に接続が切れた場合
-          (async (): Promise<ResponseMessage & { result: Result }> => {
-            const timeout = await this.onDisconnected
-              .asPromise(rpcTimeout + 100)
-              .catch((e) => e as Error);
-            if ((promiseResolved || this.closed) && timeout) {
-              return {} as any;
-            }
+        message = await this._withEventDisposer<
+          ResponseMessage & { result: Result }
+        >((disposer, isDisposed) =>
+          Promise.race([
+            handleMessage(disposer),
+            // 返信待ち中に接続が切れた場合
+            (async (): Promise<ResponseMessage & { result: Result }> => {
+              await this.onDisconnected.asPromise(rpcTimeout + 100, disposer);
+              if (isDisposed()) {
+                return neverDone<ResponseMessage & { result: Result }>();
+              }
 
-            try {
-              const message = await pendingRequest();
-              log.warn(
-                createWarnPayload({
-                  operationName: 'request.pendingRequest',
-                  detail: 'success to handle disconnected',
-                })
-              );
-              return message;
-            } catch (error: any) {
-              throw createError({
-                operationName: 'RPC.request',
-                info: errors.connectionDisconnected,
-                path: log.prefix,
-                error,
-              });
-            }
-          })(),
-          this.onFatalError
-            .asPromise(rpcTimeout + 100)
-            .then((e) => {
-              if (promiseResolved || this.closed) {
-                return {} as any;
+              try {
+                const message = await pendingRequest();
+                log.warn(
+                  createWarnPayload({
+                    operationName: 'request.pendingRequest',
+                    detail: 'success to handle disconnected',
+                  }),
+                );
+                return message;
+              } catch (error: any) {
+                throw createError({
+                  operationName: 'RPC.request',
+                  info: errors.connectionDisconnected,
+                  path: log.prefix,
+                  error,
+                });
               }
-              throw createError({
-                operationName: 'RPC.request',
-                info: {
-                  ...errors.internalError,
-                  detail: 'onFatalError while requesting',
-                },
-                path: log.prefix,
-                error: e,
-              });
-            })
-            .catch(() => {
-              if (promiseResolved || this.closed) {
-                return {} as any;
+            })(),
+            this.onFatalError
+              .asPromise(rpcTimeout + 100, disposer)
+              .then((e) => {
+                if (isDisposed()) {
+                  return neverDone<ResponseMessage & { result: Result }>();
+                }
+                throw createError({
+                  operationName: 'RPC.request',
+                  info: {
+                    ...errors.internalError,
+                    detail: 'onFatalError while requesting',
+                  },
+                  path: log.prefix,
+                  error: e,
+                });
+              }),
+            this.onClosed.asPromise(rpcTimeout + 100, disposer).then(() => {
+              if (isDisposed()) {
+                return neverDone<ResponseMessage & { result: Result }>();
               }
+              throw createClosedWhileRequestingError();
             }),
-          this.onClosed
-            .asPromise(rpcTimeout + 100)
-            .then(() => {
-              if (promiseResolved || this.closed) {
-                return {} as any;
-              }
-              throw createError({
-                operationName: 'RPC.request',
-                info: errors.onClosedWhileRequesting,
-                path: log.prefix,
-                payload: { method, params },
-              });
-            })
-            .catch(() => {
-              if (promiseResolved || this.closed) {
-                return {} as any;
-              }
-            }),
-        ]);
+          ]),
+        );
         promiseResolved = true;
       } else {
         message = await pendingRequest();
@@ -373,10 +410,10 @@ export class RPC {
   }
 
   async batch<Result extends object>(
-    requests: { method: string; params: object }[]
+    requests: { method: string; params: object }[],
   ) {
     const messages: RequestMessage[] = requests.map(({ method, params }) =>
-      buildRequest(method, params)
+      buildRequest(method, params),
     );
     this._send(messages).catch((e) => {
       throw e;
@@ -385,10 +422,10 @@ export class RPC {
       messages.map(async ({ id }) => {
         const message = (await this._onMessage.watch(
           (msg) => msg.id === id,
-          rpcTimeout
+          rpcTimeout,
         )) as ResponseMessage & { result: Result };
         return message;
-      })
+      }),
     );
     return responses;
   }
@@ -397,12 +434,12 @@ export class RPC {
 const buildRequest = (
   method: string,
   params: object,
-  notify?: boolean
+  notify?: boolean,
 ): RequestMessage => {
   if (notify) {
     return { jsonrpc: '2.0', method, params };
   }
-  const id = uuidV4();
+  const id = globalThis.crypto.randomUUID();
   return { jsonrpc: '2.0', method, params, id };
 };
 
@@ -432,10 +469,10 @@ type RtcApiRpcError = {
 };
 
 const isNotifyMessage = (
-  msg: RequestMessage | ResponseMessage
+  msg: RequestMessage | ResponseMessage,
 ): msg is RequestMessage => {
   const notify = msg as RequestMessage;
-  if (notify.method && notify.id == undefined) {
+  if (notify.method && notify.id === undefined) {
     return true;
   }
   return false;

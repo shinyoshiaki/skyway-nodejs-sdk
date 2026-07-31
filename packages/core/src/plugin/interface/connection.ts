@@ -1,10 +1,10 @@
-import { Event } from '@skyway-sdk/common';
+import type { Event } from '@skyway-sdk/common';
 
-import { RTCPeerConnection } from '../../imports/mediasoup';
-import { Member } from '../../member';
-import { LocalPersonImpl } from '../../member/localPerson';
-import { PublicationImpl } from '../../publication';
-import { SubscriptionImpl } from '../../subscription';
+import type { RTCPeerConnection } from '../../imports/mediasoup';
+import type { Member } from '../../member';
+import type { LocalPersonImpl } from '../../member/localPerson';
+import type { PublicationImpl } from '../../publication';
+import type { SubscriptionImpl } from '../../subscription';
 
 /**@internal */
 export interface SkyWayConnection {
@@ -18,7 +18,7 @@ export interface SkyWayConnection {
   /**@throws {SkyWayError} */
   startPublishing?(
     publication: PublicationImpl,
-    subscriptionId: string
+    subscriptionId: string,
   ): Promise<void>;
   stopPublishing?(publication: PublicationImpl): Promise<void>;
   startSubscribing?(subscription: SubscriptionImpl): Promise<void>;

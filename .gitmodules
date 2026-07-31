@@ -1,3 +1,5 @@
 [submodule "submodules/mediasoup"]
 	path = submodules/mediasoup
-	url = git@github.com:shinyoshiaki/mediasoup-client-node.git
+	# SSH ではなく HTTPS。公開リポジトリなので鍵を持たない環境（fresh clone や
+	# CI の checkout）からも取得できるようにする。
+	url = https://github.com/shinyoshiaki/mediasoup-client-node.git

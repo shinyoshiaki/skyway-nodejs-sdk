@@ -1,4 +1,4 @@
-import { LogFormat, LogLevel } from '@skyway-sdk/common';
+import type { LogFormat, LogLevel } from '@skyway-sdk/common';
 import deepmerge from 'deepmerge';
 
 import { RtcRpcApiConfig } from './imports/rpc';

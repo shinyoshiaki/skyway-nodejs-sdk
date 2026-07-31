@@ -31,12 +31,14 @@ const memberScopeV3Schema = z.intersection(
        */
       methods: z.array(
         // 型補完のため enum で定義しておく
-        z.enum(memberMethods).refine((arg) => {
-          return typeof arg === 'string'; // バリデーションとしては MemberMethod 以外の文字列も許容する
-        })
+        z
+          .enum(memberMethods)
+          .refine((arg) => {
+            return typeof arg === 'string'; // バリデーションとしては MemberMethod 以外の文字列も許容する
+          }),
       ),
     })
-    .passthrough()
+    .passthrough(),
 );
 export type MemberScopeV3 = z.input<typeof memberScopeV3Schema>;
 
@@ -60,6 +62,9 @@ const roomScopeV3SchemaBase = z
     message: 'Either id or name is required.',
   });
 
+/**@internal */
+export type RoomScopeV3Base = z.input<typeof roomScopeV3SchemaBase>;
+
 const roomScopeV3Schema = z.intersection(
   roomScopeV3SchemaBase,
   z
@@ -72,9 +77,11 @@ const roomScopeV3Schema = z.intersection(
        */
       methods: z.array(
         // 型補完のため enum で定義しておく
-        z.enum(roomMethods).refine((arg) => {
-          return typeof arg === 'string'; // バリデーションとしては RoomMethod 以外の文字列も許容する
-        })
+        z
+          .enum(roomMethods)
+          .refine((arg) => {
+            return typeof arg === 'string'; // バリデーションとしては RoomMethod 以外の文字列も許容する
+          }),
       ),
       /** memberリソースに関するオブジェクトを指定 */
       member: memberScopeV3Schema.optional(),
@@ -86,8 +93,14 @@ const roomScopeV3Schema = z.intersection(
           maxSubscribersLimit: z.number().optional(),
         })
         .optional(),
+      stt: z
+        .object({
+          /**文字起こし機能の利用有無。enabledがfalseの場合は文字起こし機能を利用できない。指定しない場合は enabled: true として扱われる。 */
+          enabled: z.boolean().optional(),
+        })
+        .optional(),
     })
-    .passthrough()
+    .passthrough(),
 );
 export type RoomScopeV3 = z.input<typeof roomScopeV3Schema>;
 

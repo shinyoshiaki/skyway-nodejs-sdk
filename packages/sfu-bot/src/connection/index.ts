@@ -1,26 +1,27 @@
-import { Event, Logger, PromiseQueue } from '@skyway-sdk/common';
-
-import { errors } from '../errors';
+import { Event, Logger } from '@skyway-sdk/common';
 import {
   createError,
-  LocalAudioStream,
-  LocalCustomVideoStream,
-  LocalPersonImpl,
-  LocalVideoStream,
-  Publication,
-  PublicationImpl,
-  SkyWayChannelImpl,
-  SkyWayConnection,
-  SkyWayContext,
-  Subscription,
-  SubscriptionImpl,
+  createLogPayload,
+  type LocalAudioStream,
+  type LocalCustomVideoStream,
+  type LocalPersonImpl,
+  type LocalVideoStream,
+  type Publication,
+  type PublicationImpl,
+  type SkyWayChannelImpl,
+  type SkyWayConnection,
+  type SkyWayContext,
+  type Subscription,
+  type SubscriptionImpl,
 } from '../imports/core';
-import { SfuRestApiClient } from '../imports/sfu';
-import { SfuBotMember } from '../member';
+import type { SFURestApiClient } from '../imports/sfu';
+
+import { errors } from '../errors';
+import type { SFUBotMember } from '../member';
 import { getLayerFromEncodings } from '../util';
 import { Receiver } from './receiver';
 import { Sender } from './sender';
-import { TransportRepository } from './transport/transportRepository';
+import type { TransportRepository } from './transport/transportRepository';
 
 const log = new Logger('packages/sfu-bot/src/connection/index.ts');
 
@@ -42,19 +43,19 @@ export class SFUConnection implements SkyWayConnection {
 
   /**@internal */
   constructor(
-    private readonly _api: SfuRestApiClient,
+    private readonly _api: SFURestApiClient,
     readonly channel: SkyWayChannelImpl,
     readonly localPerson: LocalPersonImpl,
-    readonly remoteMember: SfuBotMember,
+    readonly remoteMember: SFUBotMember,
     private _transportRepository: TransportRepository,
-    private _context: SkyWayContext
+    private _context: SkyWayContext,
   ) {}
 
   /**@internal */
   addSender(
     publication: PublicationImpl<
       LocalAudioStream | LocalVideoStream | LocalCustomVideoStream
-    >
+    >,
   ) {
     const sender = new Sender(
       publication,
@@ -64,7 +65,7 @@ export class SFUConnection implements SkyWayConnection {
       this.localPerson,
       this.remoteMember,
       this.localPerson.iceManager,
-      this._context
+      this._context,
     );
     this._senders[publication.id] = sender;
 
@@ -89,12 +90,12 @@ export class SFUConnection implements SkyWayConnection {
       this.localPerson,
       this.remoteMember,
       this.localPerson.iceManager,
-      this._context
+      this._context,
     );
     this._receivers[subscription.id] = receiver;
 
     const ts = log.debug('[start] _startSubscribing consume');
-    const { stream, codec } = await receiver.consume().catch((e) => {
+    const { stream, codec } = await receiver.consume().catch(async (e) => {
       log.error(
         '[failed] _startSubscribing consume',
         createError({
@@ -105,11 +106,32 @@ export class SFUConnection implements SkyWayConnection {
           error: e,
           path: log.prefix,
           payload: { subscription: subscription.toJSON() },
-        })
+        }),
       );
+
+      // consume失敗時はchannel側のsubscriptionを解除してRTCAPI/SFUの状態整合を取る
+      // SFU側のreceiverクリーンアップはonPublicationUnsubscribed経由でstopSubscribingが行う
+      await this.localPerson
+        .unsubscribe(subscription.id)
+        .catch((unsubscribeError) => {
+          // unsubscribe自体の失敗は元のconsumeエラーを覆い隠さないようログのみに留める
+          log.warn('unsubscribe after consume failure also failed', {
+            error: unsubscribeError,
+            subscriptionId: subscription.id,
+            publicationId: subscription.publication.id,
+          });
+        });
+
       throw e;
     });
-    log.elapsed(ts, '[end] _startSubscribing consume');
+    log.elapsed(
+      ts,
+      '[end] _startSubscribing consume',
+      await createLogPayload({
+        operationName: 'SFUConnection.startSubscribing',
+        channel: this.channel,
+      }),
+    );
 
     stream.setIsEnabled(subscription.publication.state === 'enabled');
     subscription.codec = codec;
@@ -131,7 +153,7 @@ export class SFUConnection implements SkyWayConnection {
           subscriptionId: subscription.id,
           preferredEncodingIndex: layer,
           updatedAt: Date.now(),
-        }
+        },
       );
     }
   }
@@ -263,7 +285,7 @@ export class SFUConnection implements SkyWayConnection {
           subscriptionId: subscription.id,
           preferredEncodingIndex: layer,
           updatedAt: Date.now(),
-        }
+        },
       );
     }
   }

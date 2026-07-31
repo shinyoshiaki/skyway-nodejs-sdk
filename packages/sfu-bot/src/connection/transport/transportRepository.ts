@@ -2,11 +2,11 @@ import { Event, Logger } from '@skyway-sdk/common';
 
 import { errors } from '../../errors';
 import {
-  AnalyticsSession,
+  type AnalyticsSession,
   createError,
   getRuntimeInfo,
-  IceManager,
-  SkyWayContext,
+  type IceManager,
+  type SkyWayContext,
 } from '../../imports/core';
 import {
   Device,
@@ -19,12 +19,12 @@ import {
   useREMB,
   useSdesMid,
 } from '../../imports/mediasoup';
-import { SfuRestApiClient } from '../../imports/sfu';
-import { SfuBotMember } from '../../member';
-import { SfuTransport } from './transport';
+import { SFURestApiClient } from '../../imports/sfu';
+import { SFUBotMember } from '../../member';
+import { SFUTransport } from './transport';
 
 const log = new Logger(
-  'packages/sfu-bot/src/connection/transport/transportRepository.ts'
+  'packages/sfu-bot/src/connection/transport/transportRepository.ts',
 );
 
 export class TransportRepository {
@@ -32,7 +32,7 @@ export class TransportRepository {
 
   private readonly _device: types.Device;
   /**@private */
-  _transports: { [id: string]: SfuTransport } = {};
+  _transports: { [id: string]: SFUTransport } = {};
 
   get rtpCapabilities() {
     if (!this._device.loaded) {
@@ -43,7 +43,7 @@ export class TransportRepository {
 
   constructor(
     private _context: SkyWayContext,
-    private readonly _api: SfuRestApiClient
+    private readonly _api: SFURestApiClient,
   ) {
     const { browserName, browserVersion } = getRuntimeInfo({
       isNotBrowser: {
@@ -139,11 +139,11 @@ export class TransportRepository {
   /**worker内にmemberIdに紐つくTransportが無ければ新しいTransportが作られる */
   createTransport(
     personId: string,
-    bot: SfuBotMember,
+    bot: SFUBotMember,
     transportOptions: types.TransportOptions,
     direction: 'send' | 'recv',
     iceManager: IceManager,
-    analyticsSession?: AnalyticsSession
+    analyticsSession?: AnalyticsSession,
   ) {
     const createTransport =
       direction === 'send'
@@ -157,16 +157,15 @@ export class TransportRepository {
         this._context.config.rtcConfig.turnPolicy === 'turnOnly'
           ? 'relay'
           : undefined,
-      additionalSettings: this._context.config.rtcConfig,
     });
 
-    const transport = new SfuTransport(
+    const transport = new SFUTransport(
       msTransport,
       bot,
       iceManager,
       this._api,
       this._context,
-      analyticsSession
+      analyticsSession,
     );
     this._transports[personId + msTransport.id] = transport;
 

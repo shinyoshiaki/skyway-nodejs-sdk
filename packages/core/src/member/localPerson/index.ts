@@ -1,39 +1,43 @@
 import {
-  Event,
+  type Event,
   EventDisposer,
   Logger,
   PromiseQueue,
-  SkyWayError,
+  type SkyWayError,
 } from '@skyway-sdk/common';
-import { Encoding } from '@skyway-sdk/model';
+import type { Encoding } from '@skyway-sdk/model';
 
-import { PersonInit, SkyWayChannelImpl } from '../../channel';
-import { SkyWayContext } from '../../context';
+import type { PersonInit, SkyWayChannelImpl } from '../../channel';
+import type { SkyWayContext } from '../../context';
 import { errors } from '../../errors';
-import { AnalyticsSession } from '../../external/analytics';
-import { IceManager } from '../../external/ice';
-import { SignalingSession } from '../../external/signaling';
-import { PublicationInit } from '../../imports/rtcApi';
-import { Codec, EncodingParameters } from '../../media';
-import { LocalStream } from '../../media/stream';
-import {
+import type { AnalyticsSession } from '../../external/analytics';
+import type { IceManager } from '../../external/ice';
+import type { SignalingSession } from '../../external/signaling';
+import type { PublicationInit } from '../../imports/rtcApi';
+import type { Codec, EncodingParameters } from '../../media';
+import type {
+  LocalStream,
   RemoteAudioStream,
   RemoteDataStream,
   RemoteVideoStream,
 } from '../../media/stream';
 import { MemberImpl } from '../../member';
-import { SkyWayConnection } from '../../plugin/interface';
+import type { SkyWayConnection } from '../../plugin/interface';
 import { UnknownMemberImpl } from '../../plugin/internal/unknown/member';
 import {
   normalizeEncodings,
-  Publication,
-  PublicationImpl,
+  type Publication,
+  type PublicationImpl,
+  type PublicationType,
   sortEncodingParameters,
 } from '../../publication';
-import { Subscription, SubscriptionImpl } from '../../subscription';
+import type { Subscription, SubscriptionImpl } from '../../subscription';
 import { createError, createLogPayload } from '../../util';
-import { Person } from '../person';
-import { isRemoteMember } from '../remoteMember';
+import type { Person } from '../person';
+import {
+  isRemoteMember,
+  type RemoteMemberImplInterface,
+} from '../remoteMember';
 import { PublishingAgent, SubscribingAgent } from './agent';
 
 export * from './adapter';
@@ -77,7 +81,7 @@ export interface LocalPerson extends Person {
    */
   publish: <T extends LocalStream = LocalStream>(
     stream: T,
-    options?: PublicationOptions
+    options?: PublicationOptions,
   ) => Promise<Publication<T>>;
   /**
    * @description [japanese] StreamのPublicationをUnpublishする
@@ -87,10 +91,10 @@ export interface LocalPerson extends Person {
    * @description [japanese] StreamのPublicationをSubscribeする
    */
   subscribe: <
-    T extends RemoteDataStream | RemoteAudioStream | RemoteVideoStream
+    T extends RemoteDataStream | RemoteAudioStream | RemoteVideoStream,
   >(
     publication: string | Publication,
-    options?: SubscriptionOptions
+    options?: SubscriptionOptions,
   ) => Promise<{ subscription: Subscription<T>; stream: T }>;
   /**
    * @description [japanese] StreamのSubscriptionをUnsubscribeする
@@ -180,7 +184,7 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
       metadata?: string;
       iceManager: IceManager;
       context: SkyWayContext;
-    } & PersonInit
+    } & PersonInit,
   ) {
     super(args);
 
@@ -197,14 +201,14 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
     this.channel.onPublicationSubscribed
       .add(async ({ subscription }) => {
         await this._handleOnPublicationSubscribe(
-          subscription as SubscriptionImpl
+          subscription as SubscriptionImpl,
         ).catch((e) => log.error('_handleOnStreamSubscribe', e));
       })
       .disposer(this._disposer);
     this.channel.onPublicationUnsubscribed
       .add(async ({ subscription }) => {
         await this._handleOnPublicationUnsubscribe(
-          subscription as SubscriptionImpl
+          subscription as SubscriptionImpl,
         ).catch((e) => log.error('_handleOnStreamUnsubscribe', e));
       })
       .disposer(this._disposer);
@@ -237,7 +241,7 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
 
       const now = await this.context._api.getServerUnixtimeInSec();
       this.ttlSec = Math.floor(
-        now + keepaliveIntervalSec + (keepaliveIntervalGapSec ?? 0)
+        now + keepaliveIntervalSec + (keepaliveIntervalGapSec ?? 0),
       );
       try {
         await this.channel._updateMemberTtl(this.id, this.ttlSec);
@@ -272,7 +276,7 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
               channel: this.channel,
               context: this.context,
               error,
-            })
+            }),
           );
           this.dispose();
         }
@@ -304,7 +308,7 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
             operationName: 'onPublicationSubscribed',
             channel: this.channel,
           }),
-          { subscription }
+          { subscription },
         );
 
         const options = this._subscribing[subscription.publication.id]?.options;
@@ -330,7 +334,7 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
           }),
           {
             subscription,
-          }
+          },
         );
       } catch (error: any) {
         this._onStreamSubscribeFailed.emit({ error, subscription });
@@ -358,7 +362,7 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
           operationName: 'onPublicationSubscribed',
           channel: this.channel,
         }),
-        { subscription }
+        { subscription },
       );
 
       await this._publishingAgent.startPublishing(subscription).catch((e) => {
@@ -372,14 +376,14 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
           operationName: 'onPublicationSubscribed',
           channel: this.channel,
         }),
-        { subscription }
+        { subscription },
       );
     }
   }
 
   /**@throws {@link SkyWayError} */
   private async _handleOnPublicationUnsubscribe(
-    subscription: SubscriptionImpl
+    subscription: SubscriptionImpl,
   ) {
     if (subscription.publication.publisher.id === this.id) {
       const timestamp = log.info(
@@ -388,11 +392,14 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
           operationName: 'onPublicationUnsubscribed',
           channel: this.channel,
         }),
-        { subscription }
+        { subscription },
       );
 
       await this._publishingAgent
-        .stopPublishing(subscription.publication, subscription.subscriber)
+        .stopPublishing(
+          subscription.publication,
+          subscription.subscriber as RemoteMemberImplInterface,
+        )
         .catch((e) => {
           log.error('[failed] stopPublishing', e, { subscription });
           throw e;
@@ -405,7 +412,7 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
           operationName: 'onPublicationUnsubscribed',
           channel: this.channel,
         }),
-        { subscription }
+        { subscription },
       );
     }
     if (subscription.subscriber.id === this.id) {
@@ -415,7 +422,7 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
           operationName: 'onPublicationUnsubscribed',
           channel: this.channel,
         }),
-        { subscription }
+        { subscription },
       );
 
       await this._subscribingAgent.stopSubscribing(subscription).catch((e) => {
@@ -432,7 +439,7 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
           operationName: 'onPublicationUnsubscribed',
           channel: this.channel,
         }),
-        { subscription }
+        { subscription },
       );
     }
   }
@@ -440,7 +447,7 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
   /**@throws {@link SkyWayError} */
   async publish<T extends LocalStream>(
     stream: T,
-    options: PublicationOptions = {}
+    options: PublicationOptions = {},
   ): Promise<Publication<T>> {
     const timestamp = log.info(
       '[start] publish',
@@ -448,7 +455,7 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
         operationName: 'localPerson.publish',
         channel: this.channel,
       }),
-      { options }
+      { options },
     );
 
     if (this.state !== 'joined') {
@@ -473,9 +480,11 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
 
     if (options.codecCapabilities) {
       options.codecCapabilities = options.codecCapabilities.filter(
-        (c) => c != undefined
+        (c) => c !== undefined && c !== null,
       );
     }
+
+    options.type = options.type ?? 'p2p';
 
     const init: PublicationInit = {
       metadata: options.metadata,
@@ -484,6 +493,7 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
       contentType: stream.contentType,
       codecCapabilities: options.codecCapabilities ?? [],
       isEnabled: options.isEnabled,
+      type: options.type,
     };
     if (stream.contentType !== 'data') {
       if (init.codecCapabilities.length === 0) {
@@ -498,13 +508,13 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
 
     if (
       stream.contentType === 'video' &&
-      init.codecCapabilities!.length === 0
+      init.codecCapabilities?.length === 0
     ) {
       init.codecCapabilities = [{ mimeType: 'video/vp8' }];
     }
     if (options.encodings && options.encodings.length > 0) {
       init.encodings = normalizeEncodings(
-        sortEncodingParameters(options.encodings)
+        sortEncodingParameters(options.encodings),
       );
     }
 
@@ -518,7 +528,7 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
           path: log.prefix,
           error: e,
         });
-      })
+      }),
     );
 
     // publication作成時にpublication.state=isEnabledとなり、その後isEnabledに合わせてpublicationのenableStream/disableStreamを呼び出してもsetIsEnabled/setEnabledが実行されない。
@@ -548,7 +558,7 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
         operationName: 'localPerson.publish',
         channel: this.channel,
       }),
-      { publication }
+      { publication },
     );
 
     // dataの場合はMediaDeviceがないので送信処理をしない
@@ -582,7 +592,7 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
       await createLogPayload({
         operationName: 'onStreamPublished',
         channel: this.channel,
-      })
+      }),
     );
     this.onStreamPublished.emit({ publication });
     this.onPublicationListChanged.emit();
@@ -595,7 +605,7 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
       await createLogPayload({
         operationName: 'localPerson.unpublish',
         channel: this.channel,
-      })
+      }),
     );
 
     const publicationId = typeof target === 'string' ? target : target.id;
@@ -639,6 +649,7 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
       });
 
     await this._handleOnStreamUnpublished(publication);
+    publication._setStream(undefined);
 
     log.elapsed(
       timestamp,
@@ -647,7 +658,7 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
         operationName: 'localPerson.unpublish',
         channel: this.channel,
       }),
-      { publication }
+      { publication },
     );
   }
 
@@ -657,7 +668,7 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
       await createLogPayload({
         operationName: 'onStreamUnpublished',
         channel: this.channel,
-      })
+      }),
     );
     this.onStreamUnpublished.emit({ publication });
     this.onPublicationListChanged.emit();
@@ -665,10 +676,10 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
 
   /**@throws {@link SkyWayError} */
   async subscribe<
-    T extends RemoteVideoStream | RemoteAudioStream | RemoteDataStream
+    T extends RemoteVideoStream | RemoteAudioStream | RemoteDataStream,
   >(
     target: string | Publication,
-    options: SubscriptionOptions = {}
+    options: SubscriptionOptions = {},
   ): Promise<{ subscription: Subscription<T>; stream: T }> {
     const timestamp = log.info(
       '[start] subscribe',
@@ -676,7 +687,7 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
         operationName: 'localPerson.subscribe',
         channel: this.channel,
       }),
-      { target }
+      { target },
     );
 
     const publicationId = typeof target === 'string' ? target : target.id;
@@ -693,7 +704,7 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
     }
 
     const publication = this.channel._getPublication(publicationId);
-    if (publication == undefined) {
+    if (publication === undefined) {
       throw createError({
         operationName: 'localPerson.subscribe',
         info: errors.publicationNotExist,
@@ -714,7 +725,7 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
 
     try {
       const subscriptionDto = await this._requestQueue.push(() =>
-        this.channel._subscribe(this.id, publicationId)
+        this.channel._subscribe(this.id, publicationId),
       );
 
       log.elapsed(timestamp, '[elapsed] subscribe / subscriptionDto received', {
@@ -729,7 +740,7 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
               .watch(
                 ({ subscription }) =>
                   subscription.publication.id === publicationId,
-                this.context.config.rtcApi.timeout
+                this.context.config.rtcApi.timeout,
               )
               .then(r)
               .catch(async (e) => {
@@ -747,7 +758,7 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
                       channel: this.channel,
                       payload: { subscription, publication },
                       error: e,
-                    })
+                    }),
                   );
                 }
               });
@@ -756,7 +767,7 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
             this.channel.onMemberLeft
               .watch(
                 (e) => e.member.id === publication.publisher.id,
-                this.context.config.rtcApi.timeout + 1000
+                this.context.config.rtcApi.timeout + 1000,
               )
               .then(() => {
                 if (subscribing.processing) {
@@ -772,7 +783,7 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
                       context: this.context,
                       channel: this.channel,
                       payload: { subscription, publication },
-                    })
+                    }),
                   );
                 }
               })
@@ -782,7 +793,7 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
             this._onStreamSubscribeFailed
               .watch(
                 (e) => e.subscription.publication.id === publication.id,
-                this.context.config.rtcApi.timeout + 1000
+                this.context.config.rtcApi.timeout + 1000,
               )
               .then((e) => {
                 if (subscribing.processing) {
@@ -799,7 +810,7 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
                       channel: this.channel,
                       error: e.error,
                       payload: { subscription, publication },
-                    })
+                    }),
                   );
                 }
               })
@@ -816,7 +827,7 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
           operationName: 'localPerson.subscribe',
           channel: this.channel,
         }),
-        { subscription, publication }
+        { subscription, publication },
       );
 
       return {
@@ -874,7 +885,7 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
       await createLogPayload({
         operationName: 'localPerson.unsubscribe',
         channel: this.channel,
-      })
+      }),
     );
 
     const subscriptionId = typeof target === 'string' ? target : target.id;
@@ -890,7 +901,7 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
     }
 
     const subscription = this.subscriptions.find(
-      (s) => s.id === subscriptionId
+      (s) => s.id === subscriptionId,
     );
 
     if (!subscription) {
@@ -907,7 +918,7 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
     delete this._subscribing[subscription.publication.id];
 
     await this._requestQueue.push(() =>
-      this.channel._unsubscribe(subscriptionId)
+      this.channel._unsubscribe(subscriptionId),
     );
     log.elapsed(
       timestamp,
@@ -916,17 +927,17 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
         operationName: 'localPerson.unsubscribe',
         channel: this.channel,
       }),
-      { subscription }
+      { subscription },
     );
   }
 
-  private _getConnections() {
-    const connections = this.channel.members.map((m) =>
-      m._getConnection(this.id)
-    );
+  private _getRemoteMemberConnections() {
+    const connections = this.channel.members
+      .filter(isRemoteMember)
+      .map((m) => m._getConnection(this.id));
 
     const active = connections.filter(
-      (c): c is SkyWayConnection => c?.closed === false
+      (c): c is SkyWayConnection => c?.closed === false,
     );
     return active;
   }
@@ -952,13 +963,9 @@ export class LocalPersonImpl extends MemberImpl implements LocalPerson {
       this._signaling.close();
     }
 
-    if (this._analytics) {
-      this._analytics.close();
-    }
-
-    this._getConnections().forEach((c) =>
-      c.close({ reason: 'localPerson disposed' })
-    );
+    this._getRemoteMemberConnections().forEach((c) => {
+      c.close({ reason: 'localPerson disposed' });
+    });
 
     this._onDisposed.emit();
     this._events.dispose();
@@ -989,6 +996,12 @@ export type PublicationOptions = {
    * falseに設定された場合、publicationは一時停止された状態でpublishされる。
    */
   isEnabled?: boolean;
+  /**
+   * @description [japanese]
+   * DefaultRoom利用時に、publicationがP2Pで利用されるかSFUで利用されるかを指定する。
+   * デフォルトではP2Pが設定される。
+   */
+  type?: PublicationType;
 };
 
 export type SubscriptionOptions = {

@@ -1,10 +1,9 @@
 import { Logger } from '@skyway-sdk/common';
-import model from '@skyway-sdk/model';
-import { SkyWayAuthToken } from '@skyway-sdk/token';
+import type model from '@skyway-sdk/model';
 
-import { PersonInit, SkyWayChannelImpl } from '../../channel';
+import type { PersonInit, SkyWayChannelImpl } from '../../channel';
 import { MaxIceParamServerTTL } from '../../const';
-import { SkyWayContext } from '../../context';
+import type { SkyWayContext } from '../../context';
 import { errors } from '../../errors';
 import { IceManager } from '../../external/ice';
 import { setupSignalingSession } from '../../external/signaling';
@@ -23,7 +22,7 @@ export async function createLocalPerson(
     keepaliveIntervalGapSec,
     preventAutoLeaveOnBeforeUnload,
     disableSignaling,
-  }: PersonInit = {}
+  }: PersonInit = {},
 ) {
   log.debug('createLocalPerson', {
     channel,
@@ -49,12 +48,19 @@ export async function createLocalPerson(
   });
 
   await iceManager.updateIceParams().catch((err) => {
-    throw createError({
-      operationName: 'createLocalPerson',
-      context,
-      channel,
-      info: { ...errors.internal, detail: 'updateIceParams failed' },
-      path: log.prefix,
+    const turnPolicy = context.config.rtcConfig.turnPolicy;
+    if (turnPolicy === 'turnOnly') {
+      throw createError({
+        operationName: 'createLocalPerson',
+        context,
+        channel,
+        info: { ...errors.internal, detail: 'updateIceParams failed' },
+        path: log.prefix,
+        error: err,
+      });
+    }
+    log.warn('updateIceParams failed, continuing without TURN servers', {
+      turnPolicy,
       error: err,
     });
   });

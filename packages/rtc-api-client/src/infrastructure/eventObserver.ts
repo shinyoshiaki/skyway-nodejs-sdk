@@ -1,14 +1,14 @@
 import { Event, Logger } from '@skyway-sdk/common';
-import model from '@skyway-sdk/model';
+import type model from '@skyway-sdk/model';
 
-import { RtcApiConfig } from '../config';
-import { EventObserver } from '../domain/eventObserver';
+import type { RtcApiConfig } from '../config';
+import type { EventObserver } from '../domain/eventObserver';
 import { errors } from '../errors';
 import { ChannelEvent, RtcRpcApiClient } from '../imports/rpc';
 import { createError, createWarnPayload } from '../util';
 
 const log = new Logger(
-  'packages/rtc-api-client/src/infrastructure/eventObserver.ts'
+  'packages/rtc-api-client/src/infrastructure/eventObserver.ts',
 );
 
 export class EventObserverImpl implements EventObserver {
@@ -19,7 +19,7 @@ export class EventObserverImpl implements EventObserver {
     appId: string,
     client: RtcRpcApiClient,
     channelDto: model.Channel,
-    config: RtcApiConfig
+    config: RtcApiConfig,
   ) {
     const eventBuffer = new EventJitterBuffer(
       channelDto.version,
@@ -44,10 +44,10 @@ export class EventObserverImpl implements EventObserver {
               channelId: channelDto.id,
               appId,
               path: log.prefix,
-            })
+            }),
           );
         }
-      }
+      },
     );
     this._disposer = [
       client.onEvent.add(async ({ channelId, event }) => {
@@ -62,7 +62,9 @@ export class EventObserverImpl implements EventObserver {
   }
 
   dispose() {
-    this._disposer.forEach((d) => d());
+    this._disposer.forEach((d) => {
+      d();
+    });
     this.onEvent.removeAllListeners();
   }
 }
@@ -84,7 +86,7 @@ export class EventJitterBuffer {
   constructor(
     private presentVersion: number,
     private onPacketLost: (expectNextVersion: number) => Promise<void>,
-    private packetLifetime = 1000
+    private packetLifetime = 1000,
   ) {}
 
   private get expectNextVersion() {
@@ -122,7 +124,7 @@ export class EventJitterBuffer {
           operationName: 'EventJitterBuffer.push',
           detail: 'event packetLost resolved',
           payload: { eventFrame },
-        })
+        }),
       );
       this.packetLostHappened = false;
     }
@@ -135,7 +137,7 @@ export class EventJitterBuffer {
       .sort()
       .map((key) => this.eventBuffer[Number(key)]);
 
-    if (this.packetLifeTimer == undefined && oldestBufferedEvent) {
+    if (this.packetLifeTimer === undefined && oldestBufferedEvent) {
       log.debug('set event packetLost timer', {
         ...oldestBufferedEvent,
         presentVersion: this.presentVersion,
@@ -153,7 +155,7 @@ export class EventJitterBuffer {
                 eventBufferLength: Object.keys(this.eventBuffer).length,
                 presentVersion: this.presentVersion,
               },
-            })
+            }),
           );
 
           if (this.packetLostHappened) {

@@ -25,7 +25,7 @@
     "debug": "tsx examples/sendrecv/p2p.ts"
   },
   "devDependencies": {
-    "@skyway-sdk/room": "^1.12.0",
+    "@skyway-sdk/room": "^2.5.1",
     "@types/node": "^20.12.12",
     "@typescript-eslint/eslint-plugin": "^4.32.0",
     "@typescript-eslint/parser": "^4.32.0",
@@ -50,14 +50,7 @@
     "zx": "^8.4.0"
   },
   "engines": {
-    "node": "=24"
+    "node": ">=22"
   },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "esbuild",
-      "node-gtk",
-      "nx"
-    ]
-  },
-  "packageManager": "pnpm@10.5.2+sha512.da9dc28cd3ff40d0592188235ab25d3202add8a207afbedc682220e4a0029ffbff4562102b9e6e46b4e3f9e8bd53e6d05de48544b0c57d4b0179e22c76d1199b"
+  "packageManager": "pnpm@11.9.0+sha512.bd682d5d03fe525ef7c9fd6780c6884d1e756ac4c9c9fe00c538782824310dcf90e3ddc4f53835f06dfaebd5085e41855e0bcbb3b60de2ac5bbab89e5036f03b"
 }

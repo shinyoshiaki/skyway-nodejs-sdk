@@ -1,9 +1,8 @@
-export { errors } from './errors';
 export {
   AnalyticsSession,
   type AudioMediaTrackConstraints,
-  type ChannelState,
   type ChannelQuery,
+  type ChannelState,
   type Codec,
   type CodecParameters,
   type ContentType,
@@ -11,10 +10,11 @@ export {
   createTestVideoTrack,
   type DataStreamMessageType,
   type DataStreamOptions,
+  type DataStreamSubscriber,
   type DataType,
-  detectDevice,
   type DisplayMediaTrackConstraints,
   type DisplayStreamOptions,
+  detectDevice,
   type EncodingParameters,
   Event,
   Events,
@@ -30,7 +30,6 @@ export {
   LocalStreamBase,
   LocalVideoStream,
   MediaDevice,
-  type MemberKeepAliveConfig,
   type MemberSide,
   type MemberState,
   type MemberType,
@@ -48,15 +47,19 @@ export {
   type RtcRpcApiConfig,
   type SkyWayConfigOptions,
   SkyWayContext,
+  type SkyWayContextInterface,
   SkyWayStreamFactory,
-  Stream,
-  SubscriptionOptions,
-  SubscriptionState,
-  TransportConnectionState,
-  TurnPolicy,
-  TurnProtocol,
-  VideoMediaTrackConstraints,
-  WebRTCStats,
+  type Stream,
+  StreamFactory,
+  type StreamSide,
+  type SubscriptionOptions,
+  type SubscriptionState,
+  sortEncodingParameters,
+  type TransportConnectionState,
+  type TurnPolicy,
+  type TurnProtocol,
+  type VideoMediaTrackConstraints,
+  type WebRTCStats,
 } from './imports/core';
 export {
   dePacketizeRtpPackets,
@@ -69,12 +72,14 @@ export {
 } from './imports/mediasoup';
 export * from './member';
 export * from './member/local/base';
+export * from './member/local/default';
 export * from './member/local/p2p';
 export * from './member/local/sfu';
 export * from './member/remote/base';
 export * from './publication';
 export * from './room';
 export * from './room/base';
+export * from './room/default';
 export * from './room/event';
 export * from './room/p2p';
 export * from './room/sfu';
@@ -83,3 +88,4 @@ export * from './version';
 export * from '@skyway-sdk/common';
 export * from '@skyway-sdk/token';
 export { SkyWayAuthToken, uuidV4 } from '@skyway-sdk/token';
+export { errors } from './errors';

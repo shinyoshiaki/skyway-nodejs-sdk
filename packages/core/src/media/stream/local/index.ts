@@ -1,8 +1,8 @@
 import { LocalAudioStream } from './audio';
 import { LocalStreamBase } from './base';
 import { LocalCustomVideoStream } from './customVideo';
-import { LocalDataStream } from './data';
-import { LocalMediaStreamBase, LocalMediaStreamOptions } from './media';
+import { type DataStreamSubscriber, LocalDataStream } from './data';
+import { LocalMediaStreamBase, type LocalMediaStreamOptions } from './media';
 import { LocalVideoStream } from './video';
 
 export type LocalStream =
@@ -19,4 +19,5 @@ export {
   type LocalMediaStreamOptions,
   LocalStreamBase,
   LocalVideoStream,
+  type DataStreamSubscriber,
 };

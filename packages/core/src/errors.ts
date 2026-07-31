@@ -13,6 +13,18 @@ export const errors = {
     detail: '引数の値が不正です',
     solution: '正しい値を引数に渡してください',
   },
+  invalidStunPorts: {
+    name: 'invalidStunPorts',
+    detail: 'stunPortsには443, 3478のどちらか又は両方を指定できます',
+    solution:
+      'stunPortsに [443]、[3478]、[443, 3478] のいずれかを指定してください',
+  },
+  notSupportedInNodejs: {
+    name: 'notSupportedInNodejs',
+    detail: 'この機能はNode.js環境では利用できません',
+    solution:
+      'ブラウザ向けの @skyway-sdk/room を利用するか、この機能の利用を避けてください',
+  },
   invalidContentType: {
     name: 'invalidContentType',
     detail: 'contentTypeが正しくありません',
@@ -84,7 +96,7 @@ export const errors = {
     name: 'unknownMemberType',
     detail: '対象のMemberのSubtypeのプラグインが登録されていません',
     solution:
-      '対象のMemberのSubtypeのプラグイン(SfuBotなど)をSkyWayContextに登録してください',
+      '対象のMemberのSubtypeのプラグイン(SFUBotなど)をSkyWayContextに登録してください',
   },
   streamNotExistInSubscription: {
     name: 'streamNotExistInSubscription',
@@ -121,7 +133,8 @@ export const errors = {
   connectRtcApiFailed: {
     name: 'connectRtcApiFailed',
     detail: 'RtcAPIへの接続に失敗しました',
-    solution: 'インターネットへ接続できているか、もしくはTokenのパラメータが正しいかを確かめてください',
+    solution:
+      'インターネットへ接続できているか、もしくはTokenのパラメータが正しいかを確かめてください',
   },
   rtcApiFatalError: {
     name: 'rtcApiFatalError',
@@ -162,11 +175,18 @@ export const errors = {
   dataChannelSendError: {
     name: 'dataChannelSendError',
     detail: 'データ送信に失敗しました',
-    solution: '接続が閉じられている、バッファに空き容量が無い、データサイズが大きすぎる等の理由で送信に失敗しています。再度publish もしくは 送信するデータを分割してください',
+    solution:
+      '接続が閉じられている、バッファに空き容量が無い、データサイズが大きすぎる等の理由で送信に失敗しています。再度publish もしくは 送信するデータを分割してください',
   },
   dataChannelGeneralError: {
     name: 'dataChannelGeneralError',
     detail: 'DataStreamの内部でエラーが発生しました',
     solution: 'DataStreamを作り直して再度publishしてください',
-  }
+  },
+  invalidRequestParameter: {
+    name: 'invalidRequestParameter',
+    detail:
+      'リクエストのパラメーターが正しくない、もしくは不正な文字列を使用しています',
+    solution: 'API仕様を確認し正しい値を入力してください',
+  },
 } as const;

@@ -1,35 +1,36 @@
-import { Event, SkyWayError } from '@skyway-sdk/common';
-import { Logger } from '@skyway-sdk/common';
-import { Events } from '@skyway-sdk/common';
-import model from '@skyway-sdk/model';
-
-import { LocalMemberConfig, MemberInternalConfig, MemberKeepAliveConfig } from '../config';
-import { SkyWayContext } from '../context';
-import { errors } from '../errors';
-import {
+import type { Event, SkyWayError } from '@skyway-sdk/common';
+import { Events, Logger } from '@skyway-sdk/common';
+import type model from '@skyway-sdk/model';
+import type {
   ChannelImpl,
   ChannelInit,
   ChannelQuery,
   MemberInit,
   PublicationInit,
 } from '../imports/rtcApi';
-import { Member } from '../member';
+
+import type { LocalMemberConfig, MemberInternalConfig } from '../config';
+import type { SkyWayContext } from '../context';
+import { errors } from '../errors';
+import type { Member, MemberImpl } from '../member';
 import {
   createLocalPerson,
-  LocalPerson,
+  type LocalPerson,
   LocalPersonAdapter,
-  LocalPersonImpl,
+  type LocalPersonImpl,
 } from '../member/localPerson';
 import {
-  RemoteMember,
-  RemoteMemberImplInterface,
+  isRemoteMember,
+  type RemoteMember,
+  type RemoteMemberImplInterface,
 } from '../member/remoteMember';
-import { Publication, PublicationImpl } from '../publication';
+import type { Publication, PublicationImpl } from '../publication';
 import { createPublication } from '../publication/factory';
-import { Subscription, SubscriptionImpl } from '../subscription';
+import type { Subscription, SubscriptionImpl } from '../subscription';
 import { createSubscription } from '../subscription/factory';
 import { createError, createLogPayload } from '../util';
-import {
+import { isValidName } from '../validation';
+import type {
   ChannelClosedEvent,
   ChannelMetadataUpdatedEvent,
   ListChangedEvent,
@@ -113,7 +114,7 @@ export interface Channel {
   /**
    * @description [japanese] Channel中のMemberの一覧を取得する
    */
-  members: RemoteMember[];
+  members: Member[];
 
   /**
    * @description [japanese] Channel中のLocalPersonを取得する
@@ -142,19 +143,13 @@ export interface Channel {
     memberInit?: {
       name?: MemberInit['name'];
       metadata?: MemberInit['metadata'];
-    } & Partial<LocalMemberConfig>
+    } & Partial<LocalMemberConfig>,
   ) => Promise<LocalPerson>;
 
   /**
    * @description [japanese] ChannelからMemberを退出させる
    */
   leave: (member: Member) => Promise<void>;
-
-  /**
-   * @deprecated
-   * @description [japanese] 別のChannelのMemberを移動させる
-   */
-  moveChannel: (adapter: LocalPerson) => Promise<void>;
 
   /**
    * @description [japanese] ChannelのMetadataを更新する
@@ -187,21 +182,50 @@ export class SkyWayChannelImpl implements Channel {
   private readonly _api = this._context._api;
 
   private _members: {
-    [memberId: model.Channel['id']]: RemoteMemberImplInterface;
+    [memberId: model.Channel['id']]: MemberImpl;
   } = {};
   /**@private */
   _getMember = (id: string) => this._members[id];
-  private _addMember(memberDto: model.Member) {
+
+  private async _addLocalPerson(
+    member: model.Member,
+    config: PersonInit,
+  ): Promise<LocalPersonImpl> {
+    const person = await createLocalPerson(this._context, this, member, config);
+    this._localPerson = person;
+    this._members[this._localPerson.id] = person as LocalPersonImpl;
+
+    return person;
+  }
+
+  private _addRemoteMember(memberDto: model.Member) {
     const exist = this._getMember(memberDto.id);
     if (exist) {
+      if (exist.side === 'local') {
+        throw createError({
+          operationName: 'SkyWayChannelImpl._addRemoteMember',
+          path: log.prefix,
+          context: this._context,
+          channel: this,
+          info: errors.internal,
+        });
+      }
       return exist;
     }
     const member = this._context._createRemoteMember(this, memberDto);
     this._members[member.id] = member as RemoteMemberImplInterface;
+
     return member;
   }
+
   private _removeMember(memberId: model.Channel['id']) {
     delete this._members[memberId];
+
+    const isLocalPerson =
+      this._localPerson && this._localPerson.id === memberId;
+    if (isLocalPerson) {
+      this._localPerson = undefined;
+    }
   }
 
   private _publications: { [publicationId: string]: PublicationImpl } = {};
@@ -270,12 +294,12 @@ export class SkyWayChannelImpl implements Channel {
     /**@private */
     readonly _context: SkyWayContext,
     /**@private */
-    private readonly _channelImpl: ChannelImpl
+    private readonly _channelImpl: ChannelImpl,
   ) {
     this._setupPropertiesFromChannel();
     this._setupListenChannelEvent();
 
-    _context._onDisposed.once(() => {
+    _context.onDisposed.once(() => {
       this.dispose();
     });
 
@@ -324,7 +348,7 @@ export class SkyWayChannelImpl implements Channel {
 
   private _setupPropertiesFromChannel() {
     this._channelImpl.members.forEach((memberDto) => {
-      this._addMember(memberDto);
+      this._addRemoteMember(memberDto);
     });
     this._channelImpl.publications.forEach((publicationDto) => {
       this._addPublication(publicationDto);
@@ -337,7 +361,7 @@ export class SkyWayChannelImpl implements Channel {
   private _setupListenChannelEvent() {
     this._channelImpl.onClosed.add(() => this._handleOnChannelClose());
     this._channelImpl.onMetadataUpdated.add(({ channel }) =>
-      this._handleOnChannelMetadataUpdate(channel.metadata)
+      this._handleOnChannelMetadataUpdate(channel.metadata),
     );
 
     this._channelImpl.onMemberJoined.add(({ member }) => {
@@ -358,21 +382,21 @@ export class SkyWayChannelImpl implements Channel {
       this._handleOnStreamUnpublish(publication);
     });
     this._channelImpl.onPublicationListChanged.pipe(
-      this.onPublicationListChanged
+      this.onPublicationListChanged,
     );
     this._channelImpl.onPublicationMetadataUpdated.add(({ publication }) => {
       this._handleOnPublicationMetadataUpdate(
         publication,
-        publication.metadata!
+        publication.metadata!,
       );
     });
     this._channelImpl.onPublicationEnabled.add(
       async ({ publication }) =>
-        await this._handleOnPublicationEnabled(publication)
+        await this._handleOnPublicationEnabled(publication),
     );
     this._channelImpl.onPublicationDisabled.add(
       async ({ publication }) =>
-        await this._handleOnPublicationDisabled(publication)
+        await this._handleOnPublicationDisabled(publication),
     );
     this._channelImpl.onPublicationSubscribed.add(({ subscription }) => {
       this._handleOnStreamSubscribe(subscription);
@@ -381,7 +405,7 @@ export class SkyWayChannelImpl implements Channel {
       this._handleOnStreamUnsubscribe(subscription);
     });
     this._channelImpl.onSubscriptionListChanged.pipe(
-      this.onSubscriptionListChanged
+      this.onSubscriptionListChanged,
     );
   }
 
@@ -397,7 +421,7 @@ export class SkyWayChannelImpl implements Channel {
   }
 
   private _handleOnMemberJoin(memberDto: model.Member) {
-    const member = this._addMember(memberDto);
+    const member = this._addRemoteMember(memberDto);
     this.onMemberJoined.emit({ member });
   }
 
@@ -406,9 +430,8 @@ export class SkyWayChannelImpl implements Channel {
     this._removeMember(member.id);
     member._left();
 
-    if (this.localPerson?.id === memberDto.id) {
-      this.localPerson._left();
-      this._localPerson = undefined;
+    if (isRemoteMember(member)) {
+      member._dispose();
     }
 
     this.onMemberLeft.emit({ member });
@@ -416,7 +439,7 @@ export class SkyWayChannelImpl implements Channel {
 
   private _handleOnMemberMetadataUpdate(
     memberDto: model.Member,
-    metadata: string
+    metadata: string,
   ) {
     const member = this._getMember(memberDto.id);
     member._metadataUpdated(metadata);
@@ -445,7 +468,7 @@ export class SkyWayChannelImpl implements Channel {
 
   private _handleOnPublicationMetadataUpdate(
     publicationDto: model.Publication,
-    metadata: string
+    metadata: string,
   ) {
     const publication = this._getPublication(publicationDto.id);
     publication._updateMetadata(metadata);
@@ -461,7 +484,7 @@ export class SkyWayChannelImpl implements Channel {
   }
 
   private async _handleOnPublicationDisabled(
-    publicationDto: model.Publication
+    publicationDto: model.Publication,
   ) {
     const publication = this._getPublication(publicationDto.id);
     await publication._disable();
@@ -495,7 +518,7 @@ export class SkyWayChannelImpl implements Channel {
       await createLogPayload({
         operationName: 'SkyWayChannelImpl.join',
         channel: this,
-      })
+      }),
     );
 
     if (this._localPerson) {
@@ -508,7 +531,18 @@ export class SkyWayChannelImpl implements Channel {
       });
     }
 
-    if (options.name != undefined) {
+    if (!isValidName(options.name)) {
+      throw createError({
+        operationName: 'SkyWayChannelImpl.join',
+        path: log.prefix,
+        info: errors.invalidRequestParameter,
+        channel: this,
+        context: this._context,
+        payload: options,
+      });
+    }
+
+    if (options.name !== undefined && options.name !== null) {
       const exist = this.members.find((m) => m.name === options.name);
       if (exist) {
         throw createError({
@@ -534,7 +568,7 @@ export class SkyWayChannelImpl implements Channel {
       subtype: 'person',
     };
     if (options.keepaliveIntervalSec !== null) {
-      init['ttlSec'] =
+      init.ttlSec =
         (await this._context._api.getServerUnixtimeInSec()) +
         options.keepaliveIntervalSec;
     }
@@ -547,7 +581,7 @@ export class SkyWayChannelImpl implements Channel {
       member,
     });
 
-    const person = await this._createLocalPerson(member, options);
+    const person = await this._addLocalPerson(member, options);
     const adapter = new LocalPersonAdapter(person);
     log.elapsed(timestamp, '[end] join', { person });
 
@@ -557,75 +591,11 @@ export class SkyWayChannelImpl implements Channel {
   readonly leave = async (member: Member) =>
     this._channelImpl.leave(this.id, member.id);
 
-  async moveChannel(adapter: LocalPerson) {
-    if (this._localPerson) {
-      throw createError({
-        operationName: 'SkyWayChannelImpl.moveChannel',
-        path: log.prefix,
-        info: errors.alreadyLocalPersonExist,
-        channel: this,
-        context: this._context,
-      });
-    }
-
-    if (!(adapter instanceof LocalPersonAdapter)) {
-      throw createError({
-        operationName: 'SkyWayChannelImpl.moveChannel',
-        path: log.prefix,
-        info: errors.invalidArgumentValue,
-        channel: this,
-        context: this._context,
-      });
-    }
-
-    const leaveChannel = adapter.channel;
-    if (this.id === leaveChannel.id) {
-      throw createError({
-        operationName: 'SkyWayChannelImpl.moveChannel',
-        path: log.prefix,
-        info: errors.cantMoveSameIdChannel,
-        channel: this,
-        context: this._context,
-      });
-    }
-    await leaveChannel.leave(adapter);
-
-    const init: MemberInit = {
-      name: adapter.name,
-      type: adapter.type,
-      subtype: adapter.subtype,
-      metadata: adapter.metadata,
-    };
-    if (adapter.keepaliveIntervalSec != undefined) {
-      init['ttlSec'] =
-        (await this._context._api.getServerUnixtimeInSec()) +
-        adapter.keepaliveIntervalSec;
-    }
-    const member = await this._channelImpl.joinChannel(init);
-    const person = await this._createLocalPerson(member, {
-      keepaliveIntervalSec: adapter.keepaliveIntervalSec,
-      keepaliveIntervalGapSec: adapter.keepaliveIntervalGapSec,
-      disableSignaling: adapter.disableSignaling,
-      disableAnalytics: adapter.disableAnalytics,
-    });
-    adapter.apply(person);
-  }
-
-  private async _createLocalPerson(
-    member: model.Member,
-    config: PersonInit
-  ): Promise<LocalPersonImpl> {
-    const person = await createLocalPerson(this._context, this, member, config);
-    this._localPerson = person;
-
-    return person;
-  }
-
   readonly updateMetadata = (metadata: string) =>
     this._channelImpl.updateChannelMetadata(metadata);
 
   readonly close = () =>
-    new Promise<void>(async (r, f) => {
+    new Promise<void>((r, f) => {
       if (this.state === 'closed') {
         f(
           createError({
@@ -635,62 +605,67 @@ export class SkyWayChannelImpl implements Channel {
             channel: this,
             context: this._context,
             payload: this.toJSON(),
-          })
+          }),
         );
         return;
       }
 
-      const timestamp = log.info(
-        '[start] close channel',
-        await createLogPayload({
-          operationName: 'SkyWayChannelImpl.close',
-          channel: this,
-        })
-      );
-
-      try {
-        await this._channelImpl.close().catch((e) => {
-          const error = createError({
+      const executeClose = async () => {
+        const timestamp = log.info(
+          '[start] close channel',
+          await createLogPayload({
             operationName: 'SkyWayChannelImpl.close',
-            context: this._context,
-            info: { ...errors.internal, detail: '_api.deleteChannel failed' },
-            error: e,
-            path: log.prefix,
             channel: this,
-          });
-          throw error;
-        });
+          }),
+        );
 
-        if (this._state !== 'closed') {
-          await this.onClosed
-            .asPromise(this._context.config.rtcApi.timeout)
-            .catch((e) => {
-              const error = createError({
-                operationName: 'SkyWayChannelImpl.close',
-                context: this._context,
-                info: { ...errors.timeout, detail: 'channel.onClosed' },
-                error: e,
-                path: log.prefix,
-                channel: this,
-              });
-              throw error;
+        try {
+          await this._channelImpl.close().catch((e) => {
+            const error = createError({
+              operationName: 'SkyWayChannelImpl.close',
+              context: this._context,
+              info: { ...errors.internal, detail: '_api.deleteChannel failed' },
+              error: e,
+              path: log.prefix,
+              channel: this,
             });
+            throw error;
+          });
+
+          if (this._state !== 'closed') {
+            await this.onClosed
+              .asPromise(this._context.config.rtcApi.timeout)
+              .catch((e) => {
+                const error = createError({
+                  operationName: 'SkyWayChannelImpl.close',
+                  context: this._context,
+                  info: { ...errors.timeout, detail: 'channel.onClosed' },
+                  error: e,
+                  path: log.prefix,
+                  channel: this,
+                });
+                throw error;
+              });
+          }
+        } catch (error: any) {
+          log.error((error as SkyWayError).message, error);
+          f(error);
+          return;
         }
-      } catch (error: any) {
-        log.error((error as SkyWayError).message, error);
-        f(error);
-      }
 
-      log.elapsed(
-        timestamp,
-        '[end] close channel',
-        await createLogPayload({
-          operationName: 'SkyWayChannelImpl.close',
-          channel: this,
-        })
-      );
+        log.elapsed(
+          timestamp,
+          '[end] close channel',
+          await createLogPayload({
+            operationName: 'SkyWayChannelImpl.close',
+            channel: this,
+          }),
+        );
 
-      r();
+        r();
+      };
+
+      executeClose().catch(f);
     });
 
   /**@private */
@@ -717,7 +692,7 @@ export class SkyWayChannelImpl implements Channel {
     const publication = this._getPublication(publicationId);
 
     const subscriber = this._getMember(subscriberId);
-    if (subscriber == undefined) {
+    if (subscriber === undefined || subscriber === null) {
       throw createError({
         operationName: 'SkyWayChannelImpl._subscribe',
         path: log.prefix,
@@ -759,7 +734,7 @@ export class SkyWayChannelImpl implements Channel {
   /**@private */
   readonly _updatePublicationMetadata = (
     publicationId: string,
-    metadata: string
+    metadata: string,
   ) => this._channelImpl.updatePublicationMetadata(publicationId, metadata);
 
   /**@private */
@@ -791,11 +766,22 @@ export class SkyWayChannel {
    */
   static async Create(
     context: SkyWayContext,
-    init: ChannelInit = {}
+    init: ChannelInit = {},
   ): Promise<Channel> {
     const timestamp = log.info('[start] createChannel', {
       operationName: 'SkyWayChannel.Create',
     });
+
+    if (!isValidName(init.name)) {
+      throw createError({
+        operationName: 'SkyWayChannel.Create',
+        info: errors.invalidRequestParameter,
+        path: log.prefix,
+        context,
+        payload: init,
+      });
+    }
+
     const channelImpl = await context._api.createChannel(init).catch((e) => {
       log.error('[failed] createChannel', e);
       throw e;
@@ -810,11 +796,23 @@ export class SkyWayChannel {
    */
   static async Find(
     context: SkyWayContext,
-    query: ChannelQuery
+    query: ChannelQuery,
   ): Promise<Channel> {
     const timestamp = log.info('[start] findChannel', {
       operationName: 'SkyWayChannel.Find',
     });
+
+    // id が指定されていない場合に channelName の validation を行う
+    if (query.id === undefined && !isValidName(query.name)) {
+      throw createError({
+        operationName: 'SkyWayChannel.Find',
+        info: errors.invalidRequestParameter,
+        path: log.prefix,
+        context,
+        payload: query,
+      });
+    }
+
     const channelImpl = await context._api.findChannel(query).catch((e) => {
       log.error('[failed] findChannel', e);
       throw e;
@@ -829,11 +827,22 @@ export class SkyWayChannel {
    */
   static async FindOrCreate(
     context: SkyWayContext,
-    query: ChannelInit
+    query: ChannelInit,
   ): Promise<Channel> {
     const timestamp = log.info('[start] findOrCreateChannel', {
       operationName: 'SkyWayChannel.FindOrCreate',
     });
+
+    if (!isValidName(query.name)) {
+      throw createError({
+        operationName: 'SkyWayChannel.Create',
+        info: errors.invalidRequestParameter,
+        path: log.prefix,
+        context,
+        payload: query,
+      });
+    }
+
     const channelImpl = await context._api
       .findOrCreateChannel(query)
       .catch((e) => {
@@ -845,8 +854,7 @@ export class SkyWayChannel {
     return channel;
   }
 
-  /**@private */
-  constructor() {}
+  private constructor() {}
 }
 
 export type ChannelState = 'opened' | 'closed';

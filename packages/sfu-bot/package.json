@@ -1,6 +1,6 @@
 {
   "name": "@shinyoshiaki/skyway-nodejs-sdk-sfu-bot",
-  "version": "1.14.3",
+  "version": "2.5.1",
   "description": "The official Next Generation JavaScript SDK for SkyWay",
   "homepage": "https://skyway.ntt.com/",
   "repository": {
@@ -41,25 +41,26 @@
     "watch:tsc": "tsc -p tsconfig.build.json -w"
   },
   "dependencies": {
-    "@shinyoshiaki/skyway-nodejs-sdk-core": "file:../core",
-    "@skyway-sdk/sfu-api-client": "^1.4.5",
-    "@skyway-sdk/common": "^1.5.0",
-    "@skyway-sdk/model": "^1.0.1",
+    "@skyway-sdk/analytics-client": "workspace:*",
+    "@skyway-sdk/common": "^2.0.6",
+    "@skyway-sdk/model": "^2.0.0",
+    "@skyway-sdk/sfu-api-client": "workspace:*",
     "@types/node": "^20.8.8",
     "lodash": "4.17.21",
     "msc-node": "^0.0.24"
   },
   "devDependencies": {
+    "@skyway-sdk/sfu-api-client": "^2.0.6",
     "@types/lodash": "^4.14.200",
-    "@skyway-sdk/core": "^1.12.0",
-    "@skyway-sdk/sfu-api-client": "^1.4.8",
-    "lodash": "4.17.21",
-    "mediasoup-client": "3.8.1"
+    "lodash": "4.17.21"
   },
   "keywords": [
     "webrtc",
     "skyway",
     "conferencing",
     "sfu"
-  ]
+  ],
+  "engines": {
+    "node": ">=22"
+  }
 }

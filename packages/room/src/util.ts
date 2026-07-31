@@ -1,7 +1,7 @@
-import { ErrorInfo, SkyWayError } from '@skyway-sdk/common';
+import { type ErrorInfo, SkyWayError } from '@skyway-sdk/common';
+import type { SkyWayContext } from './imports/core';
 
-import { SkyWayContext } from './imports/core';
-import { RoomImpl } from './room/base';
+import type { Room } from './room/default';
 
 export function createError({
   operationName,
@@ -16,7 +16,7 @@ export function createError({
   path: string;
   info: ErrorInfo;
   context?: SkyWayContext;
-  room?: RoomImpl;
+  room?: Room;
   error?: Error;
   payload?: any;
 }) {
@@ -26,15 +26,15 @@ export function createError({
   };
 
   if (room) {
-    errPayload['appId'] = room._channel.appId;
-    errPayload['roomId'] = room.id;
+    errPayload.appId = room._channel.appId;
+    errPayload.roomId = room.id;
     if (room.localRoomMember) {
-      errPayload['memberId'] = room.localRoomMember.id;
+      errPayload.memberId = room.localRoomMember.id;
     }
   }
   if (context) {
-    errPayload['info'] = context.info;
-    errPayload['plugins'] = context.plugins.map((p) => p.subtype);
+    errPayload.info = context.info;
+    errPayload.plugins = context.plugins.map((p) => p.subtype);
   }
 
   return new SkyWayError({ error, info, payload: errPayload, path });

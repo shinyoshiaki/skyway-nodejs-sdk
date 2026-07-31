@@ -4,25 +4,26 @@ import { errors } from '../errors';
 import {
   createError,
   createRemoteStream,
-  IceManager,
-  LocalPersonImpl,
-  RemoteStream,
-  SkyWayContext,
-  SubscriptionImpl,
+  type IceManager,
+  type LocalPersonImpl,
+  type RemoteStream,
+  type SkyWayContext,
+  type SubscriptionImpl,
+  statsToArray,
   uuidV4,
 } from '../imports/core';
 import { MediaStreamTrack, types } from '../imports/mediasoup';
-import { SfuRestApiClient } from '../imports/sfu';
-import { SfuBotMember } from '../member';
+import { SFURestApiClient } from '../imports/sfu';
+import { SFUBotMember } from '../member';
 import { getLayerFromEncodings } from '../util';
-import { SfuTransport } from './transport/transport';
-import { TransportRepository } from './transport/transportRepository';
+import type { SFUTransport } from './transport/transport';
+import type { TransportRepository } from './transport/transportRepository';
 
 const log = new Logger('packages/sfu-bot/src/connection/receiver.ts');
 
 export class Receiver {
   consumer?: types.Consumer;
-  transport?: SfuTransport;
+  transport?: SFUTransport;
 
   private _disposer = new EventDisposer();
   private sendSubscriptionStatsReportTimer: ReturnType<
@@ -32,12 +33,12 @@ export class Receiver {
 
   constructor(
     readonly subscription: SubscriptionImpl,
-    private readonly _api: SfuRestApiClient,
+    private readonly _api: SFURestApiClient,
     private readonly _transportRepository: TransportRepository,
     private _localPerson: LocalPersonImpl,
-    private _bot: SfuBotMember,
+    private _bot: SFUBotMember,
     private _iceManager: IceManager,
-    private _context: SkyWayContext
+    private _context: SkyWayContext,
   ) {
     const analyticsSession = this._localPerson._analytics;
     if (analyticsSession) {
@@ -91,11 +92,13 @@ export class Receiver {
     const spatialLayer = this.subscription.preferredEncoding
       ? getLayerFromEncodings(
           this.subscription.preferredEncoding,
-          this.subscription.publication.origin?.encodings ?? []
+          this.subscription.publication.origin?.encodings ?? [],
         )
       : undefined;
 
     log.debug('[start] createConsumer', { subscription: this.subscription });
+
+    const { forceTCP } = this._bot.options;
 
     const { consumerOptions, transportOptions, transportId, producerId } =
       await this._api.createConsumer({
@@ -106,6 +109,7 @@ export class Receiver {
         subscriberId: this.subscription.subscriber.id,
         spatialLayer,
         originPublicationId: this.subscription.publication.origin!.id,
+        forceTCP,
       });
     if (transportOptions) {
       this._transportRepository.createTransport(
@@ -114,13 +118,13 @@ export class Receiver {
         transportOptions as any,
         'recv',
         this._iceManager,
-        this._localPerson._analytics
+        this._localPerson._analytics,
       );
     }
 
     this.transport = this._transportRepository.getTransport(
       this._localPerson.id,
-      transportId
+      transportId,
     );
     if (!this.transport) {
       log.warn('transport is under race condition', { transportId });
@@ -148,7 +152,7 @@ export class Receiver {
         });
       this.transport = this._transportRepository.getTransport(
         this._localPerson.id,
-        transportId
+        transportId,
       );
     }
 
@@ -162,7 +166,7 @@ export class Receiver {
           subscriptionId: this.subscription.id,
           role: 'receiver',
           rtcPeerConnectionId: this.transport.id,
-        }
+        },
       );
     }
 
@@ -221,7 +225,7 @@ export class Receiver {
 
   private _setupTransportAccessForStream(
     stream: RemoteStream,
-    consumer: types.Consumer
+    consumer: types.Consumer,
   ) {
     const transport = this.transport!;
     const pc = this.pc!;
@@ -231,15 +235,15 @@ export class Receiver {
       connectionState: transport.connectionState,
       info: this,
     });
-    // stream._getStats = async () => {
-    //   const stats = await consumer.getStats();
-    //   let arr = statsToArray(stats);
-    //   arr = arr.map((stats) => {
-    //     stats['sfuTransportId'] = transport.id;
-    //     return stats;
-    //   });
-    //   return arr;
-    // };
+    stream._getStats = async () => {
+      const stats = await consumer.getStats();
+      let arr = statsToArray(stats);
+      arr = arr.map((stats) => {
+        stats.sfuTransportId = transport.id;
+        return stats;
+      });
+      return arr;
+    };
     this._disposer.push(() => {
       stream._getTransport = () => undefined;
     });

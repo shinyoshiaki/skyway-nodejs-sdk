@@ -1,14 +1,23 @@
-import { defaultSfuApiOptions, SfuApiOptions } from './imports/sfu';
+import {
+  defaultSFUApiOptions,
+  type SFUApiOptions,
+} from './imports/sfu';
 
-export type SfuBotPluginOptions = Omit<SfuApiOptions, 'log'> & {
+export interface SFUAdditionalOptions {
   endpointTimeout: number;
   ackTimeout: number;
   disableRestartIce: boolean;
-};
+  /** @internal */
+  forceTCP: boolean;
+}
 
-export const defaultSfuBotPluginOptions: SfuBotPluginOptions = {
-  ...defaultSfuApiOptions,
+export type SFUBotPluginOptions = Omit<SFUApiOptions, 'log'> &
+  SFUAdditionalOptions;
+
+export const defaultSFUBotPluginOptions: SFUBotPluginOptions = {
+  ...defaultSFUApiOptions,
   endpointTimeout: 30_000,
   ackTimeout: 10_000,
   disableRestartIce: false,
+  forceTCP: false,
 };

@@ -1,6 +1,6 @@
 {
   "name": "@shinyoshiaki/skyway-nodejs-sdk-core",
-  "version": "1.15.2",
+  "version": "2.5.1",
   "description": "The official Next Generation JavaScript SDK for SkyWay",
   "keywords": [
     "webrtc",
@@ -51,25 +51,27 @@
     "watch:tsc": "tsc -p tsconfig.build.json -w"
   },
   "dependencies": {
-    "@skyway-sdk/analytics-client": "^1.0.1",
-    "@skyway-sdk/rtc-api-client": "^1.8.0",
-    "@skyway-sdk/signaling-client": "^1.0.7",
-    "@skyway-sdk/common": "^1.5.0",
-    "@skyway-sdk/model": "^1.0.1",
-    "@skyway-sdk/token": "^1.7.0",
+    "@skyway-sdk/analytics-client": "workspace:*",
+    "@skyway-sdk/common": "^2.0.6",
+    "@skyway-sdk/model": "^2.0.0",
+    "@skyway-sdk/signaling-client": "^2.0.4",
+    "@skyway-sdk/token": "^2.1.5",
     "bowser": "^2.11.0",
+    "deepmerge": "^4.3.1",
     "lodash": "4.17.21",
     "msc-node": "^0.0.21",
-    "deepmerge": "^4.3.1",
     "sdp-transform": "^2.14.2",
     "ua-parser-js": "^1.0.35",
     "uuid": "^9.0.0"
   },
   "devDependencies": {
-    "@types/node": "^20.8.8",
     "@types/lodash": "4.17.16",
+    "@types/node": "^20.8.8",
     "@types/sdp-transform": "^2.4.9",
     "@types/ua-parser-js": "^0.7.39",
     "@types/uuid": "^9.0.1"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

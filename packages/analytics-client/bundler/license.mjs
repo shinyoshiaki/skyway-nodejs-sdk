@@ -7,7 +7,7 @@ import https from 'https';
 const LICENSE_POLICY = {
   allow: ["MIT", "ISC", "BSD"],
   deny:  ["GPL", "Apache"]
-}; 
+};
 
 export async function createLicenses(pkg) {
   let output = '';
