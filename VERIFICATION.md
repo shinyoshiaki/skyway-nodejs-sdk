@@ -348,6 +348,35 @@ CI からは取得できません。
 submodule 内で直接 `git commit -a` されるのは止められません（2 回目がこれ）。
 `skip-worktree` は submodule 自身の status を clean にするので止まります。
 
+効いていることの確認（2 回目の drift はまさにこの操作で起きました）:
+
+```
+$ pnpm run submodule:patch
+✓ applied: patches/submodules/werift-ice-restart-and-multiple-stun.patch
+
+# submodule 自身から見て clean。patch 対象の 9 ファイルが skip-worktree
+$ git -C submodules/mediasoup/submodules/werift status --short      # 出力なし
+$ git -C submodules/mediasoup/submodules/werift ls-files -v | grep -c '^S'
+9
+$ git -C submodules/mediasoup/submodules/werift commit -am probe
+nothing to commit, working tree clean
+
+# 内容は patch 適用後のまま（disk の中身が base+patch であることを逆当てで確認）
+$ git -C submodules/mediasoup/submodules/werift apply --reverse --check \
+    patches/submodules/werift-ice-restart-and-multiple-stun.patch   # exit 0
+
+# CI（auto-commit を伴う）を通したあとも HEAD == gitlink
+$ git -C submodules/mediasoup/submodules/werift rev-parse --short HEAD
+d782a543
+$ git -C submodules/mediasoup rev-parse --short HEAD
+1d96eb8
+$ git ls-files -s submodules/mediasoup
+160000 1d96eb8a40c0861d99ff2d676c9270f2b164652a 0	submodules/mediasoup
+```
+
+`pnpm run submodule:unpatch` で印を外すと `status` に 9 ファイルが戻り、
+再度 `submodule:patch` で clean に戻ることも確認済みです。
+
 この印が付いている間は submodule 内で修正しても `git diff` に出ません。patch を作り直す
 ときは先に `pnpm run submodule:unpatch` で印を外して patch を revert してください。
 
