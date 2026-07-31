@@ -276,15 +276,15 @@ $ pnpm exec playwright install chromium # exit 0
 $ pnpm run compile                      # exit 0 (Successfully ran target compile for 7 projects)
 $ pnpm run type                         # exit 0 (Successfully ran target type for 7 projects)
 $ CI=true pnpm run test
- ✓ small/stream.test.ts (1 test) 4ms
+ ✓ small/stream.test.ts (1 test) 5ms
  Test Files  1 passed (1)
       Tests  1 passed (1)
- ✓ large/getStats.test.ts (2 tests) 2463ms
- ✓ large/stunPorts.test.ts (3 tests) 2476ms
- ✓ large/turn.test.ts (1 test) 2644ms
- ✓ large/p2p.test.ts (3 tests) 5087ms
- ✓ large/loopback.test.ts (4 tests | 1 skipped) 5420ms
- ✓ large/restartIce.test.ts (1 test) 31961ms
+ ✓ large/turn.test.ts (1 test) 2565ms
+ ✓ large/stunPorts.test.ts (3 tests) 2601ms
+ ✓ large/getStats.test.ts (2 tests) 3416ms
+ ✓ large/p2p.test.ts (3 tests) 4905ms
+ ✓ large/loopback.test.ts (4 tests | 1 skipped) 4990ms
+ ✓ large/restartIce.test.ts (1 test) 31980ms
  Test Files  6 passed (6)
       Tests  13 passed | 1 skipped (14)
                                         # exit 0
