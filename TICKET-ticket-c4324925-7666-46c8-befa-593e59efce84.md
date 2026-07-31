@@ -66,6 +66,26 @@ fork の核心は browser API を werift ベースに差し替える層。merge 
 
 - README の「skyway-js-sdk との違い」（対応機能・非対応機能）を v2 基準で更新。
 
+### 2.6 submodule 修正の管理方針（2026-07-31 追加要件）
+
+**submodule への fork 独自修正は、patch 運用ではなく submodule 自体のコード修正として管理する。**
+
+- werift への修正（ICE restart の修正 3 点 / 複数 STUN サーバー対応 / DataChannel の DOM 互換
+  `onbufferedamountlow`）は `submodules/mediasoup/submodules/werift` 内のコミットとして持ち、
+  gitlink がそのコミットを参照する。`submodules/mediasoup` 側も werift の gitlink 更新を
+  コミットする。
+- 本リポジトリで差分を patch として保持する運用（`patches/submodules/` +
+  `submodule:patch` / `submodule:unpatch`、および patch 由来の dirty を隠すための
+  `skip-worktree` / `.gitmodules` の `ignore = dirty`）は廃止し、関連ファイル・スクリプト・
+  CI の patch 適用ステップを削除する。
+- 経緯: 当初は「gitlink を remote から取得できる SHA に固定し、差分は patch で管理」する
+  方針で実装したが、submodule の変更を submodule 自身の履歴として持つ方が管理として素直で
+  あるため、方針を変更する。
+- **この方針では gitlink が push 前のローカルコミットを指すため、fresh clone および
+  Node CI workflow は submodule を取得できない**。§4 の push 禁止と併せて、これは方針変更に
+  伴って受け入れる制約とし、再現性は push 後に確保する。push 対象のコミットは
+  `VERIFICATION.md` に明記し、push は利用者の明示的な許可を得てから別途実施する。
+
 ## 3. 技術的アプローチ（調査結果まとめ)
 
 1. **merge 方式の継続が妥当**。upstream はリリースごとに squash された 15 コミットのみ（v1.15.2..v2.5.1）で、git 履歴は fork と共有されている。
@@ -81,7 +101,9 @@ fork の核心は browser API を werift ベースに差し替える層。merge 
 - **README の非対応機能一覧（getStats / restartIce / simulcast）は古くなっている**: 最新化済みの werift は getStats / restartIce を実装済み（§2.4 調査結果参照）で、v2 では getStats 系の公開 API 自体が削除された。v2 追従後の実質的な非対応は simulcast のみになる見込みのため、README 更新時に一覧を見直す。
 - **`pnpm run type` は mp4box 起因で通らない既知問題**があるため、型チェックの完了判定は `compile`（tsc -p tsconfig.build.json）基準にする。
 - **テスト**: `tests/large`（loopback / p2p / turn）は実 SkyWay 接続が必要。**認証情報はリポジトリ直下の `env.ts`（appId / secret）に設定済み**のため、ローカルで実接続テストを実行して合格を必須とする（CI も secrets 設定済みの Node CI workflow で同テストを実行）。integrate 系は flaky 傾向があるためリトライを考慮。
-- **submodule 運用**: `submodules/mediasoup` の checkout 状態を壊さないこと（core.worktree 問題の再発防止のため `git submodule` 操作後の `git status` 確認を行う）。CI では wpt nested submodule を除外する既存手順を維持。
+- **submodule 運用**: `submodules/mediasoup` の checkout 状態を壊さないこと（core.worktree 問題の再発防止のため `git submodule` 操作後の `git status` 確認を行う）。CI では wpt nested submodule を除外する既存手順を維持。fork 独自修正は §2.6 のとおり submodule 自体のコミットとして持つ（patch 運用は廃止）。
+- **submodule に対する git 操作の注意**: この環境のシェルは `GIT_DIR` / `GIT_COMMON_DIR` を export しているため、`git -C <submodule>` でも親リポジトリを操作してしまい、しかもエラーにならない（実際に親ブランチを submodule のコミットへ動かす事故が起きた）。submodule 内の git は `env -u GIT_DIR -u GIT_COMMON_DIR -u GIT_WORK_TREE git -C <path> ...` の形で実行する。
+- **§2.6 に伴う既知の制約**: gitlink が未 push のローカルコミット（werift `58d4c23c` / mediasoup `01d8acd`）を指すため、fresh clone と Node CI workflow は submodule checkout の段階で失敗する。方針変更に伴って受け入れた制約であり、push 後に解消する。ローカル検証はミラーを使って push 後相当の状態で実施し、結果を `VERIFICATION.md` に記録する。
 - **バージョン表記**: `packages/*/src/version.ts` 等、SDK バージョン埋め込み箇所の更新漏れに注意。
 - **【禁止】作業中の `git push` は行わない**: 本チケットの作業範囲はローカルのコミットまでとし、リモートへの push は一切行わない。対象は本リポジトリだけでなく、submodule 側（shinyoshiaki/mediasoup-client-node、werift）への push も含む。具体的に禁止する操作は以下:
   - `git push` / `git push --tags` / `git push --force`（本リポジトリ・submodule いずれも）
@@ -103,3 +125,4 @@ fork の核心は browser API を werift ベースに差し替える層。merge 
 7. README の対応/非対応機能・バージョン・動作環境（Node >=22）記載が v2 基準に更新され、各公開パッケージの `engines.node` が `>=22` になっている。
 8. npm 依存の `@skyway-sdk/*` がすべて 2.x 系に更新され、`pnpm install --frozen-lockfile` が通る lockfile がコミットされている。
 9. 成果物がすべてローカルコミットのみで完結しており、本リポジトリ・submodule のいずれに対しても `git push` / publish / PR 作成が行われていない（§4 の禁止事項）。
+10. （§2.6 追加要件）werift への fork 独自修正が submodule 自体のコミットとして存在し、`submodules/mediasoup` および親リポジトリの gitlink がそれを参照している。patch 運用の資材（`patches/submodules/`、`scripts/{apply,unapply,}submodule_patches.mjs`、`submodule:patch` / `submodule:unpatch`、CI の patch 適用ステップ、`.gitmodules` の `ignore = dirty`）がすべて削除されている。submodule checkout が gitlink と一致し（dirty でない）、patch 適用ステップ無しで `compile` と `tests/small` / `tests/large` が pass する。push が必要なコミットが `VERIFICATION.md` に明記されている。

@@ -200,106 +200,137 @@ werift のテストは ice 113 件 / webrtc 187 件すべて通っています�
 
 ## submodule の扱い
 
-werift への修正（ICE restart / 複数 STUN サーバー）は、**gitlink を remote から取得できる
-SHA のままにし、差分を本リポジトリの `patches/submodules/` で管理**しています。
-push していないコミットを gitlink に指させると fresh checkout / CI で取得できなくなるためです。
+**2026-07-31 の要件変更により、patch 運用をやめて submodule 自体のコードを修正する方針に
+変更しました。** werift への修正（ICE restart / 複数 STUN サーバー）は
+`submodules/mediasoup/submodules/werift` の**コミットとして持ち、gitlink がそれを参照**します。
+`patches/submodules/` と `submodule:patch` / `submodule:unpatch` は削除しました。
 
-| gitlink | SHA | 取得元 |
+| gitlink | SHA | 内容 |
 | --- | --- | --- |
-| `submodules/mediasoup` | `1d96eb8` | `origin/develop` の先端 |
-| `submodules/mediasoup/submodules/werift` | `d782a543` | タグ `v0.24.2` |
+| `submodules/mediasoup` | `01d8acd` | `1d96eb8`（`origin/develop` 先端）+ werift gitlink の更新 |
+| `submodules/mediasoup/submodules/werift` | `58d4c23c` | `d782a543`（タグ `v0.24.2`）+ 下記の修正コミット 1 本 |
 
-| patch | 内容 |
+werift の修正コミット `58d4c23c`「fix(ice): re-establish a nominated pair on ICE restart,
+support multiple STUN servers」の内容:
+
+```
+ packages/ice/src/ice.ts               | 65 ++++++++++++++++++++++++++++-------
+ packages/ice/src/iceBase.ts           |  6 ++++
+ packages/ice/src/stun/protocol.ts     |  4 +++
+ packages/ice/src/types/model.ts       |  5 +++
+ packages/ice/tests/ice/ice.test.ts    | 48 ++++++++++++++++++++++++++
+ packages/webrtc/src/dataChannel.ts    |  2 ++
+ packages/webrtc/src/peerConnection.ts | 13 ++++++-
+ packages/webrtc/src/utils.ts          | 19 ++++++++--
+ packages/webrtc/tests/utils.test.ts   | 26 ++++++++++++++
+ 9 files changed, 173 insertions(+), 15 deletions(-)
+```
+
+コードの中身は patch 運用時と同一です。tree hash が一致することで確認しています:
+
+```
+$ git -C submodules/mediasoup/submodules/werift rev-parse HEAD^{tree}
+813c60136551195f2f6b8fb02a6045ee67c87f69   # patch 運用時の tree と同じ
+```
+
+### push が必要（未実施 / 許可待ち）
+
+**この方針では gitlink が push されていないローカルコミットを指すため、fresh clone や
+Node CI からは submodule を取得できません。** チケット §4 が作業中の push を禁止している
+ため、本チケットの成果物はローカルコミットまでで止めています（§4 は
+「参照 SHA の更新はローカルコミットを指す状態で構わない」と明示しています）。
+
+再現可能にするには、以下を push する許可が必要です:
+
+| リポジトリ | push するコミット |
 | --- | --- |
-| `patches/submodules/werift-ice-restart-and-multiple-stun.patch` | ICE restart の修正 3 点 + 複数 STUN サーバー対応 + DataChannel の DOM 互換 `onbufferedamountlow` |
+| `shinyoshiaki/werift-webrtc` | `58d4c23c`（`d782a543` = v0.24.2 の上に 1 コミット） |
+| `shinyoshiaki/mediasoup-client-node` | `01d8acd`（`1d96eb8` = develop 先端の上に 1 コミット） |
 
-適用は `pnpm run submodule:patch`（冪等。`first` と CI の prepare に組み込み済み）。
-patch は前提 SHA（`d782a543`）を検証してから当てるので、submodule が別の状態のときは
-黙って当たらずエラーになります。
+push 前は、fresh clone での `submodule:init` が該当 SHA を取得できず失敗します。
+CI（Node CI workflow）も同じ理由で submodule checkout の段階で失敗します。これは
+方針変更に伴って受け入れた既知の制約で、push 後に解消します。
 
-remote 側に実在することの確認:
+### submodule 内の作業手順
 
-```
-# submodules/mediasoup: origin/develop の先端そのもの
-$ git -C submodules/mediasoup rev-parse origin/develop
-1d96eb8a40c0861d99ff2d676c9270f2b164652a
-
-# nested werift: タグ v0.24.2 として公開済み（remote へ問い合わせて確認）
-$ git -C submodules/mediasoup/submodules/werift ls-remote origin v0.24.2
-d782a54395552e594a6c36cd06430c8224b3096e	refs/tags/v0.24.2
-```
-
-（この環境には `ssh` バイナリが無く、グローバル git 設定の
-`url.git@github.com:.insteadof https://github.com/` により ssh へ書き換えられるため、
-上記 `ls-remote` は `GIT_CONFIG_GLOBAL=/dev/null` を付けて https のまま実行しています。）
-
-patch を当てた結果が意図した内容と一致することは tree hash で確認しています
-（`d782a543` + patch のツリーが、手元で作った修正コミットのツリーと同一）。
+この環境のシェルは `GIT_DIR` / `GIT_COMMON_DIR` を export しているため、`git -C <submodule>`
+でも**親リポジトリを操作してしまいます**（しかもエラーにならない）。submodule に対する git は
+必ず環境変数を落として実行してください:
 
 ```
-worktree tree:  813c60136551195f2f6b8fb02a6045ee67c87f69
-commit   tree:  813c60136551195f2f6b8fb02a6045ee67c87f69
+$ env -u GIT_DIR -u GIT_COMMON_DIR -u GIT_WORK_TREE \
+    git -C submodules/mediasoup/submodules/werift status
 ```
+
+修正の流れは、werift を編集 → werift でコミット → mediasoup で `git add submodules/werift`
+してコミット → 親で `git add submodules/mediasoup` してコミット、の 3 段です。
+
+`.gitmodules` の `submodules/mediasoup` の url は SSH から HTTPS
+(`https://github.com/shinyoshiaki/mediasoup-client-node.git`) に変更しています。公開
+リポジトリなので、SSH 鍵を持たない fresh clone や CI の checkout からも取得できます
+（mediasoup 側が werift を参照する url も元から HTTPS です）。patch 運用のために入れていた
+`ignore = dirty` は、submodule が dirty にならなくなったので削除しました。
 
 ### fresh checkout からの再現確認
 
 この記録では branch の HEAD の SHA を書いていません。CI / レビューの実行前に
 auto-commit が 1 コミット足すので、記録に書いた SHA は書いた直後に必ず古くなります。
-代わりに、内容で同一性が確認できるもの（gitlink の SHA と patch 適用後の tree hash
+代わりに、内容で同一性が確認できるもの（gitlink の SHA と werift の tree hash
 `813c6013…`）で状態を特定してください。branch は
 `ticket/c4324925-7666-46c8-befa-593e59efce84` です。
 
-公開済み gitlink のまま clone し、CI workflow と同じ手順を実行して large test まで
-通ることを確認しました（submodule の fetch 元だけは、この環境に `ssh` が無いため
-ローカルのミラーに差し替えています。SHA は公開済みのものと同一です）。
+clone から CI workflow と同じ手順を実行して large test まで通ることを確認しました。
+**submodule の fetch 元はローカルミラーに向けています。** この環境に `ssh` も外部
+ネットワークも無いためですが、今回の方針では gitlink が未 push のコミットを指すので、
+これは同時に**「push 後の状態」のシミュレーション**でもあります（ミラーには
+`58d4c23c` / `01d8acd` が含まれています）。
 
 ```
-$ git clone <repo> /tmp/fresh3/repo
-$ git -C /tmp/fresh3/repo checkout ticket/c4324925-7666-46c8-befa-593e59efce84
+$ git clone <repo> /tmp/fresh4/repo
+$ git -C /tmp/fresh4/repo checkout ticket/c4324925-7666-46c8-befa-593e59efce84
 
 $ pnpm run submodule:init
-Submodule path 'submodules/mediasoup': checked out '1d96eb8a…'
-Submodule path 'submodules/mediasoup/submodules/werift': checked out 'd782a543…'
+Submodule path 'submodules/mediasoup': checked out '01d8acd…'
+Submodule path 'submodules/mediasoup/submodules/werift': checked out '58d4c23c…'
 Skipping submodule 'submodules/mediasoup/submodules/werift/third_party/wpt'
 
 $ git submodule status --recursive
- 1d96eb8a40c0861d99ff2d676c9270f2b164652a submodules/mediasoup (v0.0.3-85-g1d96eb8)
- d782a54395552e594a6c36cd06430c8224b3096e submodules/mediasoup/submodules/werift (v0.24.1-6-gd782a543)
+ 01d8acdfeb84cbd8c4864a668b37639c8ed47c5e submodules/mediasoup
+ 58d4c23c2673d15ccc6aa2946e3b8672c53eb985 submodules/mediasoup/submodules/werift
 -121babb3c1d6a78dd0f638593c82d6cdcd0bcd18 submodules/mediasoup/submodules/werift/third_party/wpt
 
-$ pnpm run submodule:patch
-✓ applied: patches/submodules/werift-ice-restart-and-multiple-stun.patch
+# patch 適用ステップは無い。checkout した時点で修正が入っている
+$ git -C submodules/mediasoup/submodules/werift status --short   # 出力なし（clean）
 
-$ pnpm install --frozen-lockfile        # exit 0（node_modules/.pnpm に 1119 パッケージ）
+$ pnpm install --frozen-lockfile        # exit 0
 $ pnpm run submodule:install            # exit 0
 $ pnpm exec playwright install chromium # exit 0
 $ pnpm run compile                      # exit 0 (Successfully ran target compile for 7 projects)
 $ pnpm run type                         # exit 0 (Successfully ran target type for 7 projects)
 $ CI=true pnpm run test
- ✓ small/stream.test.ts (1 test) 5ms
+ ✓ small/stream.test.ts (1 test) 4ms
  Test Files  1 passed (1)
       Tests  1 passed (1)
- ✓ large/turn.test.ts (1 test) 2565ms
- ✓ large/stunPorts.test.ts (3 tests) 2601ms
- ✓ large/getStats.test.ts (2 tests) 3416ms
- ✓ large/p2p.test.ts (3 tests) 4905ms
- ✓ large/loopback.test.ts (4 tests | 1 skipped) 4990ms
- ✓ large/restartIce.test.ts (1 test) 31980ms
+ ✓ large/getStats.test.ts (2 tests) 2194ms
+ ✓ large/stunPorts.test.ts (3 tests) 2340ms
+ ✓ large/turn.test.ts (1 test) 2597ms
+ ✓ large/loopback.test.ts (4 tests | 1 skipped) 4919ms
+ ✓ large/p2p.test.ts (3 tests) 4897ms
+ ✓ large/restartIce.test.ts (1 test) 31923ms
  Test Files  6 passed (6)
       Tests  13 passed | 1 skipped (14)
                                         # exit 0
 
-# 全工程を通したあとも gitlink は公開済み SHA のまま（drift しない）
+# 全工程を通したあとも gitlink は同じ
 $ git submodule status --recursive
- 1d96eb8a40c0861d99ff2d676c9270f2b164652a submodules/mediasoup (v0.0.3-85-g1d96eb8)
- d782a54395552e594a6c36cd06430c8224b3096e submodules/mediasoup/submodules/werift (v0.24.1-6-gd782a543)
+ 01d8acdfeb84cbd8c4864a668b37639c8ed47c5e submodules/mediasoup (v0.0.3-86-g01d8acd)
+ 58d4c23c2673d15ccc6aa2946e3b8672c53eb985 submodules/mediasoup/submodules/werift (v0.24.1-7-g58d4c23c)
 -121babb3c1d6a78dd0f638593c82d6cdcd0bcd18 submodules/mediasoup/submodules/werift/third_party/wpt
 ```
 
-（submodule の fetch 先だけはローカルミラーに向けています。この環境に `ssh` も外部
-ネットワークも無いためで、SHA は公開済みのものと同一です。ミラーを `file` transport で
-submodule として clone するのに `protocol.file.allow=always` も検証側の一時 global
-config に入れています — いずれも検証環境の都合で、リポジトリ側の設定ではありません。）
+（ミラーを `file` transport で submodule として clone するのに
+`protocol.file.allow=always` を検証側の一時 global config に入れています。検証環境の
+都合で、リポジトリ側の設定ではありません。）
 
 この確認の過程で、fresh checkout では `pnpm run submodule:install` が失敗することが
 分かったので直しました。mediasoup submodule（パッケージ名 `msc-node`）の `prepare` が
@@ -308,88 +339,21 @@ config に入れています — いずれも検証環境の都合で、リポ�
 本 SDK は mediasoup の dist ではなく src を直接 import するので、
 `npm ci --ignore-scripts` として依存の取得だけを行うようにしました。
 
-patch を更新する場合は、
+### 参考: patch 運用でぶつかった問題（2026-07-31 の方針変更前）
 
-```
-$ pnpm run submodule:unpatch   # skip-worktree を外して patch を revert
-# submodules/mediasoup/submodules/werift を編集
-$ git -C submodules/mediasoup/submodules/werift diff d782a543 \
-    > patches/submodules/werift-ice-restart-and-multiple-stun.patch
-$ pnpm run submodule:patch     # 当て直して skip-worktree を再設定
-```
+方針変更前は gitlink を公開済み SHA（`1d96eb8` / `d782a543`）に固定し、差分を
+`patches/submodules/` で管理していました。この運用では、submodule を再帰的にコミットする
+ツール（CI / レビュー前の auto-commit）が patch 内容を submodule のローカルコミットに
+変えてしまう問題が 2 回起きています（1 回目は gitlink が `4d9f3329` / `1f9626af` へ、
+2 回目は werift の HEAD だけが `bd73fa14` へ動いて gitlink と不一致）。
+`.gitmodules` の `ignore = dirty` は親から見た表示しか変えないので防げず、最終的に
+patch 対象ファイルを `git update-index --skip-worktree` にして submodule 自身の
+`git status` を clean に見せることで止めていました。
 
-の順で行ってください。`submodule:unpatch` を先に実行しないと、編集が
-`git diff` に出てこないため patch を取り直せません。
-
-なお patch 適用後は submodule の working tree が dirty になります。これは意図した状態なので、
-submodule 側でコミットして解消しないでください（コミットすると gitlink が remote から
-取得できない SHA を指すことになります）。
-
-実際にこれを 2 回踏んだため、規約だけに頼らない防止策を入れています。submodule を再帰的に
-コミットするツール（CI 前の auto-commit）が動くと、patch 内容が werift のローカル
-コミットになってしまいます。
-
-1 回目は mediasoup の gitlink が `1d96eb8` → `4d9f3329`、werift が
-`d782a543` → `1f9626af` に動きました。2 回目は親の gitlink は守れたものの werift の
-HEAD だけが `d782a543` → `bd73fa14` に動き、gitlink と checkout が不一致になりました。
-内容はどちらも patch と同一でしたが、これらの SHA は push していないので fresh checkout /
-CI からは取得できません。
-
-対策（`submodule:patch` が適用時に自動でやること）:
-
-- **patch が触る 9 ファイルを `git update-index --skip-worktree` にする。** これが本命です。
-  submodule 自身の `git status` が clean になるため `git commit -a` が no-op になり、
-  HEAD は gitlink と一致し続けます。ファイルの内容は patch 適用後のまま残ります。
-- 親（mediasoup）側に `submodule.submodules/werift.ignore=dirty` を設定する。mediasoup 自身の
-  `.gitmodules` は upstream 管理なので clone ローカルの config に書きます。
-- 親リポジトリ側は `.gitmodules` の `ignore = dirty` で従来どおり gitlink の変更だけを見ます。
-
-`ignore=dirty` だけでは不十分でした。これは親から見た status/diff の表示を変えるだけで、
-submodule 内で直接 `git commit -a` されるのは止められません（2 回目がこれ）。
-`skip-worktree` は submodule 自身の status を clean にするので止まります。
-
-効いていることの確認（2 回目の drift はまさにこの操作で起きました）:
-
-```
-$ pnpm run submodule:patch
-✓ applied: patches/submodules/werift-ice-restart-and-multiple-stun.patch
-
-# submodule 自身から見て clean。patch 対象の 9 ファイルが skip-worktree
-$ git -C submodules/mediasoup/submodules/werift status --short      # 出力なし
-$ git -C submodules/mediasoup/submodules/werift ls-files -v | grep -c '^S'
-9
-$ git -C submodules/mediasoup/submodules/werift commit -am probe
-nothing to commit, working tree clean
-
-# 内容は patch 適用後のまま（disk の中身が base+patch であることを逆当てで確認）
-$ git -C submodules/mediasoup/submodules/werift apply --reverse --check \
-    patches/submodules/werift-ice-restart-and-multiple-stun.patch   # exit 0
-
-# CI（auto-commit を伴う）を通したあとも HEAD == gitlink
-$ git -C submodules/mediasoup/submodules/werift rev-parse --short HEAD
-d782a543
-$ git -C submodules/mediasoup rev-parse --short HEAD
-1d96eb8
-$ git ls-files -s submodules/mediasoup
-160000 1d96eb8a40c0861d99ff2d676c9270f2b164652a 0	submodules/mediasoup
-```
-
-`pnpm run submodule:unpatch` で印を外すと `status` に 9 ファイルが戻り、
-再度 `submodule:patch` で clean に戻ることも確認済みです。
-
-この印が付いている間は submodule 内で修正しても `git diff` に出ません。patch を作り直す
-ときは先に `pnpm run submodule:unpatch` で印を外して patch を revert してください。
-
-`.gitmodules` の `submodules/mediasoup` の url は SSH から HTTPS
-(`https://github.com/shinyoshiaki/mediasoup-client-node.git`) に変更しました。公開
-リポジトリなので、SSH 鍵を持たない fresh clone や CI の checkout からも取得できます
-（mediasoup 側が werift を参照する url も元から HTTPS です）。
-
-patch ファイルには末尾空白を残していません。unified diff では空行の context 行が
-「空白 1 文字だけの行」になりますが、末尾空白を除去するツールに壊されると patch が
-当たらなくなるため、空行のまま保存しています（`git apply` は空行を空の context 行として
-解釈します。適用は `--whitespace=nowarn` 付き）。除去後も同じ tree hash
-`813c6013…` になることを確認済みです。
+新方針では submodule のコミットが正規の状態になるため、auto-commit が submodule 内で
+コミットしても gitlink が意図せず動くだけで、内容が失われることはありません。ただし
+submodule に未コミットの編集を残したまま CI / レビューを回すと余計なコミットが増えるので、
+submodule 側の編集は都度コミットしてから回してください。
 
 mediasoup-client-node の werift handler の getStats 空実装は submodule を変更せず、
 本リポジトリの `packages/core/src/imports/weriftHandlerStats.ts` が prototype に
