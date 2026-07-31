@@ -366,23 +366,29 @@ $ pnpm exec playwright install chromium # exit 0
 $ pnpm run compile                      # exit 0 (Successfully ran target compile for 7 projects)
 $ pnpm run type                         # exit 0 (Successfully ran target type for 7 projects)
 $ CI=true pnpm run test
- ✓ small/stream.test.ts (1 test) 4ms
  Test Files  1 passed (1)
       Tests  1 passed (1)
- ✓ large/getStats.test.ts (2 tests) 2194ms
- ✓ large/stunPorts.test.ts (3 tests) 2340ms
- ✓ large/turn.test.ts (1 test) 2597ms
- ✓ large/loopback.test.ts (4 tests | 1 skipped) 4919ms
- ✓ large/p2p.test.ts (3 tests) 4897ms
- ✓ large/restartIce.test.ts (1 test) 31923ms
+ ✓ large/stunPorts.test.ts > stunPorts > single port 443 862ms
+ ✓ large/stunPorts.test.ts > stunPorts > single port 3478 664ms
+ ✓ large/stunPorts.test.ts > stunPorts > both ports 683ms
+ ✓ large/getStats.test.ts > getStats > p2p 962ms
+ ✓ large/getStats.test.ts > getStats > sfu 1252ms
+ ✓ large/turn.test.ts > turn > force_turn 2497ms
+ ✓ large/loopback.test.ts > loopback > audio 995ms
+ ✓ large/loopback.test.ts > loopback > audio_multiple 1604ms
+ ✓ large/loopback.test.ts > loopback > video_h264 2317ms
+ ✓ large/p2p.test.ts > p2p > node-to-node 977ms
+ ✓ large/p2p.test.ts > p2p > node-to-browser 2421ms
+ ✓ large/p2p.test.ts > p2p > browser-to-node 1077ms
+ ✓ large/restartIce.test.ts > restartIce > reconnects and resumes RTP after the ICE path breaks 32025ms
  Test Files  6 passed (6)
       Tests  13 passed | 1 skipped (14)
                                         # exit 0
 
 # 全工程を通したあとも gitlink は同じ
 $ git submodule status --recursive
- a866ee85ee8fdb1fe3cca39690446c2e3e203de8 submodules/mediasoup (v0.0.3-86-g01d8acd)
- 7c2a3ab9c544dffdfadf4d8e4fcd8f0713fcc69d submodules/mediasoup/submodules/werift (v0.24.1-7-g58d4c23c)
+ a866ee85ee8fdb1fe3cca39690446c2e3e203de8 submodules/mediasoup (v0.0.3-87-ga866ee8)
+ 7c2a3ab9c544dffdfadf4d8e4fcd8f0713fcc69d submodules/mediasoup/submodules/werift (v0.24.1-8-g7c2a3ab9)
 -121babb3c1d6a78dd0f638593c82d6cdcd0bcd18 submodules/mediasoup/submodules/werift/third_party/wpt
 ```
 
